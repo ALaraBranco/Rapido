@@ -1,0 +1,51 @@
+﻿@inherits RazorTemplateBase<RazorTemplateModel<Template>>
+@using Dynamicweb.Rendering;
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Security;
+
+@Include("../../EmailGeneralHelpers.cshtml")
+@Include("../../EmailHelpers.cshtml")
+
+@RenderBodySection()
+
+@* CONTENT HELPERS *@
+
+@helper RenderBodySection()
+{
+    Column centerColumn = new Column();
+
+    centerColumn.align = "left";
+    centerColumn.image = GetString("Item.Image");
+    centerColumn.altText = GetString("Item.Heading");
+    centerColumn.header = GetString("Item.Heading");
+    centerColumn.introheader = GetString("Item.Topic");
+    centerColumn.introheaderTextColor = GetString("Item.TopicFontColor");
+
+    centerColumn.buttonType = GetString("Item.ButtonType");
+    if (!string.IsNullOrEmpty(GetString("Item.Text")))
+    {
+        centerColumn.text.Add(GetString("Item.Text"));
+    }
+    centerColumn.textColor = GetString("Item.FontColor");
+    
+    if (!string.IsNullOrEmpty(GetString("Item.Link")))
+    {
+        centerColumn.link = GetString("Item.Link");
+        centerColumn.linkText = GetString("Item.LinkText");
+    }
+
+    string emailBackgroundColor = !string.IsNullOrEmpty(GetString("Item.BackgroundColor")) ? GetString("Item.BackgroundColor") : "#fff";
+
+    if (!centerColumn.isEmpty()) 
+    {
+        @CreateRow(centerColumn, new RowSettings { backgroundColor = emailBackgroundColor });
+    }
+    
+    @GetString("ParagraphModule");
+    
+    if (GetBoolean("Item.SeparationLine"))
+    {
+        @CreateRowDivider();
+    }
+}

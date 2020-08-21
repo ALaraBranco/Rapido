@@ -1,0 +1,84 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage usersFilterPage = BlocksPage.GetBlockPage("UsersListPage");
+}
+
+@{ 
+    Block usersHeader = new Block
+    {
+        Id = "UsersHeader",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block
+            {
+                Id = "UsersFilter",
+                SortId = 10,
+                Template = RenderUsersDepartmentFilter(),
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                }
+            }
+        }
+    };
+    usersFilterPage.Add(usersHeader);
+}
+
+@helper RenderUsersDepartmentFilter() {
+    List<string> departments = new List<string>();
+    departments.Add("All");
+
+    foreach (LoopItem user in GetLoop("AllUsers"))
+    {
+        string department = user.GetString("UserManagement:User.Department");
+
+        if (!departments.Exists(x => x == department) && department != "")
+        {
+            departments.Add(department);
+        }
+    }
+
+    departments = departments.OrderBy(x => x).ToList();
+
+
+    string selectedDepartment = !String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("Department")) ? HttpContext.Current.Request.QueryString.Get("Department") : Translate("All");
+    var query = HttpUtility.ParseQueryString(HttpContext.Current.Request.QueryString.ToString());
+
+    foreach (var item in departments)
+    {
+        selectedDepartment = selectedDepartment == item ? item : selectedDepartment;
+    }
+
+    if (departments.Count > 1) {
+        <div class="u-full-width u-ta-right">
+            <div class="collection u-no-margin">
+                <input type="checkbox" id="DepartmentSelector" class="dropdown-trigger" />
+                <div class="dropdown u-w180px dw-mod">
+                    <label class="dropdown__header dropdown__btn dw-mod" for="DepartmentSelector">@Translate(selectedDepartment)</label>
+                    <div class="dropdown__content dw-mod">
+                        @{
+                            foreach (var item in departments)
+                            {
+                                if (item.ToLower() == "all") {
+                                    query.Set("Department", "All");
+                                } else {
+                                    query.Set("Department", item);
+                                }
+                                <div class="dropdown__item" onclick="window.location = '/Default.aspx?@query.ToString()'">@Translate(item)</div>
+                            }
+                        }
+                    </div>
+                    <label class="dropdown-trigger-off" for="DepartmentSelector"></label>
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,104 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("Master.cshtml")
+@using System.Text.RegularExpressions
+
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("WhitePaperArticle");
+}
+
+@{
+    string articleBannerTextColor = !string.IsNullOrEmpty(Model.Item.GetString("TextColor")) ? Model.Item.GetString("TextColor") : "#fff";
+
+    ArticleHeader topBanner = new ArticleHeader
+    {
+        Layout = ArticleHeaderLayout.Banner,
+        Image = new Image { Path = Model.Item.GetFile("Image") },
+        Heading = Model.Item.GetString("Title"),
+        Subheading = Model.Item.GetString("Summary"),
+        TextColor = articleBannerTextColor,
+        ButtonLayout = ButtonLayout.Primary,
+        TextLayout = ArticleHeaderTextLayout.Full
+    };
+
+
+    //Basic structure
+
+    Block articleContainer = new Block
+    {
+        Id = "ArticleContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleBanner",
+                SortId = 10,
+                Component = topBanner,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    HidePadding = true
+                }
+            },
+            new Block {
+                Id = "ArticleBody",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleBodyRow",
+                        SortId = 10,
+                        Design = new Design {
+                            RenderType = RenderType.Row
+                        },
+                        BlocksList = new List<Block> {
+                            new Block {
+                                Id = "ArticleText",
+                                SortId = 10,
+                                Component = new ArticleText { Text =  Model.Item.GetString("Text") },
+                                Design = new Design {
+                                    RenderType = RenderType.Column,
+                                    Size = "8"
+                                }
+                            },
+                            new Block {
+                                Id = "ArticlePlaceholder",
+                                SortId = 20,
+                                Component = new ArticleText { Text = @Model.Placeholder("dwcontent", "content", "default:true;sort:1") },
+                                Design = new Design {
+                                    RenderType = RenderType.Column,
+                                    Size = "4"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            new Block {
+                Id = "ArticleSnippets",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                }
+            }
+        }
+    };
+    articlePage.Add(articleContainer);
+
+}
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)
+

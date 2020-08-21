@@ -1,0 +1,19 @@
+﻿@using System.Reflection
+@using System.Text.RegularExpressions;
+@using Dynamicweb.Frontend
+@using Dynamicweb.Content.Items
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleBodyRow(ArticleBodyRow settings)
+{
+    string position = settings.TopLayout == "overlay" ? "article__overlay-offset" : "";
+    string contentAlignment = settings.TextLayout == "center" ? "grid--justify-center" : "";
+
+    <div class="grid grid--align-content-start @contentAlignment @position dw-mod">
+        @RenderBlockList(settings.SubBlocks)
+    </div>
+}

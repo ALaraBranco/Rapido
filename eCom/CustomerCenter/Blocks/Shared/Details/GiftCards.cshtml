@@ -1,0 +1,50 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+
+@functions {
+    BlocksPage giftCardsPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.HasGiftCards")))
+    {
+        Block giftCards = new Block
+        {
+            Id = "GiftCards",
+            SortId = 40,
+            Template = RenderGiftCards()
+        };
+        giftCardsPage.Add("MainContent", giftCards);
+    }
+}
+
+@helper RenderGiftCards()
+{
+    <table class="table table-cart">
+        <tr>
+            <td colspan="4">
+                @Render(new Heading { Title = Translate("Giftcards bought on this order"), CssClass = "u-no-margin" })
+            </td>
+        </tr>
+        <tr>
+            <td>@Translate("Gift card name")</td>
+            <td>@Translate("Gift card code")</td>
+            <td>@Translate("Expiry date")</td>
+            <td class="u-ta-right">@Translate("Gift card amount")</td>
+        </tr>
+
+        @foreach (LoopItem giftcards in GetLoop("GiftCards"))
+        {
+            <tr>
+                <td>@giftcards.GetString("Ecom:Order.GiftCard.Name")</td>
+                <td>@giftcards.GetString("Ecom:Order.GiftCard.Code")</td>
+                <td>@giftcards.GetDate("Ecom:Order.GiftCard.ExpiryDate").ToString(Dynamicweb.Core.Helpers.DateHelper.DateFormatStringShort)</td>
+                <td class="u-ta-right" title="@giftcards.GetString("Ecom:Order.GiftCard.Amount")">@giftcards.GetString("Ecom:Order.GiftCard.Amount")</td>
+            </tr>
+        }
+    </table>
+}

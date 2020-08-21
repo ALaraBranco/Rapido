@@ -1,0 +1,83 @@
+﻿@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage mainProfileInfoPage = BlocksPage.GetBlockPage("EditProfilePage");
+}
+
+@{
+    Block mainProfileInfo = new Block
+    {
+        Id = "MainProfileInfo",
+        SortId = 10,
+        Template = RenderMainProfileInfo(),
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "auto",
+            CssClass = "u-no-padding u-full-width"
+        }
+    };
+
+    mainProfileInfoPage.Add("MainInfoProfileView", mainProfileInfo);
+}
+
+@helper RenderMainProfileInfo()
+{
+
+    string email = GetString("UserManagement:User.Email");
+    string phone = GetString("UserManagement:User.Phone");
+    string address = GetString("UserManagement:User.DefaultAddress.Address");
+    string zip = GetString("UserManagement:User.DefaultAddress.Zip");
+    string city = GetString("UserManagement:User.DefaultAddress.City");
+    string state = GetString("UserManagement:User.DefaultAddress.State");
+    string country = GetString("UserManagement:User.DefaultAddress.Country");
+
+    var item = new MediaListItem
+    {
+        Title = GetString("UserManagement:User.Name"),
+        CssClass = "u-no-padding media-list-item--no-border"
+    };
+
+    if (!string.IsNullOrEmpty(email))
+    {
+        item.AddInfoRow(Translate("Email"), email);
+    }
+
+    if (!string.IsNullOrEmpty(phone))
+    {
+        item.AddInfoRow(Translate("Phone"), phone);
+    }
+
+    if (Dynamicweb.Security.Licensing.LicenseManager.LicenseHasFeature("LoyaltyPoints") && GetDouble("UserManagement:User.PointBalance") > 0)
+    {
+        item.AddInfoRow(Translate("Point balance"), "<span class='u-color--loyalty-points'>" + GetInteger("UserManagement:User.PointBalance") + "</span> " + Translate("points"));
+    }
+
+    if (!string.IsNullOrEmpty(address))
+    {
+        item.AddInfoRow(Translate("Address"), address);
+    }
+
+    if (!string.IsNullOrEmpty(zip))
+    {
+        item.AddInfoRow(Translate("Zip"), zip);
+    }
+
+    if (!string.IsNullOrEmpty(city))
+    {
+        item.AddInfoRow(Translate("City"), city);
+    }
+
+    if (!string.IsNullOrEmpty(state))
+    {
+        item.AddInfoRow(Translate("State"), state);
+    }
+
+    if (!string.IsNullOrEmpty(country))
+    {
+        item.AddInfoRow(Translate("Country"), country);
+    }
+
+    @Render(item)
+}

@@ -1,0 +1,156 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Components.General
+@Include("../../../../Components/GridBuilder.cshtml")
+@Include("../../../../Components/GeneralComponents.cshtml")
+
+@functions { 
+    BlocksPage checkoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+}
+
+@{
+    Block orderContainer = new Block()
+    {
+        Id = "OrderContainer",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "8",
+            HidePadding = true
+        },
+        BlocksList = new List<Block> {
+            new Block()
+            {
+                Id = "OrderContainerRow",
+                SortId = 1,
+                Design = new Design
+                {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    checkoutPage.Add(orderContainer);
+    
+    Block paymentBlock = new Block()
+    {
+        Id = "EBizPayment",
+        SortId = 30,
+        Template = RenderPayment(),
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        }
+    };
+    checkoutPage.Add("OrderContainerRow", paymentBlock);
+
+    Block summaryContainer = new Block()
+    {
+        Id = "SummaryContainer",
+        SortId = 40,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "auto",
+            HidePadding = true
+        },
+        BlocksList = new List<Block> {
+            new Block()
+            {
+                Id = "SummaryContainerRow",
+                SortId = 1,
+                Design = new Design
+                {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    checkoutPage.Add(summaryContainer);   
+    
+    Block checkoutStepNavigation = new Block()
+    {
+        Id = "StepNavigation",
+        SortId = 50,
+        Template = RenderStepNavigation(),
+        Design = new Design {
+            RenderType = RenderType.Column,
+            Size = "12"
+        }
+    };
+    checkoutPage.Add(checkoutStepNavigation);
+}
+
+@Include("../../../CartV2/Step/Blocks/StaticSummary.cshtml")
+
+<section class="multiple-paragraphs-container u-color-light-gray--bg paragraph-container--full-width">
+    <div class="center-container center-container--with-background-image dw-mod">
+        <div class="paragraph-container">
+             <div class="grid grid--external-bleed">
+                 @RenderBlockList(checkoutPage.BlocksRoot.BlocksList)
+             </div>
+        </div>
+    </div>
+</section>
+
+@helper RenderPayment() {
+    var pageId = GetGlobalValue("Global:Page.ID");
+
+    <div class="card-header u-color-light--bg dw-mod">
+        <h3><i class="fas fa-list-ul"></i> @Translate("Payment Information")</h3>
+        @{
+            Form form = new Form {Action = "/Default.aspx?ID=" + pageId, Method = FormMethod.Post, Enctype = FormEnctype.multipart, ExtraAttributes = {{"id", "EbizForm"}}};
+            form.Add(new HiddenField {Id = "Action", Name = "Action", Value = "Approve"});
+            form.Add(new HiddenField {Id = "CheckoutHandlerOrderID", Name = "CheckoutHandlerOrderID", Value = GetString("Ecom:Order.ID")});
+            form.Add(new HiddenField {Id = "DontUseDraftCardName", Name = "DontUseDraftCardName", Value = "true"});
+            form.Add(new HiddenField {Id = "chkSaveCardToken", Name = "chkSaveCardToken", Value = HttpContext.Current.Request.Form.Get("EcomOrderSavedCardCreate")});
+            form.Add(new HiddenField {Id = "CardTokenName", Name = "CardTokenName", Value = GetString("Ecom:Order.SavedCardName")});
+            form.Add(new TextField() {Type = TextFieldType.Text, Id = "CardNumber", Name = "CardNumber", Label = Translate("Card Number"), Required = true});
+            form.Add(new TextField() {Type = TextFieldType.Text, Id = "CardExpiration", Name = "CardExpiration", Label = Translate("Card Expiration"), Required = true, Placeholder = "MMYY"});
+            form.Add(new TextField() {Type = TextFieldType.Text, Id = "CVV", Name = "CVV", Label = Translate("CVV"), Required = true, Placeholder = Translate("CVV")});
+            form.Add(new Button
+            {
+                ButtonType = ButtonType.Submit,
+                CssClass = "btn--primary btn--condensed dw-mod u-pull--right u-no-margin u-hidden",
+                Icon = new Icon {Prefix = "fas", Name = "fa-angle-right", LabelPosition = IconLabelPosition.After},
+                Title = Translate("Pay"),
+                ExtraAttributes = {{"id", "submit"}}
+            });
+        }
+        @Render(form)
+    </div>
+}
+
+@helper RenderStepNavigation()
+{
+    var pageId = GetGlobalValue("Global:Page.ID");
+    var previousButton = string.Concat("/Default.aspx?Id=", pageId, "&amp;CartV2.GotoStep2=true");
+
+    <div class="card u-color-light--bg dw-mod">
+        <div class="u-pull--left">
+            @Render(new Link
+            {
+                CssClass = "btn--secondary btn--condensed dw-mod u-pull--right u-no-margin",
+                Id = "CartV2.GotoStep2",
+                Target = LinkTargetType.Self,
+                Href = previousButton,
+                Icon = new Icon {Prefix = "fas", Name = "fa-angle-left"},
+                Title = Translate("Back")
+            })
+        </div>
+        <div class="u-pull--right">
+            @Render(new Button
+            {
+                ButtonType = ButtonType.Submit,
+                CssClass = "btn--primary btn--condensed dw-mod u-pull--right u-no-margin",
+                Icon = new Icon {Prefix = "fas", Name = "fa-angle-right", LabelPosition = IconLabelPosition.After},
+                Title = Translate("Pay"),
+                OnClick = "document.getElementById('submit').click()"
+            })
+        </div>
+    </div>
+}

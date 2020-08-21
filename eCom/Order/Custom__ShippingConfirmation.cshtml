@@ -1,0 +1,214 @@
+@inherits RazorTemplateBase<RazorTemplateModel<Template>>
+@using System.IO
+@using System.Linq
+@using System.Web
+@using Dynamicweb.Core
+@using Dynamicweb.Rendering;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Environment = System.Environment
+@* Include the components that makes it possible to render articles *@
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@MasterPageFile("../../RizzoEmailMaster.cshtml")
+@Include("../../RizzoEmailHelpers.cshtml")
+
+
+<style type="text/css">
+    .ReadMsgBody {width: 100%; background-color: #ffffff;}
+    .ExternalClass {width: 100%; background-color: #ffffff;}
+    body	 {width: 100%; background-color: #ffffff; margin:0; padding:0; -webkit-font-smoothing: antialiased;font-family: Georgia, Times, serif}
+    table {border-collapse: collapse;}
+    @{
+        var mediaqueryMin641 = "@media only screen and (min-width: 641px)  {"
+                               + Environment.NewLine
+                               + "table[class='flexibleContainer'],td[class='flexibleContainerCell'],td[width='"+emailTableWidth+"'],table[width='"+emailTableWidth+"']{width:100%!important; max-width:500px!important;  padding:0;}"
+                               + Environment.NewLine
+                               + ".deviceWidth, table[id='emailHeader'],table[id='emailBody'],table[id='emailFooter']{width:500px!important; padding:0;}"
+                               + Environment.NewLine
+                               + ".center {text-align: center!important;"
+                               + Environment.NewLine
+                               + "}"
+                               + Environment.NewLine
+                               + "#emailBody td[align=right] .text--center, #emailBody td[align=left] .text--center, #emailBody td[align=right] h2, #emailBody td[align=left] h2 {text-align: center!important;"
+                               + Environment.NewLine
+                               + "}"
+                               + "#emailBody .col-left, #emailBody .col-right {text-align: center!important; width:100%"
+                               + Environment.NewLine
+                               + "}"
+                               + "#emailBody table[cellpadding='10'],#emailBody td[cellpadding='10']{padding:0!important;border-spacing:0px; color:#000"
+                               + Environment.NewLine
+                               + "}"
+                               + "}"; 
+        @mediaqueryMin641;
+        var mediaqueryMax640 = "@media only screen and (max-width: 640px)  {"
+                               + Environment.NewLine
+                               + "table[class='flexibleContainer'],td[class='flexibleContainerCell'],td[width='"+emailTableWidth+"'],table[width='"+emailTableWidth+"']{width:100%!important; max-width:440px!important;  padding:0;}"
+                               + Environment.NewLine
+                               + ".deviceWidth, table[id='emailHeader'],table[id='emailBody'],table[id='emailFooter']{width:440px!important; padding:0;}"
+                               + Environment.NewLine
+                               + ".center {text-align: center!important;"
+                               + Environment.NewLine
+                               + "}"
+                               + Environment.NewLine
+                               + "#emailBody td[align=right] .text--center, #emailBody td[align=left] .text--center, #emailBody td[align=right] h2, #emailBody td[align=left] h2 {text-align: center!important;"
+                               + Environment.NewLine
+                               + "}"
+                               + "#emailBody .col-left, #emailBody .col-right {text-align: center!important; width:100%"
+                               + Environment.NewLine
+                               + "}"
+                               + "#emailBody table[cellpadding='10'],#emailBody td[cellpadding='10']{padding:0!important;border-spacing:0px; color:#000"
+                               + Environment.NewLine
+                               + "}"
+                               + "}"; 
+        @mediaqueryMax640;
+
+        var mediaqueryMax479 = "@media only screen and (max-width: 479px)  {"
+                               + "table[class='flexibleContainer'],td[class='flexibleContainerCell'],td[width='"+emailTableWidth+"'],table[width='"+emailTableWidth+"']{width:100%!important; padding:0;}"
+                               + Environment.NewLine
+                              // + ".deviceWidth, table[id='emailHeader'],table[id='emailBody'],table[id='emailFooter']{width:290px!important; padding:0;}"
+                               + ".deviceWidth, table[id='emailHeader'],table[id='emailBody'],table[id='emailFooter']{ padding:0;}"
+                               + Environment.NewLine
+                               + ".center {text-align: center!important;"
+                               + Environment.NewLine
+                               + "}"
+                               + "}";
+        @mediaqueryMax479;
+    }
+    </style>
+    @CreatePreheader(Dynamicweb.Context.Current.Request.Url.Scheme + "://" + GetGlobalValue("Global:Request.Host") + "/Default.aspx?ID=" + GetString("Global.PageId"))
+    <table border="0" cellpadding="" cellspacing="25" align="center" style="padding-bottom: 0px; padding-top: 0px;margin-bottom: 0px;margin-top: 0px" bgcolor="@emailBgColor">
+    @RizzoRenderHeaderImage()
+    @{
+        var salutationField = GetString("Item.SalutationField");
+        var showSalutation = GetBoolean("Item.ShowSalutation");
+        var hideFooter = GetBoolean("Item.HideFooter");
+        var salutation = GetString("Item.Salutation") + (salutationField.IsNotNullOrEmpty() ? " {{" + salutationField + "}} " : string.Empty);
+        var introduction = GetString("Item.Introduction");
+    }
+    @if (showSalutation && salutation.IsNotNullOrEmpty())
+    {
+        <tr>
+            <td>
+                <table border="0" cellpadding="25" style="padding-bottom: 0" cellspacing="0" width="100%" class="flexibleContainer">
+                    <tr>
+                        <td align="left" style="text-align: left" valign="top">
+
+                            <div class="text text--large">
+                                @salutation
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    }
+    @if (introduction.IsNotNullOrEmpty())
+    {
+        <tr>
+            <td>
+                <table border="0" cellpadding="25" cellspacing="0" width="100%" class="flexibleContainer">
+                    <tr>
+                        <td align="left" style="text-align: left" valign="top">
+
+                            <div class="text text--large">
+                                @introduction
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    }
+    <tr>
+        <td>
+            <table bgcolor="#FFFFFF" border="0" cellpadding="0" cellspacing="0" width="500" id="emailBody">
+                @RenderHeaderSection()
+                @RenderMessage()
+                @RenderOrderList()
+            </table>
+        </td>
+    </tr>
+   @RizzoRenderFooterSection()
+    
+</table> 
+
+
+@* CONTENT HELPERS *@
+
+@helper RenderHeaderSection()
+{   
+    Column info = new Column();
+    info.header = Translate("Your Order has been Shipped");
+    info.text.Add(GetString("Ecom:Order.Date"));
+    info.align = "center";
+
+    @CreateRow(info);
+
+    @CreateRowDivider();
+}
+
+@helper RenderMessage()
+{ 
+    Column message = new Column();
+    message.text.Add(Translate("Hi") + " " + GetString("Ecom:Order.Customer.Name"));
+    message.text.Add("");
+    message.text.Add(Translate("Your Order from") + " <a href='" + Dynamicweb.Context.Current.Request.Url.Scheme + "://" + GetGlobalValue("Global:Request.Host") + "'>" + GetGlobalValue("Global:Request.Host") + "</a> " + Translate("has been shipped") + ".");
+    @CreateRow(message);
+}
+
+@helper RenderOrderList()
+{
+    foreach (LoopItem orderline in GetLoop("OrderLines"))
+    {
+        @RenderOrderline(orderline);
+
+        @CreateRowDivider();
+    }
+
+    @RenderSummary();
+    @RenderTotal();
+}
+
+
+@helper RenderSummary()
+{
+    Column summaryLeft = new Column();
+    summaryLeft.text.Add(Translate("Total"));
+    if (!string.IsNullOrEmpty(GetString("Ecom:Order.PaymentMethod")))
+    {
+        summaryLeft.text.Add(Translate("Payment method") + ": " + Translate(GetString("Ecom:Order.PaymentMethod")));
+    } else {
+        summaryLeft.text.Add(Translate("Payment method"));
+    }
+    if (!string.IsNullOrEmpty(GetString("Ecom:Order.ShippingMethod")))
+    {
+        summaryLeft.text.Add(Translate("Shipping method") + ": " + Translate(GetString("Ecom:Order.ShippingMethod")));
+    } else {
+        summaryLeft.text.Add(Translate("Shipping method"));
+    }
+    summaryLeft.text.Add(Translate("VAT"));
+
+    Column summaryRight = new Column();
+    summaryRight.text.Add(GetString("Ecom:Order.Price.PriceWithoutVATFormatted"));
+    summaryRight.text.Add(GetString("Ecom:Order.PaymentFee.PriceFormatted"));
+    summaryRight.text.Add(GetString("Ecom:Order.ShippingFee.PriceFormatted"));
+    summaryRight.text.Add(GetString("Ecom:Order.Price.VATFormatted"));
+    summaryRight.align = "right";
+
+    @CreateRow(summaryLeft, summaryRight);
+}
+
+
+@helper RenderTotal()
+{
+    Column totalsLeft = new Column();
+    totalsLeft.subheader = Translate("Total");
+
+    Column totalsRight = new Column();
+    totalsRight.subheader = GetString("Ecom:Order.Price.PriceWithVATFormatted");
+    totalsRight.align = "right";
+
+    @CreateRow(totalsLeft, totalsRight, new RowSettings { backgroundColor = "#e4e4e4" });
+}
+

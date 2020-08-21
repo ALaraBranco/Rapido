@@ -1,0 +1,116 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@functions {
+    BlocksPage myListItemsContainerPage = BlocksPage.GetBlockPage("MyList");
+}
+
+@{
+    Block myListItems = new Block
+    {
+        Id = "MyListItems",
+        SortId = 10,
+        Template = RenderList(),
+        SkipRenderBlocksList = true
+    };
+    myListItemsContainerPage.Add("PageContainer", myListItems);
+
+    Block myListSnippets = new Block
+    {
+        Id = "MyListSnippets",
+        SortId = 20,
+        Template = RenderListSnippets()
+    };
+    myListItemsContainerPage.Add("PageContainer", myListSnippets);
+}
+
+@helper RenderList()
+{
+    int pageId = Int32.Parse(GetGlobalValue("Global:Page.ID"));
+    string pid = "CC" + GetString("Ecom:CustomerCenter.PID");
+    int areaId = Int32.Parse(GetGlobalValue("Global:Area.ID"));
+    string favoriteIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon") != null ? "fa-" + Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue : "fas fa-star";
+
+    var mode = GetString("Ecom:CustomerCenter.ProductList.Mode");
+
+    if (mode.Contains("showAll") && !mode.Contains("edit") && !mode.Contains("create"))
+    {
+        List<Block> subBlocks = this.myListItemsContainerPage.GetBlockListById("MyListItems").OrderBy(item => item.SortId).ToList();
+
+        @Render(new Heading { Title = GetGlobalValue("Global:Page.Name"), Icon = new Icon { Prefix = "fas", Name = favoriteIcon } })
+
+        @Render(new Link { Href = GetString("Ecom:CustomerCenter.List.AddURL"), Title = Translate("Add new list"), CssClass = "media-list-item__add-new", ButtonLayout = ButtonLayout.None })
+
+        if (GetInteger("Ecom:CustomerCenter.List.Count") <= 0)
+        {
+            @Render(new Text { Content = Translate("No favorites lists found") })
+        }
+
+        if (GetInteger("Ecom:CustomerCenter.List.Count") > 0)
+        {
+            <div>
+                @foreach (LoopItem listitem in GetLoop("Lists").OrderByDescending(listitem => listitem.GetString("Ecom:CustomerCenter.List.IsDefault")).ToList())
+                {
+                    @RenderListItem(listitem, pageId, pid);
+                }
+            </div>
+        }
+    }
+}
+
+@helper RenderListItem(LoopItem listitem, int pageId, string pid)
+{   
+    var item = new MediaListItem
+    {
+        Title = listitem.GetString("Ecom:CustomerCenter.List.Name"),
+        Status = listitem.GetBoolean("Ecom:CustomerCenter.List.IsDefault") ? Translate("Default") : "",
+        Link = "/Default.aspx?ID=" + Converter.ToString(GetPageIdByNavigationTag("ProductsPage")) + "&ListID=" + listitem.GetString("Ecom:CustomerCenter.ListTypes.List.ID") + "&ListName=" + listitem.GetString("Ecom:CustomerCenter.List.Name"),
+        Label = listitem.GetString("Ecom:CustomerCenter.List.ProductCount") + " " + Translate("Prod") + "."
+    };
+
+    item.AddInfoRow(Translate("Published until"), listitem.GetBoolean("Ecom:CustomerCenter.List.IsPublished") ? listitem.GetDate("Ecom:CustomerCenter.List.PublishToDate").ToString("d") : Translate("Never"));
+
+    item.AddAction(new Link
+    {
+        Href = listitem.GetString("Ecom:CustomerCenter.List.EditURL"),
+        Title = Translate("Edit")
+    });
+
+    item.AddAction(new Button
+    {
+        ButtonLayout = ButtonLayout.None,
+        Id = "DeleteWarning_" + listitem.GetString("Ecom:CustomerCenter.ListTypes.List.ID") + "_",
+        Title = Translate("Delete"),
+        ConfirmTitle = "Warning",
+        ConfirmText = Translate("Are you sure you wish to delete this favorite list?"),
+        OnClick = "window.location.href='" + listitem.GetString("Ecom:CustomerCenter.List.RemoveURL") + "'"
+    });
+
+    if (!listitem.GetBoolean("Ecom:CustomerCenter.List.IsDefault")) 
+    {
+        item.AddAction(new Button
+        {
+            OnClick = "makeDefault('/Default.aspx?ID=" + pageId + "&" + pid + "=EditList&ListID=" + listitem.GetString("Ecom:CustomerCenter.ListTypes.List.ID") + "&CC_IsDefault=on&CC_Name=" + listitem.GetString("Ecom:CustomerCenter.ListTypes.List.Name") + "')",
+            Title = Translate("Set as default")
+        });
+    }
+
+    @RenderMediaListItem(item)
+}
+
+@helper RenderListSnippets()
+{
+    <script>
+        function makeDefault(url) {
+            Request.Fetch().get(url, function () {
+                location.reload();
+            }, function () { }, false);
+        }
+    </script>
+}

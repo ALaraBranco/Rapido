@@ -1,0 +1,68 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Linq
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Frontend
+@using Dynamicweb.Rapido.Blocks
+@using NUglify.Helpers
+@{
+    // block only is called if product type==0, if ShowQuantityPricingTable is set to true, and the pricecount is bigger than 1
+    var loopProdPrices = GetLoop("Product.Prices").OrderBy(x => x.GetInteger("Ecom:Product.Prices.Quantity")).ThenBy(x => x.GetInteger("Ecom:Product.Prices.AmountWithVATFormatted")).DistinctBy(x=> x.GetInteger("Ecom:Product.Prices.Quantity")).ToList();
+   if (GetInteger("Ecom:Product.Type") == 0 && Pageview.AreaSettings.GetItem("Rizzo").GetBoolean("ShowQuantityPricingTable") && loopProdPrices.Count > 1)
+    {
+        BlocksPage quantityPricesProductsPage = BlocksPage.GetBlockPage("Product");
+        Block rizzoProductQuantityPrices = new Block()
+        {
+            Id = "QuantityPrices",
+            SortId = 40,
+            Design = new Design
+            {
+                RenderType = RenderType.Row,
+                Size = "auto"
+            },
+            Template = RizzoRenderQuantityPrices(loopProdPrices)
+        };
+        // If this block is meant to be re-used, the if condition can wrap this line only 
+        quantityPricesProductsPage.Add("MainInformation",rizzoProductQuantityPrices);
+    }
+}
+@helper RizzoRenderQuantityPrices(List<LoopItem> loopProdPrices)
+{
+        var quantityPricesFormat = Pageview.AreaSettings.GetItem("Rizzo").GetList("QuantityPricesFormat").SelectedValue;
+        var qtyPrefix = Translate("Qty");
+        var greaterThanText = Pageview.AreaSettings.GetItem("Rizzo").GetString("QuantityPricesGreaterThanText").IsNotNullOrEmpty() ? Pageview.AreaSettings.GetItem("Rizzo").GetString("QuantityPricesGreaterThanText") : Translate(" or more");
+        var loopCount = loopProdPrices.Count;
+        var count = 1;
+                <h4>
+                    @Translate("Quantity Prices")
+                </h4>
+                <ul class="u-no-padding-x grid__col-12 grid dw-mod grid--direction-row u-border-bottom u-margin-bottom">
+                    @foreach (var price in loopProdPrices)
+                    {
+                        var quantity = price.GetInteger("Ecom:Product.Prices.Quantity").Equals(0) ? 1 : price.GetInteger("Ecom:Product.Prices.Quantity");
+                        var priceProd = price.GetString("Ecom:Product.Prices.PriceWithoutVATFormatted");
+                        var priceQtyLabel = string.Empty;
+                        switch (quantityPricesFormat)
+                        {
+                            case "GreaterThanSymbol":
+                                priceQtyLabel = string.Concat(qtyPrefix, " ", "&#x2265", " ", quantity);
+                                break;
+                            case "Range":
+                                var nextQty = count < loopCount ? loopProdPrices[count].GetInteger("Ecom:Product.Prices.Quantity") : loopProdPrices[count-1].GetInteger("Ecom:Product.Prices.Quantity");
+                                priceQtyLabel = quantity == nextQty-1 ? string.Concat(qtyPrefix," ", quantity) : quantity != nextQty  ? string.Concat(qtyPrefix, " ", quantity, " - ", nextQty - 1) : string.Concat(qtyPrefix, " ", quantity," ", greaterThanText);
+                                break;
+                            default: 
+                                priceQtyLabel = string.Concat(qtyPrefix, " ", quantity, " ", greaterThanText);
+                                break;
+                        }
+                        <li class="grid dw-mod u-no-padding-x">
+                            <span class="grid__col-6 u-no-padding-x">@priceQtyLabel</span>
+                            <span class="grid__col-6 u-ta-right"><strong>@priceProd</strong></span>
+                        </li>
+                        count++;
+                    }
+                </ul>
+    
+}

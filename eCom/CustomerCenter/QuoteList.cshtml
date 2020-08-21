@@ -1,0 +1,77 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb
+@using Dynamicweb.Core
+@using Dynamicweb.Frontend.Devices
+@using System.Web
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@functions {
+    BlocksPage quoteListPage = BlocksPage.GetBlockPage("QuoteList");
+}
+
+@{
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        Component = new Heading
+        {
+            Title = GetGlobalValue("Global:Page.Name"),
+            Icon = new Icon { Prefix = "fas", Name = "fa-quote-right" }
+        },
+        BlocksList = new List<Block> { }
+    };
+    quoteListPage.Add(pageContainer);
+
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Quotes.EmptyList")) && !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Quotes.Paging.Show")))
+    {
+        Block pager = new Block
+        {
+            Id = "Pager",
+            SortId = 40,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            },
+            Component = new Pagination
+            {
+                PagingTag = "Ecom:CustomerCenter",
+                ShowNextAndPrevControls = true
+            }
+        };
+
+        pageContainer.Add(pager);
+    }
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Quotes.EmptyList")))
+    {
+
+        Block emptyListMessage = new Block
+        {
+            Id = "EmptyListMessage",
+            SortId = 40,
+            Component = new Text { Content = Translate("No quotes found") }
+        };
+
+        pageContainer.Add(emptyListMessage);
+    }
+}
+
+
+@Include("Blocks/QuoteList/Quotes.cshtml")
+@Include("Blocks/QuoteList/ViewQuoteModal.cshtml")
+@Include("Blocks/QuoteList/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(quoteListPage.BlocksRoot.BlocksList)
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")

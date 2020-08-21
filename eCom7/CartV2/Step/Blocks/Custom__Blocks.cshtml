@@ -1,0 +1,146 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@Include("Rizzo/Rizzo__Blocks.cshtml")
+@Include("RizzoPackages/RizzoPackages__Blocks.cshtml")
+@functions{ 
+    BlocksPage customBlocksPage = BlocksPage.GetBlockPage("CheckoutPage");
+    int rizzoCartFeedPageId;
+    string orderContext;
+    int quotesCartFeedPageId;
+}
+@{
+    rizzoCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    quotesCartFeedPageId = GetPageIdByNavigationTag("CartOrderlinesFeed");
+    orderContext = GetString("Ecom:OrderContext.ID");
+    customBlocksPage.GetBlockById("ReviewOrder").Template = CustomRenderReviewOrder();
+    customBlocksPage.GetBlockById("CartOrderlineTemplate").Template = CustomRizzoRenderCartOrderlineTemplate();
+}
+
+@helper CustomRenderReviewOrder() {
+    <div class="grid__col-12">
+        <div class="js-handlebars-root" id="Cart" data-template="CartContent" data-cart-id="@rizzoCartFeedPageId" data-json-feed="/Default.aspx?ID=@rizzoCartFeedPageId&OrderContext=@orderContext" data-preloader="overlay"></div>
+    </div>
+}
+
+@helper CustomRizzoRenderCartOrderlineTemplate() {
+    bool pointShop = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    int quotesCartPageId = GetPageIdByNavigationTag("QuotesCartPage");
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+
+    /*Start of Edit Cart changes*/
+    var editCartPage = Dynamicweb.Frontend.SearchEngineFriendlyURLs.GetFriendlyUrl(GetPageIdByNavigationTag("EditCart"));
+    /*End of Edit Cart changes*/
+
+    @* Template for the orderlines *@
+    <script id="CartOrderline" type="text/x-template">
+        {{#unless isEmpty}}
+            <tr id="Orderline{{id}}" class="cart-orderline">
+                <td class="cart-orderline__cell cart-table__image u-hidden-xs u-hidden-xxs dw-mod">
+                    <div class="cart-orderline__cell__block {{hideimage}} dw-mod">
+                        @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                    </div>
+                </td>
+                <td class="cart-orderline__cell dw-mod" title="{{name}} {{variantname}}">
+                    <a href="{{link}}" class="u-color-inherit cart-orderline__name">{{name}}</a>
+                    <div class="cart-orderline__cell__block item-number dw-mod">#{{productnumber}}</div>
+                    {{#if variantname}}
+                        <div class="cart-orderline__cell__block item-number dw-mod">{{variantname}}</div>
+                    {{/if}}
+                    {{#if unitname}}
+                        <div class="cart-orderline__cell__block item-number dw-mod">{{unitname}}</div>
+                    {{/if}}
+                </td>
+                
+                {{!-- Start of Edit Cart changes --}} 
+                <td class="cart-orderline__cell u-ta-right u-hidden-xs u-hidden-xxs dw-mod" width="200">
+                    {{#if pointsTotal}}
+                        <span class="u-color--loyalty-points">{{pointPrice}}</span> @Translate("points")
+                    {{else}}                        
+                        {{#if isSalesRep}}                                 
+                            {{currency}} <input class="u-no-margin" type="number" step=".01" name="editPrice" id="Price_{{id}}" min="{{productCost}}" max={{productPrice}} value="{{unitpricevalue}}" onchange="EditCart.prototype.EditProductPrice('@editCartPage',this.value,'{{id}}','{{variantId}}')"/>
+                            <i class="fa fa-info-circle" onclick="EditCart.prototype.DisplayInfo('{{id}}')"></i>  
+                            <p id="lowestPrice_{{id}}" class="u-zindex-1 u-hidden u-position-absolute u-border u-padding u-color-light-gray--bg">@Translate("Lower Price: "){{currency}}{{productCost}}</p>                          
+                        {{else}}
+                            {{unitprice}}
+                        {{/if}}                          
+                    {{/if}}
+                </td>
+                {{!-- End of Edit Cart changes --}}
+                
+                @if (!Dynamicweb.Ecommerce.Common.Context.Cart.IsQuote)
+                {
+                    <td class="cart-orderline__cell u-ta-right dw-mod" width="80">
+                    
+                        {{!-- Start of Stock Validation (+ for Quotes) changes --}}
+                        @Render(new NumberField { Id = "Quantity_{{orderLineId}}", Min = 1, OnChange = "QuotesCart.ChangeQuantity('" + rizzoCartFeedPageId + "', '{{orderLineId}}', this.value, '{{productStock}}', '"+ orderContext + "')", Name = "QuantityOrderLine{{orderLineId}}", Value = "{{quantity}}", CssClass = "u-w80px" })
+                        {{!-- End of Stock Validation (+ for Quotes) changes --}}
+                    
+                    </td>
+                    <td class="cart-orderline__cell u-ta-left dw-mod u-no-padding-x" width="50">
+                        {{!-- Start of Quotes / Cart Update changes --}}
+                        @Render(new Button {
+                            ButtonType = ButtonType.Button,
+                            ButtonLayout = ButtonLayout.Clean,
+                            CssClass = "btn--condensed",
+                            OnClick = "{{removeFromCartGoogleImpression}}; Cart.UpdateCart(null, '/Default.aspx?ID=" + rizzoCartFeedPageId + "', 'CartCmd=DelOrderLine&key={{orderLineId}}&OrderContext="+ orderContext + "&redirect=false', true);",
+                            Icon = new Icon { Prefix = "fas", Name = "fa-times" } 
+                        })
+                        {{!-- End of Quotes / Cart Update changes --}}
+                    </td>
+                }
+                else
+                {
+                    <td class="cart-orderline__cell u-ta-right dw-mod" width="80">
+                        @Render(new HiddenField { Id = "Quantity_{{orderLineId}}", Name = "QuantityOrderLine{{orderLineId}}", Value = "{{quantity}}" })
+                        <div class="u-w80px u-no-margin">{{quantity}}</div>
+                    </td>
+                }
+
+                <td class="cart-orderline__cell u-ta-right dw-mod">
+                    {{#if pointsTotal}}
+                        <span class="u-color--loyalty-points">{{pointsTotal}}</span> @Translate("points")
+                    {{else}}
+                        <div>{{totalprice}}</div>
+                    {{/if}}
+                    {{#if canBePurchasedWithPoints}}
+                        @Render(new Button { Title = Translate("Use") + " {{pointPrice}} " + Translate("points"), ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Clean, CssClass = "btn--loyalty-points btn--sm u-no-margin", OnClick = "Cart.BuyForPoints('" + GetGlobalValue("Global:Page.ID") + "', '" + rizzoCartFeedPageId + "', '{{orderLineId}}', '{{id}}', '{{variantId}}');", Icon = new Icon { Prefix = "far", Name = "fa-tag" } })
+                    {{/if}}
+                </td>
+            </tr>
+        {{/unless}}
+        <tr class="{{hideBomItems}}">
+            <td class="cart-table__image u-hidden-xs u-hidden-xxs dw-mod"><div class="{{hideimage}}"></div></td>
+            <td colspan="5" class="u-no-padding">
+                <table class="u-no-margin u-color-light-gray--bg">
+                    <tbody>
+                        {{#BomItems}}
+                            <tr>
+                                <td class="cart-table__image u-hidden-xs u-hidden-xxs dw-mod">
+                                    @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                                </td>
+                                <td title="{{name}} {{variantname}}">
+                                    <a href="{{link}}" class="u-color-inherit dw-mod">{{name}}</a>
+                                    <div class="item-number dw-mod">#{{productnumber}}</div>
+                                    {{#if variantname}}
+                                        <div class="item-number dw-mod">{{variantname}}</div>
+                                    {{/if}}
+                                    {{#if unitname}}
+                                        <div class="item-number dw-mod">{{unitname}}</div>
+                                    {{/if}}
+                                </td>
+                                <td class="u-hidden-xs u-hidden-xxs">&nbsp;</td>
+                                <td>{{quantity}}</td>
+                                <td>&nbsp;</td>
+                                <td class="cart-table__price u-ta-right dw-mod">&nbsp;</td>
+                            </tr>
+                        {{/BomItems}}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </script>
+}

@@ -1,0 +1,47 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component for the articles *@
+
+@helper RenderArticleQuote(ArticleQuote settings)
+{
+    string text = Regex.Replace(settings.Text, "<.*?>", String.Empty);
+
+    <div class="grid u-padding-bottom--lg">
+        @if (settings.Image != null)
+        {
+            if (settings.Image.Path != null) {
+                <div class="grid__col-3">
+                    <div class="grid__cell-img">
+                        @{ 
+                            settings.Image.Title = !String.IsNullOrEmpty(settings.Image.Title) ? settings.Image.Title : settings.Author;
+                            settings.Image.CssClass += " article__image article__image--ball";
+                            settings.Image.ImageDefault.Width = 200;
+                            settings.Image.ImageDefault.Height = 200;
+                        }
+                        @Render(settings.Image)
+                    </div>
+                </div>
+            }
+        }
+        <div class="grid__col-auto">
+            @if (!String.IsNullOrEmpty(settings.Text))
+            {
+            <div class="article__quote dw-mod">
+                <i class="fas fa-quote-right u-margin-bottom--lg"></i>
+                @settings.Text
+                <i class="fas fa-quote-right"></i>
+            </div>
+            }
+            @if (!String.IsNullOrEmpty(settings.Author))
+            {
+            <div class="article__quote-author dw-mod">
+                - @settings.Author
+            </div>
+            }
+        </div>
+    </div>
+} 

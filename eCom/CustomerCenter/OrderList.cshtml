@@ -1,0 +1,145 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb
+@using Dynamicweb.Core
+@using Dynamicweb.Frontend.Devices
+@using System.Web
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage orderListPage = BlocksPage.GetBlockPage("OrderList");
+}
+
+@{
+    string pid = GetString("Ecom:CustomerCenter.PID");
+    string pageId = GetGlobalValue("Global:Page.ID");
+    string sortBy = HttpContext.Current.Request.QueryString.Get("CCOrderByField" + pid);
+    string sortOrder = HttpContext.Current.Request.QueryString.Get("CCSortOrder" + pid);
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+
+    var user = Dynamicweb.Security.UserManagement.User.get_Current(Dynamicweb.Security.UserManagement.PagePermissionLevels.Frontend);
+    double userPoints = user != null ? user.PointBalance : 0;
+    var cart = Dynamicweb.Ecommerce.Common.Context.Cart;
+    double pointsUsedInCart = cart != null && cart.TotalPoints.HasValue ? cart.TotalPoints.Value : 0;
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block
+            {
+            Id = "PageHeader",
+            SortId = 10,
+            Design = new Design {
+                CssClass = "u-clearfix",
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "PageTitle",
+                    SortId = 10,
+                    Design = new Design {
+                        CssClass = "u-pull--left"
+                    },
+                    Component = new Heading
+                    {
+                        Title = GetGlobalValue("Global:Page.Name"),
+                        Icon = new Icon { Prefix = "fas", Name = "fa-list" }
+                    }
+                }
+              }
+           }
+        }
+    };
+
+    orderListPage.Add(pageContainer);
+
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Orders.EmptyList")))
+    {
+        Block actions = new Block
+        {
+            Id = "Actions",
+            SortId = 20,
+            Design = new Design
+            {
+                CssClass = "u-pull--right"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "DownloadButton",
+                    SortId = 10,
+                    Component = new Link
+                    {
+                        Href = "/Admin/Public/CustomerCenter/ExcelExport.aspx",
+                        ButtonLayout = ButtonLayout.Secondary,
+                        CssClass = "btn--condensed u-no-margin",
+                        Icon = new Icon { Prefix = "fas", Name = "fa-download" }
+                    }
+                },
+                new Block {
+                    Id = "SearchButton",
+                    SortId = 20,
+                    Component = new Button
+                    {
+                        ButtonType = ButtonType.Button,
+                        ButtonLayout = ButtonLayout.Secondary,
+                        CssClass = "btn--condensed u-no-margin",
+                        Icon = new Icon { Prefix = "fas", Name = "fa-search" },
+                        OnClick = "document.getElementById('SearchFormTrigger').checked = true"
+                    }
+                }
+            }
+        };
+
+        orderListPage.Add("PageHeader", actions);
+    }
+
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Orders.EmptyList")) && !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Orders.Paging.Show")))
+    {
+        Block pager = new Block
+        {
+            Id = "Pager",
+            SortId = 40,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            },
+            Component = new Pagination
+            {
+                PagingTag = "Ecom:CustomerCenter",
+                ShowNextAndPrevControls = true
+            }
+        };
+
+        pageContainer.Add(pager);
+    }
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Orders.EmptyList")))
+    {
+
+        Block emptyListMessage = new Block
+        {
+            Id = "EmptyListMessage",
+            SortId = 40,
+            Component = new Text { Content = Translate("No orders found") }
+        };
+
+        pageContainer.Add(emptyListMessage);
+    }
+}
+
+@Include("Blocks/OrderList/Orders.cshtml")
+@Include("Blocks/OrderList/ExpandableSearch.cshtml")
+@Include("Blocks/OrderList/ViewOrderModal.cshtml")
+@Include("Blocks/OrderList/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(orderListPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")

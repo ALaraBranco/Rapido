@@ -1,0 +1,219 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.IO
+@using Dynamicweb.Content.Items
+
+@functions{ 
+    public string GetThisOrParentSettingsItem(string systemName)
+    {
+        string item = null;
+
+        if (Model.Item.GetString(systemName) != null) {
+            if (Model.Item.GetList(systemName) != null)
+            {
+                if (!String.Equals("default", Model.Item.GetList(systemName).SelectedValue, StringComparison.OrdinalIgnoreCase)) {
+                    item = Model.Item.GetList(systemName).SelectedValue;
+                } else {
+                    item = null;
+                }
+            }
+            else if (Model.Item.GetFile(systemName) != null)
+            {
+                if (!String.IsNullOrEmpty(Model.Item.GetString(systemName))) {
+                    item = Model.Item.GetFile(systemName).Path;
+                } else {
+                    item = null;
+                }
+            }
+            else
+            {
+                if (!String.IsNullOrEmpty(Model.Item.GetString(systemName)) && !String.Equals("transparent", Model.Item.GetString(systemName), StringComparison.OrdinalIgnoreCase))
+                {
+                    item = Model.Item.GetString(systemName);
+                }
+                else
+                {
+                    item = null;
+                }
+            }
+        }
+
+        if (item == null)
+        {
+            Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Model.PageID);
+            while (current != null && current.Parent != current)
+            {
+                var temp = current.Item != null ? current.Item[systemName] : "";
+
+                if (temp != null)
+                {
+                    item = temp.ToString();
+
+                    if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+                }
+
+                current = current.Parent;
+            }
+        }
+
+        return item;
+    }
+}
+
+@functions {
+    int contentHeight;
+    int contentWidth;
+    string pageOrientation;
+}
+
+@{ 
+    int sheetMargin = GetThisOrParentSettingsItem("Margin") != null ? Convert.ToInt32(GetThisOrParentSettingsItem("Margin")) : 10;
+    int sheetHeight = 296;
+    int sheetWidth = 210;
+    int headerHeight = 15;
+    int footerHeight = 15;
+
+    string pageSize = GetThisOrParentSettingsItem("PageSize").ToLower();
+    pageOrientation = GetThisOrParentSettingsItem("PageOrientation").ToLower();
+
+    if (pageOrientation == "portrait")
+    {
+        switch (pageSize)
+        {
+            case "a4":
+                sheetHeight = 296;
+                sheetWidth = 210;
+                break;
+            case "a5":
+                sheetHeight = 209;
+                sheetWidth = 148;
+                break;
+            case "a3":
+                sheetHeight = 419;
+                sheetWidth = 297;
+                break;
+            case "letter":
+                sheetHeight = 279;
+                sheetWidth = 216;
+                break;
+            case "legal":
+                sheetHeight = 356;
+                sheetWidth = 216;
+                break;
+        }
+    }
+    else
+    {
+        switch (pageSize)
+        {
+            case "a4":
+                sheetHeight = 209;
+                sheetWidth = 296;
+                break;
+            case "a5":
+                sheetHeight = 147;
+                sheetWidth = 210;
+                break;
+            case "a3":
+                sheetHeight = 296;
+                sheetWidth = 420;
+                break;
+            case "letter":
+                sheetHeight = 215;
+                sheetWidth = 280;
+                break;
+            case "legal":
+                sheetHeight = 215;
+                sheetWidth = 357;
+                break;
+        }
+    }
+
+    contentHeight = (sheetHeight - (headerHeight + footerHeight + (sheetMargin * 2)));
+    contentWidth = (sheetWidth - (sheetMargin * 2));
+}
+
+@{
+    string text = !String.IsNullOrEmpty(Model.Item.GetString("Text")) ? Model.Item.GetString("Text") : "";
+    int numLines = text.Split('\n').Length;
+
+    @RenderPageSheet(text)
+}
+
+@helper RenderPageSheet(string text) { 
+    string bodyTextColor = GetThisOrParentSettingsItem("BodyTextColor") != null ? "color: " + GetThisOrParentSettingsItem("BodyTextColor") : "";
+    string pageMargin = GetThisOrParentSettingsItem("Margin") != null ? GetThisOrParentSettingsItem("Margin") : "10";
+    DateTime serverTime = DateTime.Now;
+
+    int pageNumber = 1;
+    if (System.Web.HttpContext.Current.Items.Contains("PaperPageNumber"))
+    {
+        pageNumber = Convert.ToInt32(System.Web.HttpContext.Current.Items["PaperPageNumber"]);
+        pageNumber++;
+        System.Web.HttpContext.Current.Items["PaperPageNumber"] = pageNumber;
+    } else {
+        System.Web.HttpContext.Current.Items.Add("PaperPageNumber", pageNumber);
+    }
+
+    var footerSettings = Dynamicweb.Content.Items.Item.GetItemById("SheetFooter", GetThisOrParentSettingsItem("Footer"));
+
+    string title = Model.Item.GetString("Title") != null ? Model.Item.GetString("Title") : "";
+    string subTitle = Model.Item.GetString("SubTitle") != null ? Model.Item.GetString("SubTitle") : "";
+
+    <section class="sheet">
+        <div class="sheet-container sheet-container--flex-col">
+            <div class="sheet-container__header sheet-container__header--padding-@(pageMargin)mm">
+                <div class="sheet-header-left">
+                     <div class="sheet-header-date">@serverTime</div>
+                </div>
+                <div class="sheet-header-center">
+                    
+                </div>
+                <div class="sheet-header-right">
+                    @if (!String.IsNullOrEmpty(Pageview.CurrentParagraph.Item["Title"].ToString()))
+                    {
+                        <div class="sheet-header-title">@Pageview.CurrentParagraph.Item["Title"]</div>
+                    }
+                </div>
+            </div>
+            <div id="ContentContainer" class="sheet-container__content sheet-container__content--padding-@(pageMargin)mm" style="height: @(contentHeight)mm; @bodyTextColor" runat="server">
+                @if (!String.IsNullOrEmpty(title)) {
+                    <h1 class="sheet-page-title">@title</h1>
+                }
+
+                @if (!String.IsNullOrEmpty(subTitle)) {
+                    <div class="sheet-page-sub-title">@subTitle</div>
+                }
+
+                @text
+            </div>
+            <div class="sheet-container__footer sheet-container__footer--padding-@(pageMargin)mm">
+                <div class="sheet-footer-left"></div>
+                <div class="sheet-footer-center">
+                    @if (footerSettings["Logo"] != null)
+                    {
+                        if (!String.IsNullOrEmpty(footerSettings["Logo"].ToString()))
+                        {
+                            <div class="sheet-footer-logo">
+                                <img src="@footerSettings["Logo"].ToString()" />
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="sheet-footer-right">
+                    @if (footerSettings["ShowPageNumber"] != null)
+                    {
+                        if (Convert.ToBoolean(footerSettings["ShowPageNumber"]))
+                        {
+                            <div class="sheet-footer-page-number">
+                                @pageNumber
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}

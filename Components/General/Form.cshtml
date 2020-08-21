@@ -1,0 +1,38 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@* Component *@
+
+@helper RenderForm(Form settings) {
+    if (settings != null)
+    {
+        Dictionary<string, string> optionalAttributes = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(settings.Action)) { optionalAttributes.Add("action", settings.Action); };
+        if (!string.IsNullOrEmpty(settings.Name)) { optionalAttributes.Add("name", settings.Name); };
+        if (!string.IsNullOrEmpty(settings.OnSubmit)) { optionalAttributes.Add("onsubmit", settings.OnSubmit); };
+        var enctypes = new Dictionary<string, string>
+        {
+            { "multipart", "multipart/form-data" },
+            { "text", "text/plain" },
+            { "application", "application/x-www-form-urlencoded" }
+        };
+        if (settings.Enctype != FormEnctype.none) { optionalAttributes.Add("enctype", enctypes[Enum.GetName(typeof(FormEnctype), settings.Enctype).ToLower()]); };
+        optionalAttributes.Add("method", settings.Method.ToString());
+
+        if (!string.IsNullOrEmpty(settings.FormStartMarkup))
+        {
+            @settings.FormStartMarkup
+        }
+        else
+        {
+            @:<form class="@settings.CssClass u-no-margin dw-mod" @ComponentMethods.AddAttributes(optionalAttributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>
+        }
+
+        foreach (var field in settings.GetFields())
+        {
+            @Render(field)
+        }
+
+        @:</form>
+    }
+}

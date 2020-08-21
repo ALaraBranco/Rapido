@@ -1,0 +1,114 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage digitalSignaturePage = BlocksPage.GetBlockPage("CheckoutPage");
+    string signatureCardHeightClass = Pageview.Device.ToString() != "Tablet" ? "u-full-height" : "";
+    
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("EnableDigitalSignature"))
+    {
+        Block digitalSignature = new Block {
+            Id = "DigitalSignature",
+            SortId = 35,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "DigitalSignatureHeader",
+                    SortId = 10,
+                    Component = new Heading { Level = 3, Title = Translate("Digital signature"), Icon = new Icon { Prefix = "fas", Name = "fa-pencil" } },
+                    Design = new Design {
+                        RenderType = RenderType.CardHeader,
+                        CssClass = "u-color-light--bg"
+                    }
+                },
+                new Block {
+                    Id = "DigitalSignatureBody",
+                    SortId = 20,
+                    Template = RenderDigitalSignature(),
+                    Design = new Design {
+                        RenderType = RenderType.CardBody,
+                        CssClass = "u-color-light--bg " + signatureCardHeightClass
+                    }
+                }
+            }
+        };
+
+        digitalSignaturePage.Add("OrderContainerRow", digitalSignature);
+    }
+}
+
+@helper RenderDigitalSignature() {
+    <div class="signature">
+        <canvas id="signature"></canvas>
+        @Render(new Button() {
+            Id = "signatureClear",
+            ButtonLayout = ButtonLayout.None,
+            CssClass = "signature__clear",
+            ButtonType = ButtonType.Button,
+            Icon = new Icon { Prefix = "fal", Name = "fa-times" },
+            AltText = Translate("Clear signature")
+        })
+    </div>
+    <input name="Signature" id="signatureImage" type="hidden" value="@GetString("Signature.Clean")" />
+    <input name="SignaturePointsArray" id="signaturePointsArray" type="hidden" value="@GetString("SignaturePointsArray.Clean")" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            //init canvas
+
+            let canvas = document.getElementById("signature");
+            let clearBtn = document.getElementById("signatureClear");
+            let savedPointsInput = document.getElementById("signaturePointsArray");
+            let savedPoints = savedPointsInput.value;
+            let mainOrderForm = document.getElementById("OrderSubmit");
+            let drawingCanvas = new DrawingCanvas({
+                canvas: canvas,
+                startText: "@Translate("Draw your signature here")"
+            });
+
+            //clear
+            clearBtn.onclick = drawingCanvas.Clear.bind(drawingCanvas);
+
+            canvas.addEventListener("endCanvasDrawing", function (e) {
+                savedPointsInput.value = JSON.stringify(e.detail.points).replace(/"/g, "'");
+                if (e.detail.points.length > 0) {
+                    Request.Fetch().post(
+                        "/Default.aspx?ID=@GetPageIdByNavigationTag("SignatureSave")",
+                        {
+                            signature: canvas.toDataURL().split(",").pop(),
+                            fileName: "@GetString("Ecom:Order.ID")"
+                        },
+                        function (result) {
+                            if (result.result) {
+                                document.getElementById("signatureImage").value = result.result;
+                            }
+                        },
+                        function (result) { }
+                    );
+                }
+            });
+
+            if (savedPoints != "") {
+                try {
+                    savedPoints = JSON.parse(savedPoints.replace(/'/g, "\""));
+                    if (savedPoints.length > 0) {
+                        drawingCanvas.DrawPoints(savedPoints);
+                    }
+                } catch (err) {
+                    console.error("Parsing signature JSON error");
+                    savedPointsInput.value = "";
+                }
+            }
+
+        });
+    </script>
+}

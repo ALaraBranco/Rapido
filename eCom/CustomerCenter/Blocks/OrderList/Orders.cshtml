@@ -1,0 +1,119 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage ordersPage = BlocksPage.GetBlockPage("OrderList");
+}
+
+@{
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Orders.EmptyList")))
+    {
+        Block orders = new Block
+        {
+            Id = "Orders",
+            SortId = 30,
+            Template = RenderOrders()
+        };
+
+        ordersPage.Add("PageContainer", orders);
+    }
+}
+
+@helper RenderOrders() {
+
+    foreach (LoopItem order in GetLoop("Orders"))
+    {
+        string orderId = order.GetString("Ecom:Order.ID");
+        string printLink = order.GetString("Ecom:CustomerCenter.Orders.PrintOrderURL");
+        bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+        var user = Dynamicweb.Security.UserManagement.User.get_Current(Dynamicweb.Security.UserManagement.PagePermissionLevels.Frontend);
+        double userPoints = user != null ? user.PointBalance : 0;
+        var cart = Dynamicweb.Ecommerce.Common.Context.Cart;
+        double pointsUsedInCart = cart != null && cart.TotalPoints.HasValue ? cart.TotalPoints.Value : 0;
+        bool canBePurchasedWithPoints = userPoints - pointsUsedInCart >= order.GetDouble("Ecom:Order.TotalPoints");
+        var validationPage = Dynamicweb.Frontend.SearchEngineFriendlyURLs.GetFriendlyUrl(GetPageIdByNavigationTag("ReorderValidation"));
+        
+        MediaListItem listItem = new MediaListItem
+        {
+            Title = Translate("No.") + orderId,
+            Label = order.GetDate("Ecom:Order.Date").ToString("dd/MM yyyy"),
+            Status = Translate(order.GetString("Ecom:Order:Orderstate.Name")),
+            OnClick = "orderModal.ShowOrderModal('" + orderId + "', '" + printLink + "')"
+        };
+
+        bool isMyCustomerOrdersPage = GetGlobalValue("Global:Page.NavigationTag") == "MyCustomersOrders";
+
+        if (isMyCustomerOrdersPage && !string.IsNullOrEmpty(order.GetString("Ecom:Order.Customer.Name")))
+        {
+            listItem.AddInfoRow(Translate("Name"), order.GetString("Ecom:Order.Customer.Name"));
+        }
+
+        if (isMyCustomerOrdersPage && !string.IsNullOrEmpty(order.GetString("Ecom:Order.Customer.Number")))
+        {
+            listItem.AddInfoRow(Translate("Customer no."), order.GetString("Ecom:Order.Customer.Number"));
+        }
+
+        if (!pointShopOnly && !string.IsNullOrEmpty(order.GetString("Ecom:Order.PaymentMethod")))
+        {
+            listItem.AddInfoRow(Translate("Payment"), order.GetString("Ecom:Order.PaymentMethod"));
+        }
+
+        if (!string.IsNullOrEmpty(order.GetString("Ecom:Order.ShippingMethod")))
+        {
+            listItem.AddInfoRow(Translate("Shipping"), order.GetString("Ecom:Order.ShippingMethod"));
+        }
+
+        listItem.AddInfoRow(Translate("Price"), pointShopOnly ? "<span class='u-color--loyalty-points'>" + order.GetString("Ecom:Order.TotalPoints") + "</span> " + Translate("points") : order.GetString("Ecom:Order.OrderLines.Total.Price"));
+
+        if (Dynamicweb.Security.Licensing.LicenseManager.LicenseHasFeature("LoyaltyPoints") && order.GetDouble("Ecom:Order.RewardTotalPoints") > 0)
+        {
+            listItem.AddInfoRow(Translate("Earnings"), "<span class='u-color--loyalty-points'>" + order.GetDouble("Ecom:Order.RewardTotalPoints") + "</span> " + Translate("points"));
+        }
+
+        listItem.AddActions(
+            new Button
+            {
+                OnClick = "orderModal.ShowOrderModal('" + orderId + "', '" + printLink + "')",
+                Title = Translate("View order")
+            },
+            new Link
+            {
+                Href = printLink,
+                Title = Translate("Print"),
+                Target = LinkTargetType.Blank,
+                Rel = LinkRelType.Noopener
+            });
+
+        if (!pointShopOnly || canBePurchasedWithPoints)
+        {
+            listItem.AddAction(new Link
+            {
+                Href = order.GetString("Ecom:Order.ReorderID"),
+                Title = Translate("Reorder"),
+                OnClick = "ReorderValidation.prototype.ReorderValidation(event, '"+validationPage+"', '"+order.GetString("Ecom:Order.ReorderID")+"', '"+orderId+"')"
+            });
+        }
+
+        string confirmNewFavoriteListText = Translate("Do you want to create a new favorite list based on these products?");
+
+        if (isMyCustomerOrdersPage)
+        {
+            confirmNewFavoriteListText = Translate("You are impersonating") + " " + order.GetString("Ecom:Order.Customer.Name") + ".<br/>";
+            confirmNewFavoriteListText += Translate("Do you want to create a new favorite list based on these products, for this customer?");
+        }
+
+        listItem.AddAction(new Button
+        {
+            OnClick = "alert('something should be here')",
+            ConfirmText = confirmNewFavoriteListText,
+            ConfirmTitle = Translate("Confirm"),
+            Title = Translate("Create new fav. list")
+        });
+        
+        @Render(listItem);
+    }
+}
+

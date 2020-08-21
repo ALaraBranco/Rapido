@@ -1,0 +1,230 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage shippingAddressCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+
+    Block shippingAddressBlock = new Block()
+    {
+        Id = "ShippingAddress",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ShippingAddressHeader",
+                SortId = 10,
+                Component = new Heading { Level = 3, Title = Translate("Shipping address"), Icon = new Icon { Prefix = "fas", Name = "fa-map-marker" } },
+                Design = new Design {
+                    RenderType = RenderType.CardHeader,
+                    CssClass = "u-color-light--bg"
+                }
+            },
+            new Block {
+                Id = "ShippingAddressBody",
+                SortId = 20,
+                Template = RenderShippingAddress(),
+                Design = new Design {
+                    RenderType = RenderType.CardBody,
+                    CssClass = "u-color-light--bg"
+                }
+            }
+        }
+    };
+    shippingAddressCheckoutPage.Add("AddressContainerRow", shippingAddressBlock);
+
+    Block addressScriptTemplates = new Block()
+    {
+        Id = "AddressTemplates",
+        SortId = 10,
+        Template = RenderAddressScriptTemplates()
+    };
+    shippingAddressCheckoutPage.Add("CheckoutBottomSnippets", addressScriptTemplates);
+    
+    Block regionLabelsScript = new Block
+    {
+        Id = "RegionLabelsScript",
+        SortId = 20,
+        Template = RenderRegionLabelsScript()
+    };
+    shippingAddressCheckoutPage.Add("CheckoutBottomSnippets", regionLabelsScript);
+}
+
+@helper RenderShippingAddress()
+{
+    string manageAddresses = "/Default.aspx?ID=" + GetPageIdByNavigationTag("CustomerProfile").ToString() + "&Action=ManageAddresses";
+    int cartAddressesFeedPageId = GetPageIdByNavigationTag("CartAddressesFeed");
+
+    @Render(new CheckboxField {
+        Id = "AlternateAddressBlock",
+        Label = Translate("Add alternative adr."),
+        CssClass = "js-remember-state u-margin-bottom--lg",
+        ExtraAttributes = new Dictionary<string, string>() {
+            { "data-expand", "AlternateAddressBlock" }
+        } 
+    })
+
+    <div class="expandable--collapsed" data-trigger="AlternateAddressBlock">
+        @if (GetLoop("UserManagement:User.UserAddresses").Count > 0)
+        {
+            SelectField deliverySelect = new SelectField
+            {
+                Id = "DeliveryAddressSelector",
+                OnChange = "fillAddress(this.value)",
+                ActionButton = new Button { Id = "ManageAddressButton", Href = manageAddresses, ButtonLayout = ButtonLayout.Primary, Icon = new Icon { Prefix = "fas", Name = "fa-plus" } }
+            };
+            deliverySelect.Options.Add(new SelectFieldOption { Label = Translate("Select saved address"), Value = "-1" });
+            <script>
+                let userAddresses = {};
+                function fillAddress(id) {
+                    for (key in userAddresses[id]) {
+                        let value = userAddresses[id][key];
+                        let field = document.getElementById("EcomOrderDelivery" + key);
+                        if (field) {
+                            field.value = value;
+                        }
+                        Cart.SubmitCart();
+                    }
+                }
+            </script>
+            foreach (LoopItem address in GetLoop("UserManagement:User.UserAddresses"))
+            {
+                string description = ComponentMethods.Truncate(address.GetString("UserManagement:User.UserAddress.Description"), 25);
+                string userAddress = ComponentMethods.Truncate(address.GetString("UserManagement:User.UserAddress.Address"), 20);
+                string id = address.GetString("UserManagement:User.UserAddress.ID");
+                deliverySelect.Options.Add(new SelectFieldOption { Label = description + " (" + userAddress + ")", Value = id });
+                <script>
+                    userAddresses["@id"] = {
+                        "Company": "@address.GetString("UserManagement:User.UserAddress.Company")",
+                        "Name": "@address.GetString("UserManagement:User.UserAddress.Name")",
+                        "Phone": "@address.GetString("UserManagement:User.UserAddress.Phone")",
+                        "Email": "@address.GetString("UserManagement:User.UserAddress.Email")",
+                        "Address": "@address.GetString("UserManagement:User.UserAddress.Address")",
+                        "Zip": "@address.GetString("UserManagement:User.UserAddress.Zip")",
+                        "City": "@address.GetString("UserManagement:User.UserAddress.City")",
+                        "Region": "@address.GetString("UserManagement:User.UserAddress.Region")",
+                        "Country": "@address.GetString("UserManagement:User.UserAddress.Country")"
+                    };
+                </script>
+            }
+            @Render(deliverySelect)
+        }
+
+        @if (Dynamicweb.Core.Converter.ToBoolean(GetGlobalValue("Global:Extranet.UserName")) && GetLoop("UserManagement:User.UserAddresses").Count > 0)
+        {
+            <div class="js-handlebars-root" id="DeliveryAddressFields" data-template="DeliveryAddressFieldsTemplate" data-json-feed="/Default.aspx?ID=@cartAddressesFeedPageId&AddressId=0" data-preloader="minimal"></div>
+        }
+        else
+        {
+            @Render(new TextField { Label = Translate("Company"), Name = "EcomOrderDeliveryCompany", Id = "EcomOrderDeliveryCompany", Value = GetString("Ecom:Order.Delivery.Company"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryCompany.ErrorMessage") })
+            @Render(new TextField { Label = Translate("Name"), Name = "EcomOrderDeliveryName", Id = "EcomOrderDeliveryName", Value = GetString("Ecom:Order.Delivery.Name"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryName.ErrorMessage") })
+
+            <div class="form__fields-collection form__fields-collection--2-3">
+                @Render(new TextField { Label = Translate("Phone"), Name = "EcomOrderDeliveryPhone", Id = "EcomOrderDeliveryPhone", Value = GetString("Ecom:Order.Delivery.Phone"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryPhone.ErrorMessage") })
+                @Render(new TextField { Label = Translate("Email"), Name = "EcomOrderDeliveryEmail", Id = "EcomOrderDeliveryEmail", Value = GetString("Ecom:Order.Delivery.Email"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryEmail.ErrorMessage") })
+            </div>
+
+            @Render(new TextField { Label = Translate("Address"), Name = "EcomOrderDeliveryAddress", Id = "EcomOrderDeliveryAddress", Value = GetString("Ecom:Order.Delivery.Address"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryAddress.ErrorMessage") })
+
+            <div class="form__fields-collection form__fields-collection--2-3">
+                @Render(new TextField { Label = Translate("Zip"), Name = "EcomOrderDeliveryZip", Id = "EcomOrderDeliveryZip", Value = GetString("Ecom:Order.Delivery.Zip"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryZip.ErrorMessage") })
+                @Render(new TextField { Label = Translate("City"), Name = "EcomOrderDeliveryCity", Id = "EcomOrderDeliveryCity", Value = GetString("Ecom:Order.Delivery.City"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryCity.ErrorMessage") })
+            </div>
+
+            if (GetLoop("DeliveryRegions").Count > 0)
+            {
+                SelectField selectState = new SelectField
+                {
+                    Id = "EcomOrderDeliveryRegion",
+                    Name = "EcomOrderDeliveryRegion",
+                    Label = Translate("State/Region"),
+                    OnChange = "Cart.SubmitCart()",
+                    ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryState.ErrorMessage"),
+                    Value = GetString("Ecom:Order.Delivery.Region")
+                };
+                foreach (LoopItem state in GetLoop("DeliveryRegions"))
+                {
+                    selectState.Options.Add(new SelectFieldOption { Label = state.GetString("Ecom:DeliveryRegion.Name"), Value = state.GetString("Ecom:DeliveryRegion.Name") });
+                }
+                @Render(selectState)
+            }
+
+            SelectField selectCountry = new SelectField
+            {
+                Id = "EcomOrderDeliveryCountry",
+                Name = "EcomOrderDeliveryCountry",
+                Label = Translate("Country"),
+                OnChange = "Cart.SubmitCart()",
+                ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryCountry.ErrorMessage"),
+                Value = !string.IsNullOrEmpty(GetString("Ecom:Order.Delivery.Country.Code")) ? GetString("Ecom:Order.Delivery.Country.Code") : GetString("Ecom:Order.Delivery.Country"),
+                Default = new SelectFieldOption
+                {
+                    Label = Translate("Nothing selected")
+                }
+            };
+            foreach (LoopItem country2 in GetLoop("Countries"))
+            {
+                selectCountry.Options.Add(new SelectFieldOption { Label = country2.GetString("Ecom:Country.Name"), Value = country2.GetString("Ecom:Country.Code2") });
+            }
+
+            @Render(selectCountry)
+        }
+    </div>
+}
+
+@helper RenderAddressScriptTemplates()
+{ 
+    @* Templates for addresses *@
+    <script id="DeliveryAddressFieldsTemplate" type="text/x-template">
+        {{#.}}
+        @Render(new TextField { Label = Translate("Company"), Name = "EcomOrderDeliveryCompany", Id = "EcomOrderDeliveryCompany", Value = "{{company}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryCompany.ErrorMessage") })
+        @Render(new TextField { Label = Translate("Name"), Name = "EcomOrderDeliveryName", Id = "EcomOrderDeliveryName", Value = "{{name}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryName.ErrorMessage") })
+
+        <div class="form__fields-collection form__fields-collection--2-3">
+            @Render(new TextField { Label = Translate("Phone"), Name = "EcomOrderDeliveryPhone", Id = "EcomOrderDeliveryPhone", Value = "{{phone}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryPhone.ErrorMessage") })
+            @Render(new TextField { Label = Translate("Email"), Name = "EcomOrderDeliveryEmail", Id = "EcomOrderDeliveryEmail", Value = "{{email}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryEmail.ErrorMessage") })
+        </div>
+
+        @Render(new TextField { Label = Translate("Address"), Name = "EcomOrderDeliveryAddress", Id = "EcomOrderDeliveryAddress", Value = "{{address}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryAddress.ErrorMessage") })
+
+        <div class="form__fields-collection form__fields-collection--2-3">
+            @Render(new TextField { Label = Translate("Zip"), Name = "EcomOrderDeliveryZip", Id = "EcomOrderDeliveryZip", Value = "{{zip}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryZip.ErrorMessage") })
+            @Render(new TextField { Label = Translate("City"), Name = "EcomOrderDeliveryCity", Id = "EcomOrderDeliveryCity", Value = "{{city}}", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderDeliveryCity.ErrorMessage") })
+        </div>
+
+        <div class="form__field-group dw-mod">
+            <label for="Country">@Translate("Country")</label>
+            <select class="u-full-width" name="EcomOrderDeliveryCountry" id="EcomOrderDeliveryCountry" onchange="Cart.SubmitCart()">
+                <option>@Translate("Nothing selected")</option>
+                {{#Country}}
+                    {{#if selected}}
+                        @Render(new SelectFieldOption { Label = "{{name}}", Value = "{{id}}", Checked = true })
+                    {{else}}
+                        @Render(new SelectFieldOption { Label = "{{name}}", Value = "{{id}}" })
+                    {{/if}}
+                {{/Country}}
+            </select>
+        </div>
+        {{/.}}
+
+        {{^.}}
+        @Translate("No address found")
+        {{/.}}
+    </script>
+}
+
+@helper RenderRegionLabelsScript()
+{
+    <script>
+        var regions = @Newtonsoft.Json.JsonConvert.SerializeObject(Dynamicweb.Rapido.Services.Translations.GetRegionLabels());
+    </script>
+}

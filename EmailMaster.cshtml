@@ -1,0 +1,215 @@
+﻿@inherits RazorTemplateBase<RazorTemplateModel<Template>>
+@using Dynamicweb.Rendering;
+
+@Include("EmailGeneralHelpers.cshtml")
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="format-detection" content="telephone=no" /> <!-- disable auto telephone linking in iOS -->
+    <title>@GetGlobalValue("Global:Request.Host")</title>
+    <style type="text/css">
+
+        /* RESET STYLES */
+        html {
+            background-color: #d3d3d3;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        img, a img {
+            border: 0;
+            outline: none;
+            text-decoration: none;
+            height: auto;
+            line-height: 100%;
+        }
+
+        a {
+            text-decoration: none !important;
+            border-bottom: none;
+            font-weight: normal;
+        }
+
+        /* Force Hotmail/Outlook.com to display line heights normally. */
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            display: block;
+            margin-top: 0;
+            margin-right: 0;
+            margin-bottom: 5px;
+            margin-left: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            padding-left: 0;
+            padding-right: 0;
+            color: #5F5F5F;
+            font-weight: normal;
+            font-style: normal;
+            font-family: Helvetica,Arial,sans-serif;
+            line-height: 135%;
+            text-align: Left;
+            letter-spacing: normal;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            font-size: 23px;
+        }
+
+        h3 {
+            margin-bottom: 3px;
+            font-size: 20px;
+            line-height: 125%;
+        }
+
+        h4 {
+            font-size: 18px;
+            font-style: italic;
+            line-height: 100%;
+        }
+
+        /* STYLES */
+
+        .table--fixed {
+            table-layout: fixed;
+            max-width: 100% !important;
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+
+        .table-content-border--top {
+            border-top: 1px solid #a8a8a8;
+        }
+
+        .content {
+            height: 100% !important;
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            font-family: Helvetica, Arial, "Lucida Grande", sans-serif;
+        }
+
+        .content--bg {
+            background-color: #d3d3d3;
+        }
+
+        .content--hidden {
+            display: none !important;
+            mso-hide: all;
+        }
+
+        .label {
+            color: #828282;
+        }
+
+        .text {
+            font-size: 13px;
+            line-height: 120%;
+            font-weight: normal;
+            color: #828282;
+        }
+
+        .text--small {
+            margin-top: 0;
+            margin-bottom: 3px;
+            font-size: 10px;
+            line-height: 125%;
+        }
+
+        .text--large {
+            margin-bottom: 0;
+            font-size: 15px;
+            line-height: 135%;
+        }
+
+        .text--center {
+            text-align: center;
+        }
+
+        .link {
+            color: #828282;
+            text-decoration: underline;
+        }
+
+        .link--no-decoration {
+            text-decoration: none;
+        }
+
+        .no-top-bottom-inner-space {
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        /* MOBILE STYLES */
+        @@media only screen and (max-width: 480px) {
+
+            .flexibleImage {
+                height: auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
+        /*  CONDITIONS FOR ANDROID DEVICES ONLY
+            *   http://developer.android.com/guide/webapps/targeting.html
+            *   http://pugetworks.com/2011/04/css-media-queries-for-targeting-different-mobile-devices/
+        */
+
+        @@media only screen and (-webkit-device-pixel-ratio:.75) {
+            /* Put CSS for low density (ldpi) Android layouts in here */
+        }
+
+        @@media only screen and (-webkit-device-pixel-ratio:1) {
+            /* Put CSS for medium density (mdpi) Android layouts in here */
+        }
+
+        @@media only screen and (-webkit-device-pixel-ratio:1.5) {
+            /* Put CSS for high density (hdpi) Android layouts in here */
+        }
+        /* end Android targeting */
+
+        /* CONDITIONS FOR IOS DEVICES ONLY
+            =====================================================*/
+        @@media only screen and (min-device-width : 320px) and (max-device-width:568px) {
+        }
+        /* end IOS targeting */
+    </style>
+
+</head>
+
+@{
+    string emailBgColor = "#d3d3d3";
+    string emailContent = "height:100% !important;margin:0;padding:0;width:100% !important;font-family:Helvetica, Arial,'Lucida Grande',sans-serif;";
+    string emailTableFixedStyle = "table-layout: fixed;max-width:100% !important;width: 100% !important;min-width: 100% !important;";
+}
+
+<body class="content content--bg" bgcolor="@emailBgColor" style="@emailContent" marginwidth="0" marginheight="0" offset="0">
+    <center class="content--bg" bgcolor="@emailBgColor">
+        <table class="content table--fixed" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable" style="@(emailTableFixedStyle + emailContent)">
+            <tr>
+                <td class="content" align="center" valign="top" id="bodyCell" style="@emailContent">
+                    @ContentPlaceholder()
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>

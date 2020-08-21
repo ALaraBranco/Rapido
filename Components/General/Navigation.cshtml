@@ -1,0 +1,18 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderNavigation(Navigation settings) {
+    @RenderNavigation(new
+    {
+        id = settings.Id,
+        cssclass = settings.CssClass,
+        startLevel = settings.StartLevel,
+        endlevel = settings.EndLevel,
+        expandmode = settings.Expandmode,
+        template = settings.Template
+    })
+}

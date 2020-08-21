@@ -1,0 +1,77 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage quotesPage = BlocksPage.GetBlockPage("QuoteList");
+
+    public MediaListItem GetQuote(LoopItem quote)
+    {
+        int cartPageID = GetPageIdByNavigationTag("CartPage");
+        string orderId = quote.GetString("Ecom:Order.ID");
+
+        MediaListItem listItem = new MediaListItem
+        {
+            Title = Translate("No.") + orderId,
+            Label = quote.GetDate("Ecom:Order.Date").ToString("dd/MM yyyy"),
+            OnClick = "orderModal.ShowOrderModal('" + orderId + "')"
+        };
+
+        foreach (LoopItem state in quote.GetLoop("AvailableQuoteStates"))
+        {
+            if (state.GetBoolean("QuoteState.IsCurrent") && !string.IsNullOrEmpty(state.GetString("QuoteState.Name")))
+            {
+                listItem.Status = state.GetString("QuoteState.Name");
+            }
+        }
+
+        listItem.AddInfoRow(Translate("Total price"), quote.GetString("Ecom:Order.OrderLines.Total.Price"));
+
+        listItem.AddActions(
+            new Button
+            {
+                ButtonLayout = ButtonLayout.None,
+                OnClick = "orderModal.ShowOrderModal('" + orderId + "')",
+                Title = Translate("View quote")
+            },
+            new Button
+            {
+                ButtonLayout = ButtonLayout.None,
+                OnClick = "acceptQuote('" + quote.GetString("Ecom:CustomerCenter.Quotes.AddToCart") + "', '/Default.aspx?ID=" + cartPageID + "')",
+                Title = Translate("Accept quote")
+            }
+        );
+
+        return listItem;
+    }
+}
+
+@{
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.Quotes.EmptyList")))
+    {
+        Block quotes = new Block
+        {
+            Id = "Quotes",
+            SortId = 20,
+            Template = RenderQuotes()
+        };
+        quotesPage.Add("PageContainer", quotes);
+    }
+}
+
+@helper RenderQuotes() {
+    var cart = Dynamicweb.Ecommerce.Common.Context.Cart;
+    var currentOrderId = cart != null ? cart.Id : null;
+          
+    foreach (LoopItem quote in GetLoop("Quotes"))
+    {
+        string orderId = quote.GetString("Ecom:Order.ID");
+
+        if (orderId != currentOrderId && string.IsNullOrEmpty(quote.GetString("Ecom:Order.Completed")))
+        {
+            @Render(GetQuote(quote))
+        }
+    }
+}

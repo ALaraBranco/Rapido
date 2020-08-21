@@ -1,0 +1,41 @@
+@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    BlocksPage rizzoMiniCartBlocksPage = BlocksPage.GetBlockPage("Master");
+    
+    Block rizzoMiniCartOrderLinesList = new Block {
+        Id = "MiniCartOrderLinesList",
+        SortId = 20,
+        Template = RenderRizzoMiniCartOrderLinesList()
+    };
+    rizzoMiniCartBlocksPage.ReplaceBlock(rizzoMiniCartOrderLinesList);
+}
+
+@helper RenderRizzoMiniCartOrderLinesList()
+{
+    <text>
+        {{#OrderLines}}
+            {{#ifCond template "===" "CartOrderline"}}
+                {{>MiniCartOrderline}}
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineMobile"}}
+                {{>MiniCartOrderline}}t
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineDiscount"}}
+                {{>MiniCartOrderlineDiscount}}
+            {{/ifCond}}
+        {{/OrderLines}}
+        {{#OrderLinesOutOfStock}}
+            {{#ifCond template "===" "CartOrderline"}}
+                {{>MiniCartOrderline}}
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineMobile"}}
+                {{>MiniCartOrderline}}
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineDiscount"}}
+                {{>MiniCartOrderlineDiscount}}
+            {{/ifCond}}
+        {{/OrderLinesOutOfStock}}
+    </text>
+}

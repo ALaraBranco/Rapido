@@ -1,0 +1,173 @@
+﻿@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage editProfileInfoViewPage = BlocksPage.GetBlockPage("EditProfilePage");
+}
+
+@{
+    Block editProfileInfo = new Block
+    {
+        Id = "EditProfileInfo",
+        SortId = 20,
+        BlocksList = new List<Block>
+        {
+            new Block
+            {
+                Id = "EditProfileInfoView",
+                SortId = 20,
+                Template = RenderEditProfileInfoView()
+            },
+            new Block
+            {
+                Id = "EditProfileInfoScripts",
+                SortId = 30,
+                Template = RenderEditProfileInfoScripts()
+            }
+        }
+    };
+
+    editProfileInfoViewPage.Add("ViewsSwitcher", editProfileInfo);
+}
+
+@helper RenderEditProfileInfoView()
+{
+    Form form = new Form { FormStartMarkup = GetString("UserManagement:User.FormStart") };
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_Name",
+        Name = "UserManagement_Form_Name",
+        Label = Translate("Name"),
+        Value = GetString("UserManagement:User.Name"),
+        ErrorMessage = GetString("UserManagement:User.Name.Input.Error"),
+        CssClass = "js-profile-view"
+    });
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_Phone",
+        Name = "UserManagement_Form_Phone",
+        Type = TextFieldType.Tel,
+        Label = Translate("Phone"),
+        Value = GetString("UserManagement:User.Phone"),
+        ErrorMessage = GetString("UserManagement:User.Phone.Input.Error"),
+        CssClass = "js-profile-view"
+    });
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_Email",
+        Name = "UserManagement_Form_Email",
+        Type = TextFieldType.Email,
+        Label = Translate("Email"),
+        Value = GetString("UserManagement:User.Email"),
+        Required = true,
+        ErrorMessage = GetString("UserManagement:User.Email.Input.Error"),
+        CssClass = "js-profile-view"
+    });
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_OldPassword",
+        Name = "UserManagement_Form_OldPassword",
+        Type = TextFieldType.Password,
+        Label = Translate("Old password"),
+        Value = GetString("UserManagement:User.OldPassword"),
+        ErrorMessage = GetString("UserManagement:User.OldPassword.Input.Error"),
+        CssClass = "js-password-view"
+    });
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_NewPassword",
+        Name = "UserManagement_Form_NewPassword",
+        Type = TextFieldType.Password,
+        Label = Translate("New password"),
+        Value = GetString("UserManagement:User.NewPassword"),
+        ErrorMessage = GetString("UserManagement:User.NewPassword.Input.Error"),
+        CssClass = "js-password-view"
+    });
+
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_NewPasswordConfirm",
+        Name = "UserManagement_Form_NewPasswordConfirm",
+        Type = TextFieldType.Password,
+        Label = Translate("Confirm password"),
+        Value = GetString("UserManagement:User.NewPasswordConfirm"),
+        ErrorMessage = GetString("UserManagement:User.NewPasswordConfirm.Input.Error"),
+        CssClass = "js-password-view"
+    });
+
+    form.Add(new Button
+    {
+        ButtonType = ButtonType.Button,
+        Title = Translate("Back"),
+        Icon = new Icon { Prefix = "fas", Name = "fa-angle-left" },
+        ButtonLayout = ButtonLayout.Secondary,
+        CssClass = "btn--condensed",
+        OnClick = "Expand.changeTriggerValue(document.getElementById('editProfileContentTrigger'), false);"
+    });
+
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Save") });
+
+    <div class="expandable--collapsed" data-trigger="editProfileContentTrigger">
+        <div class="grid">
+            <div class="grid__col-md-8 grid__col--bleed">
+                @Render(form)
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderEditProfileInfoScripts()
+{
+    <script>
+        function openProfileInfoEdit() {
+            Expand.changeTriggerValue(document.getElementById('editProfileContentTrigger'), true);
+            document.querySelectorAll(".js-password-view").forEach(function (element) {
+                element.parentElement.classList.add('u-hidden');
+                element.disabled = true;
+            });
+            document.querySelectorAll(".js-profile-view").forEach(function (element) {
+                element.parentElement.classList.remove('u-hidden');
+                element.disabled = false;
+            });
+        }
+
+        function openPasswordEdit() {
+            Expand.changeTriggerValue(document.getElementById('editProfileContentTrigger'), true);
+            document.querySelectorAll(".js-profile-view").forEach(function (element) {
+                element.parentElement.classList.add('u-hidden');
+                element.disabled = true;
+            });
+            document.querySelectorAll(".js-password-view").forEach(function (element) {
+                element.parentElement.classList.remove('u-hidden');
+                element.disabled = false;
+            });
+        }
+
+        @if (!string.IsNullOrEmpty(GetString("UserManagement:User.Name.Input.Error")) ||
+            !string.IsNullOrEmpty(GetString("UserManagement:User.Phone.Input.Error")) ||
+            !string.IsNullOrEmpty(GetString("UserManagement:User.Email.Input.Error")))
+        {
+            <text>
+                document.addEventListener("DOMContentLoaded", function () {
+                    openProfileInfoEdit();
+                })
+            </text>
+        }
+
+        @if (!string.IsNullOrEmpty(GetString("UserManagement:User.OldPassword.Input.Error")) ||
+            !string.IsNullOrEmpty(GetString("UserManagement:User.NewPassword.Input.Error")) ||
+            !string.IsNullOrEmpty(GetString("UserManagement:User.NewPasswordConfirm.Input.Error")))
+        {
+            <text>
+                document.addEventListener("DOMContentLoaded", function () {
+                    openPasswordEdit();
+                })
+            </text>
+        }
+    </script>
+}

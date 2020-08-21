@@ -1,0 +1,87 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+   BlocksPage createRequestPage = BlocksPage.GetBlockPage("RMADetails");
+}
+
+@{
+    Block createRequest = new Block
+    {
+        Id = "CreateRequest",
+        SortId = 50,
+        BlocksList = new List<Block> {
+                new Block
+                {
+                    Id = "CreateRequestButton",
+                    SortId = 10,
+                    Component = new Button { ButtonType = ButtonType.Submit, CssClass = "btn--condensed", Title = Translate("Create request") }
+                }
+            }
+    };
+
+    Block rmaProducts = new Block
+    {
+        Id = "RmaProducts",
+        SortId = 30
+    };
+
+    Modal selectRmaProductsMessage = new Modal
+    {
+        Id = "SelectRmaProductsMessage",
+        Heading = new Heading
+        {
+            Level = 2,
+            Title = Translate("Error")
+        },
+        Width = ModalWidth.Xs,
+        BodyText = Translate("Please select RMA's products")
+    };
+
+    selectRmaProductsMessage.AddAction(new Button
+    {
+        ButtonType = ButtonType.Button,
+        Title = Translate("Close"),
+        OnClick = "document.getElementById('SelectRmaProductsMessageModalTrigger').checked = false",
+        CssClass = "btn--full"
+    });
+
+    rmaProducts.Component = selectRmaProductsMessage;
+    createRequest.Add(rmaProducts);
+
+    Block additionalInfo = new Block
+    {
+        Id = "AdditionalInfo",
+        SortId = 20,
+    };
+
+    Modal addInfoMessage = new Modal
+    {
+        Id = "AddInfoMessage",
+        Heading = new Heading
+        {
+            Level = 2,
+            Title = Translate("Error")
+        },
+        Width = ModalWidth.Xs,
+        BodyText = Translate("Please specify additional info")
+    };
+
+    addInfoMessage.AddAction(new Button
+    {
+        ButtonType = ButtonType.Button,
+        Title = Translate("Close"),
+        OnClick = "document.getElementById('AddInfoMessageModalTrigger').checked = false",
+        CssClass = "btn--full"
+    });
+
+    additionalInfo.Component = addInfoMessage;
+    createRequest.Add(additionalInfo);
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent")) && !string.IsNullOrEmpty(HttpContext.Current.Request[GetString("ParagraphID") + "RMAOrderID"])) {
+       createRequestPage.Add("RmaDetailsForm", createRequest);
+    }
+}

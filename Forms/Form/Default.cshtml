@@ -1,0 +1,28 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Web
+
+@functions {
+    BlocksPage defaultFormPage = BlocksPage.GetBlockPage("FormPage");
+}
+
+@{
+    Block formPlaceholder = new Block
+    {
+        Id = "Form",
+        SortId = 10
+    };
+
+    defaultFormPage.Add(formPlaceholder);
+}
+
+@Include("../Blocks/Form.cshtml")
+@Include("../Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(defaultFormPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

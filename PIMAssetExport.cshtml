@@ -1,0 +1,39 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@Include("Helpers/ExportHelpers.cshtml")
+
+@using System.Text;
+@using System.IO;
+@using System.Threading;
+@using System.Web;
+@using System.Xml.Linq;
+
+@{
+    List<string> documents = new List<string>();
+    List<string> images = new List<string>();
+    List<string> imageExtensions = new List<string>() { ".jpeg", ".jpg", ".tiff", ".psd", ".png", ".ai", ".svg" };
+    string asset = HttpContext.Current.Request.Form["assetPath"];
+
+    string exportPurposeName = HttpContext.Current.Request.Form["purpose"];
+    string siteUrl = HttpContext.Current.Request.Form["siteUrl"];
+
+    var exportPurpose = GetExportPurposeByName(exportPurposeName);
+
+}
+
+@{
+    var zipEntries = new Dictionary<string, byte[]>();
+    
+    if(imageExtensions.Contains(Path.GetExtension(asset).ToLower()) || (Path.GetExtension(asset).ToLower() == ".pdf" && GetNumberOfPdfPages(asset, siteUrl) == 1))
+    {
+        images.Add(asset);
+    }
+    else
+    {
+        documents.Add(asset);
+    }
+
+    AddImagesToZip(images, exportPurpose, siteUrl, zipEntries);
+
+    ZipContent(zipEntries, documents, siteUrl);
+}

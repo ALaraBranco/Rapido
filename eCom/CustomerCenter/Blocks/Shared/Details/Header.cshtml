@@ -1,0 +1,74 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+
+@functions {
+    BlocksPage headerPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+    var logoImage = "/Admin/Public/GetImage.ashx?width=200&amp;height=50&amp;crop=5&amp;Compression=75&amp;image=" + Pageview.AreaSettings.GetItem("Ecommerce").GetString("ReceiptLogoImage");
+    var imageClass = "";
+
+    if (!String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("PageID")))
+    {
+        imageClass = "u-w220px";
+    }
+
+    Block header = new Block
+    {
+        Id = "Header",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--border receipt__header"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "HeaderLogo",
+                SortId = 10,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "7",
+                    CssClass = "receipt__logo grid__col-sm-7 grid__cell"
+                },
+                Component = new Image {
+                    Path = logoImage,
+                    Title = Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null ? Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("Name") : "",
+                    CssClass = imageClass,
+                    DisableImageEngine = true
+                }
+            },
+            new Block {
+                Id = "HeaderTable",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "5",
+                    CssClass = "grid__col-sm-5"
+                },
+                Template = RenderHeader()
+            }
+        }
+    };
+
+    headerPage.Add("PageContainer", header);
+}
+
+@helper RenderHeader()
+{
+    <table class="table table--clean table--compact">
+        <tr>
+            <td>@Translate("Order number")</td>
+            <td>@GetString("Ecom:Order.ID")</td>
+        </tr>
+        <tr>
+            <td>@Translate("Order date")</td>
+            <td>@GetDate("Ecom:Order.Date").ToString(Dynamicweb.Core.Helpers.DateHelper.DateFormatStringShort)</td>
+        </tr>
+    </table>
+}

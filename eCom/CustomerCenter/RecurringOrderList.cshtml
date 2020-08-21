@@ -1,0 +1,60 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb
+@using Dynamicweb.Core
+@using Dynamicweb.Frontend.Devices
+@using System.Web
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage recurringOrderListPage = BlocksPage.GetBlockPage("RecurringOrderList");
+}
+
+@{
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block
+            {
+                Id = "PageTitle",
+                SortId = 10,
+                Component = new Heading
+                {
+                    Title = GetGlobalValue("Global:Page.Name"),
+                    Icon = new Icon { Prefix = "fas", Name = "fa-calendar" }
+                }
+            }
+        }
+    };
+
+    recurringOrderListPage.Add(pageContainer);
+
+    if (!GetBoolean("Ecom:CustomerCenter.RecurringOrders.EmptyList") && !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RecurringOrders.Paging.Show")))
+    {
+        pageContainer.Add(new Block
+        {
+            Id = "Pagination",
+            SortId = 30,
+            Component = new Pagination
+            {
+                PagingTag = "Ecom:CustomerCenter",
+                ShowNextAndPrevControls = true
+            }
+        });
+    }
+}
+
+@Include("Blocks/RecurringOrderList/ViewOrderModal.cshtml")
+@Include("Blocks/RecurringOrderList/RecurringOrders.cshtml")
+@Include("Blocks/RecurringOrderList/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(recurringOrderListPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")

@@ -1,0 +1,30 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    public string GenerateRgba(string color, double opacity)
+    {
+        color = color.Replace("#", "");
+        if (color.Length == 6) {
+            return "rgba(" + Convert.ToInt32(color.Substring(0, 2), 16) + ", " + Convert.ToInt32(color.Substring(2, 2), 16) + ", " + Convert.ToInt32(color.Substring(4, 2), 16) + ", " + opacity + ");";
+        } else {
+            return Convert.ToInt16(color).ToString();
+        }
+    }
+}
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml") 
+
+
+@* Include the basic, re-used, paragraph initializer *@
+@Include("ParagraphRender.cshtml")
+                              
+        
+
+@RenderParagraph(Model.Item)                   

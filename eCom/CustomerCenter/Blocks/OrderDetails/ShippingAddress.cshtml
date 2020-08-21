@@ -1,0 +1,78 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage shippingAddressPage = BlocksPage.GetBlockPage("Details");
+
+    public string GetShippingAddressColumnWidth()
+    {
+
+        string businessAddress = Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null ? Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("StreetAddress") : "";
+        bool showDelivery = !string.IsNullOrWhiteSpace(GetString("Ecom:Order.Delivery.Address"));
+        bool showShop = Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null && !string.IsNullOrWhiteSpace(businessAddress);
+        string columnWidth = (showDelivery || showShop) ? "4" : "6";
+        columnWidth = Pageview.Device.ToString() == "Mobile" ? "12" : columnWidth;
+
+        return columnWidth;
+    }
+}
+
+@{
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Delivery.Address")))
+    {
+        Block shippingAddress = new Block
+        {
+            Id = "ShippingAddress",
+            SortId = 20,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = GetShippingAddressColumnWidth(),
+                CssClass = "pdf-column"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "ShippingAddressTitle",
+                    SortId = 10,
+                    Component = new Heading {
+                        Title = Translate("Shipping address"),
+                        Level = 3, Icon = new Icon { Prefix = "fas", Name = "fa-truck" },
+                        CssClass = "u-no-margin"
+                    }
+                },
+                new Block {
+                    Id = "ShippingAddressContent",
+                    SortId = 20,
+                    Design = new Design {
+                        CssClass = "grid__cell"
+                    },
+                    Template = RenderShippingAddress()
+                 }
+             }
+        };
+
+        shippingAddressPage.Add("FooterContent", shippingAddress);
+    }
+}
+
+@helper RenderShippingAddress()
+{
+    <div>@GetString("Ecom:Order.Delivery.Company")</div>
+    <div>@GetString("Ecom:Order.Delivery.Name")</div>
+    <div>@GetString("Ecom:Order.Delivery.Address")</div>
+    <div>@GetString("Ecom:Order.Delivery.Address2")</div>
+    <div>@GetString("Ecom:Order.Delivery.Zip") @GetString("Ecom:Order.Delivery.City"), @GetString("Ecom:Order.Delivery.Country")</div>
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Delivery.Email")))
+    {
+        <div>@Translate("Email"): @GetString("Ecom:Order.Delivery.Email")</div>
+    }
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Delivery.Phone")))
+    {
+        <div>@Translate("Phone"): @GetString("Ecom:Order.Delivery.Phone")</div>
+    }
+}

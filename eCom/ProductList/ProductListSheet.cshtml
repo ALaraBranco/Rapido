@@ -1,0 +1,299 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.IO
+@using System;
+@using System.Globalization;
+
+@functions{ 
+    public string GetParentSettingsItem(string systemName)
+    {
+        string item = null;
+
+        Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Pageview.Page.ID);
+        while (current != null && current.Parent != current)
+        {
+            var temp = current.Item != null ? current.Item[systemName] : "";
+
+            if (temp != null)
+            {
+                item = temp.ToString();
+
+                if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+            }
+
+            current = current.Parent;
+        }
+
+        return item;
+    }
+}
+
+@Include("../../GetProductImage.cshtml")
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@functions {
+    int contentHeight;
+    int contentWidth;
+    int productItemHeight;
+    string pageOrientation;
+}
+
+@{ 
+    int productsOnSheet = Convert.ToInt32(Pageview.CurrentParagraph.Item["ProductsOnEachPage"]) != 0 ? Convert.ToInt32(Pageview.CurrentParagraph.Item["ProductsOnEachPage"]) : 10;
+    int sheetMargin = GetParentSettingsItem("Margin") != null ? Convert.ToInt32(GetParentSettingsItem("Margin")) : 10;
+    int sheetHeight = 296;
+    int sheetWidth = 210;
+    int headerHeight = 15;
+    int footerHeight = 15;
+
+    string pageSize = GetParentSettingsItem("PageSize").ToLower();
+    pageOrientation = GetParentSettingsItem("PageOrientation").ToLower();
+
+    if (pageOrientation == "portrait") {
+        switch (pageSize) {
+            case "a4":
+                sheetHeight = 296;
+                sheetWidth = 210;
+                break;
+            case "a5":
+                sheetHeight = 209;
+                sheetWidth = 148;
+                break;
+            case "a3":
+                sheetHeight = 419;
+                sheetWidth = 297;
+                break;
+            case "letter":
+                sheetHeight = 279;
+                sheetWidth = 216;
+                break;
+            case "legal":
+                sheetHeight = 356;
+                sheetWidth = 216;
+                break;
+        }
+    } else {
+        switch (pageSize)
+        {
+            case "a4":
+                sheetHeight = 209;
+                sheetWidth = 296;
+                break;
+            case "a5":
+                sheetHeight = 147;
+                sheetWidth = 210;
+                break;
+            case "a3":
+                sheetHeight = 296;
+                sheetWidth = 420;
+                break;
+            case "letter":
+                sheetHeight = 215;
+                sheetWidth = 280;
+                break;
+            case "legal":
+                sheetHeight = 215;
+                sheetWidth = 357;
+                break;
+        }
+    }
+
+    contentHeight = (sheetHeight - (headerHeight + footerHeight + (sheetMargin * 2)));
+    contentWidth = (sheetWidth - (sheetMargin * 2));
+    productItemHeight = (contentHeight - 2) / productsOnSheet;
+
+
+    List<LoopItem> productListPart = new List<LoopItem>();
+    int count = 1;
+
+    foreach (LoopItem product in GetLoop("Products"))
+    {
+        productListPart.Add(product);
+
+        if (count < productsOnSheet) {
+            count++;
+        } else {
+            @RenderProductSheet(productListPart);
+
+            productListPart.Clear();
+            count = 1;
+        }
+    }
+
+    if (count != 1) {
+        @RenderProductSheet(productListPart);
+    }
+}
+
+
+@helper RenderProductSheet(List<LoopItem> products) { 
+    string bodyTextColor = GetParentSettingsItem("BodyTextColor") != null ? "color: " + GetParentSettingsItem("BodyTextColor") : "";
+    string pageMargin = GetParentSettingsItem("Margin") != null ? GetParentSettingsItem("Margin") : "10";
+    DateTime serverTime = DateTime.Now;
+
+    int pageNumber = 1;
+    if (System.Web.HttpContext.Current.Items.Contains("PaperPageNumber"))
+    {
+        pageNumber = Convert.ToInt32(System.Web.HttpContext.Current.Items["PaperPageNumber"]);
+        pageNumber++;
+        System.Web.HttpContext.Current.Items["PaperPageNumber"] = pageNumber;
+    } else {
+        System.Web.HttpContext.Current.Items.Add("PaperPageNumber", pageNumber);
+    }
+
+    var footerSettings = Dynamicweb.Content.Items.Item.GetItemById("SheetFooter", GetParentSettingsItem("Footer"));
+
+
+    <section class="sheet">
+        <div class="sheet-container sheet-container--flex-col">
+            <div class="sheet-container__header sheet-container__header--padding-@(pageMargin)mm">
+                <div class="sheet-header-left">
+                     <div class="sheet-header-date">@serverTime</div>
+                </div>
+                <div class="sheet-header-center">
+                    
+                </div>
+                <div class="sheet-header-right">
+                    @if (!String.IsNullOrEmpty(Pageview.CurrentParagraph.Item["Title"].ToString()))
+                    {
+                        <div class="sheet-header-title">@Pageview.CurrentParagraph.Item["Title"]</div>
+                    }
+                </div>
+            </div>
+            <div class="sheet-container__content sheet-container__content--padding-@(pageMargin)mm" style="height: @(contentHeight)mm; @bodyTextColor">
+                @if (products.Count > 1)
+                {
+                    <table class="sheet-product-table">
+                        @foreach (LoopItem product in products)
+                        {
+                            string productName = product.GetString("Ecom:Product.Name");
+                            productName += !String.IsNullOrEmpty(product.GetString("Ecom:Product.SelectedVariantComboName")) ? ", " + product.GetString("Ecom:Product.SelectedVariantComboName") : "";
+                            string productPrice = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Discount.Price.PriceFormatted") : product.GetString("Ecom:Product.Price.PriceFormatted");
+                            string productBeforePrice = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Price.PriceFormatted") : "";
+                            string productNameWidth = productItemHeight < 20 ? "width: 40mm; " : "";
+                            int productImageHeight = productItemHeight < 15 ? 6 : productItemHeight - 4; 
+
+                            <tr class="sheet-product-table-item" style="height: @(productItemHeight)mm">
+                                <td>
+                                    <img src="@GetProductImage(product)" style="height: @(productImageHeight)mm" />
+                                </td>
+                                <td>
+                                    <div class="sheet-product-title" style="@productNameWidth">@productName</div>
+
+                                    @if (productItemHeight > 15)
+                                    {
+                                        <div class="sheet-product-number">@product.GetString("Ecom:Product.Number")</div>
+                                    }
+                                </td>
+                                @if (productItemHeight < 15)
+                                {
+                                  <td>
+                                      <div class="sheet-product-number">@product.GetString("Ecom:Product.Number")</div>
+                                  </td>
+                                }
+                                <td>
+                                    @if (!String.IsNullOrEmpty(product.GetString("Ecom:Product:Stock.Text")))
+                                    {
+                                        <div>@product.GetString("Ecom:Product:Stock.Text")</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!String.IsNullOrEmpty(product.GetString("Ecom:Product:Stock.DeliveryText")))
+                                    {
+                                        <span>@Translate("Shipping")</span> <span>@product.GetString("Ecom:Product:Stock.DeliveryText")</span> <span>@product.GetString("Ecom:Product:Stock.DeliveryUnit")</span>
+                                    }
+                                </td>
+                                <td style="width: 30mm">
+                                    <div class="sheet-product-price">@productPrice</div>
+                                    @if (!String.IsNullOrEmpty(productBeforePrice) && productItemHeight > 11)
+                                    {
+                                        <div class="sheet-product-before-price">@productBeforePrice</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                }
+                else
+                {
+                    foreach (LoopItem product in products)
+                    {
+                        string pageImageClass = pageOrientation == "portrait" ? "sheet-product-page-image--full" : "";
+                        string pageImageStyle = pageOrientation == "portrait" ? "height: " + (contentHeight / 2) + "mm" : "width: " + (contentWidth / 2) + "mm";
+                        string pageInfoClass = pageOrientation == "portrait" ? "sheet-product-page-info--full" : "";
+                        string pageInfoContainerClass = pageOrientation == "portrait" ? "sheet-product-page-info__container--full" : "";
+
+                        string productName = product.GetString("Ecom:Product.Name");
+                        productName += !String.IsNullOrEmpty(product.GetString("Ecom:Product.SelectedVariantComboName")) ? ", " + product.GetString("Ecom:Product.SelectedVariantComboName") : "";
+                        string productPrice = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Discount.Price.PriceFormatted") : product.GetString("Ecom:Product.Price.PriceFormatted");
+                        string productBeforePrice = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Price.PriceFormatted") : "";
+
+
+                        <div class="sheet-product-page-image @pageImageClass" style="@pageImageStyle">
+                            <img src="@GetProductImage(product)" style="@pageImageStyle" />
+                        </div>
+                        <div class="sheet-product-page-info @pageInfoClass">
+                            <div class="sheet-product-page-info__container @pageInfoContainerClass">
+                                <div class="sheet-product-title">@productName</div>
+                                <div class="sheet-product-number">@product.GetString("Ecom:Product.Number")</div>
+                                <br />
+                                @if (!String.IsNullOrEmpty(product.GetString("Ecom:Product:Stock.Text")))
+                                {
+                                    <div>@product.GetString("Ecom:Product:Stock.Text")</div>
+                                }
+                                @if (!String.IsNullOrEmpty(product.GetString("Ecom:Product:Stock.DeliveryText")))
+                                {
+                                    <div>
+                                        <span>@Translate("Shipping")</span> <span>@product.GetString("Ecom:Product:Stock.DeliveryText")</span> <span>@product.GetString("Ecom:Product:Stock.DeliveryUnit")</span>
+                                    </div>
+                                }
+                                <br />
+                                <br />
+                                @if (!String.IsNullOrEmpty(product.GetString("Ecom:Product.LongDescription")))
+                                {
+                                    <div>
+                                        @Dynamicweb.Rapido.Blocks.Components.ComponentMethods.Truncate(product.GetString("Ecom:Product.LongDescription"), 360)
+                                    </div>
+                                    <br />
+                                    <br />
+                                }
+                                <div class="sheet-product-price">@productPrice</div>
+                                @if (!String.IsNullOrEmpty(productBeforePrice) && productItemHeight > 11)
+                                {
+                                    <div class="sheet-product-before-price">@productBeforePrice</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="sheet-container__footer sheet-container__footer--padding-@(pageMargin)mm">
+                <div class="sheet-footer-left"></div>
+                <div class="sheet-footer-center">
+                    @if (footerSettings["Logo"] != null)
+                    {
+                        if (!String.IsNullOrEmpty(footerSettings["Logo"].ToString()))
+                        {
+                            <div class="sheet-footer-logo">
+                                <img src="@footerSettings["Logo"].ToString()" />
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="sheet-footer-right">
+                    @if (footerSettings["ShowPageNumber"] != null)
+                    {
+                        if (Convert.ToBoolean(footerSettings["ShowPageNumber"]))
+                        {
+                            <div class="sheet-footer-page-number">
+                                @pageNumber
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}

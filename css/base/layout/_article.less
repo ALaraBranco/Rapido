@@ -1,0 +1,247 @@
+//  Article
+
+.article-head {
+    margin-bottom: @reflex-cell-spacing-xl;
+}
+
+
+.article__header {
+    line-height: 1.2; 
+    margin: 0;
+}
+
+.article__category {
+   font-weight: bold;
+   text-transform: uppercase;
+   color: @gray;
+}
+
+.article__header--giant {
+   font-size: 52px;
+   font-weight: bold;
+   text-transform: uppercase;
+   margin-top: 1rem; 
+}
+
+.article__subheader {
+   margin-bottom: @reflex-cell-spacing-lg;
+   margin-top: @reflex-cell-spacing-sm;
+}
+
+.article__subheader--giant {
+   font-size: 32px;
+   line-height: 1.4;
+}
+
+.article__leadtext {
+   font-size: 32px;
+   line-height: 1.2;
+   margin-bottom: @reflex-cell-spacing-md;
+   color: @gray-dark;
+}
+
+.article__post-info {
+    display: block;
+    line-height: 1.2;
+}
+
+.article__image {
+   margin-bottom: 2rem; 
+}
+
+.article__image-caption {
+    text-align: center;
+    font-size: 16px;
+    color: @gray;
+    margin: @reflex-cell-spacing-sm;
+    display: block;
+}
+
+.article__image-zoom-wrap {
+    cursor: zoom-in;
+}
+
+.article__image--ball {
+   border-radius: 1000px;
+}
+
+.article__subscription {
+    font-size: 12px;
+    margin-bottom: 1rem;
+}
+
+.article__short-summary {
+    margin: 0;
+}
+
+.article__summary {
+    font-size: @font-size--md;
+    margin-bottom: 2rem;
+}
+
+.article__quote {
+    font-size: 35px;
+    font-style: italic;
+    color: @gray; 
+    margin: 0 35px;
+}
+
+.article__quote-author {
+    font-style: italic;
+    text-align: right;
+    color: @gray;    
+}
+
+.article__paragraph {
+    margin-bottom: @reflex-cell-spacing-lg;  
+    font-size: 20px;
+}
+
+.article__paragraph--great-text {
+    font-size: 20px;
+}
+
+.article__paragraph ul {
+    padding-left: 3rem;
+}
+
+.article__paragraph ol {
+    padding-left: 3rem;
+}
+
+.article__info-header {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.article__info-body {
+    margin-bottom: 1rem;
+}
+
+.article__block {
+    position: relative;
+    padding-top: @reflex-cell-spacing-lg;
+    padding-bottom: @reflex-cell-spacing-md;
+}
+
+.article__block::before {
+    content: '';
+    position: absolute;
+    width: 200px;
+    border-top: 1px solid @gray-light;
+    left: ~"calc(50% - 100px)";
+    top: 0;
+}
+
+.article__block::after {
+    content: '';
+    position: absolute;
+    width: 200px;
+    border-top: 1px solid @gray-light;
+    left: ~"calc(50% - 100px)";
+    bottom: 0;
+}
+
+.article__grid--lines {
+    border-bottom: 1px solid @gray;
+}
+
+.article__drop-cap {
+    font-size: 56px;
+    line-height: 1;
+    float: left;
+    margin-right: 12px;
+}
+
+.article__overlay-offset {
+    top: -170px;
+}
+
+.article-list__item-info {
+    margin-bottom: @reflex-cell-spacing-md * 5;
+}
+
+.article-list__item-micro-info {
+    font-size: @font-size--xs;
+    color: @gray;
+    margin-bottom: @reflex-cell-spacing-md;  
+}
+
+//Article lists
+.article-list__item-header {
+    line-height: 1.4;
+    margin: 0;
+    margin-bottom: @reflex-cell-spacing-sm;  
+}
+
+.article-simple-list__item {
+    border-bottom: 1px solid @gray-light;
+    padding: 0.5em 0;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.article-carousel-item__wrap {
+    padding: 0 80px;
+    align-self: center;
+    position: relative;
+    z-index: @z-index-1;
+}
+
+@media (max-width: @reflex-sm) {
+    .article-carousel-item__wrap {
+        padding: @reflex-cell-spacing-md;
+        width: 100%;
+    }
+}
+
+
+//Timelines
+.timeline__date {
+    float: right;
+    font-size: 2rem;
+    background-color: #333;
+    color: #fff;
+    padding: 7px;
+    border-radius: 9px;
+}
+
+.timeline__date small {
+   display: block;
+   color: #fff;
+}
+
+.timeline__date--clean {
+    margin-bottom: 1rem;
+}
+
+.timeline__date::after {
+    content: '';
+    position: absolute;
+    border-style: solid;
+    border-width: 15px 0 15px 15px;
+    border-color: transparent #333;
+    display: block;
+    width: 0;
+    z-index: 1;
+    margin-top: -15px;
+    right: -13px;
+    top: 50%;
+}
+
+.timeline__date--clean::after {
+   display: none; 
+}
+
+@media (max-width: @reflex-sm) {
+    .timeline__date {
+        float: none;
+        text-align: center;
+    }
+
+    .timeline__date::after {
+        display: none;
+    } 
+}

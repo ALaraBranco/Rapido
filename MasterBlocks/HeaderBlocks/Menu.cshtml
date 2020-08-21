@@ -1,0 +1,77 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@functions { 
+    bool isMegaMenu;
+}
+
+@{
+    isMegaMenu = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("NavigationMegaMenu") != null ? Converter.ToBoolean(Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("NavigationMegaMenu").SelectedValue) : false;
+    Block masterDesktopMenu = new Block
+    {
+        Id = "MasterDesktopMenu",
+        SortId = 10,
+        Template = RenderDesktopMenu(),
+        Design = new Design
+        {
+            Size = "auto",
+            HidePadding = true,
+            RenderType = RenderType.Column
+        }
+    };
+
+    if (isMegaMenu)
+    {
+        masterDesktopMenu.Design.CssClass = "u-reset-position";
+    }
+
+    BlocksPage.GetBlockPage("Master").Add("MasterHeader", masterDesktopMenu);
+}
+
+@helper RenderDesktopMenu()
+{
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string menuAlignment = topLayout == "minimal-right" ? "grid--align-self-end" : "";
+    string megamenuPromotionImage = Model.Area.Item.GetItem("Layout").GetItem("Header").GetFile("MegamenuPromotionImage") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetFile("MegamenuPromotionImage").PathUrlEncoded : "";
+    bool renderPagesInToolBar = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("RenderPagesInToolBar");
+    bool showOnlyHeaders = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("ShowOnlyHeaders");
+    int startLevel = renderPagesInToolBar ? 1 : 0; 
+       
+    string promotionLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetString("MegamenuPromotionLink");
+
+    <div class="grid__cell u-flex @(isMegaMenu ? "u-reset-position" : "") @menuAlignment">
+        @if (!isMegaMenu)
+        {
+            @RenderNavigation(new
+            {
+                id = "topnavigation",
+                cssclass = "menu dw-mod dwnavigation u-full-max-width u-flex grid--wrap",
+                startLevel = startLevel,
+                ecomStartLevel = startLevel + 1,
+                endlevel = 5,
+                expandmode = "all",
+                template = "BaseMenuWithDropdown.xslt"
+            });
+        }
+        else
+        {
+            @RenderNavigation(new
+            {
+                id = "topnavigation",
+                cssclass = "menu dw-mod dwnavigation u-full-max-width u-flex grid--wrap",
+                startLevel = startLevel,
+                ecomStartLevel = startLevel + 1,
+                endlevel = 5,
+                promotionImage = megamenuPromotionImage,
+                promotionLink = promotionLink,
+                expandmode = "all",
+                showOnlyHeaders = showOnlyHeaders.ToString().ToLower(),
+                template = "BaseMegaMenu.xslt"
+            });
+        }
+    </div>
+}

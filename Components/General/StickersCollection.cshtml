@@ -1,0 +1,21 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderStickersCollection(StickersCollection settings)
+{
+    if (settings.Stickers.Count > 0) 
+    {
+        string position = "stickers-container--" + Regex.Replace(settings.Position.ToString(), "([a-z])([A-Z])", "$1-$2").ToLower();
+
+        <div class="stickers-container @position @settings.CssClass dw-mod" @ComponentMethods.AddAttributes(settings.ExtraAttributes)>
+            @foreach (Sticker sticker in settings.Stickers)
+            {
+                @Render(sticker)
+            }
+        </div> 
+    }
+}

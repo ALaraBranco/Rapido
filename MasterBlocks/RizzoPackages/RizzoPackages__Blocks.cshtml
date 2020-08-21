@@ -1,0 +1,44 @@
+@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using Dynamicweb.Rapido.Blocks
+@{ 
+    var rizzoPackagesReferencesBlocksPage = BlocksPage.GetBlockPage("Master");
+
+    var rizzoPackagesMasterScriptReferences = new Block()
+    {
+        Id = "RizzoPackagesMasterScriptReferences",
+        SortId = 3,
+        Template = RenderRizzoPackagesMasterScriptReferences()
+    };
+    rizzoPackagesReferencesBlocksPage.Add(MasterBlockId.MasterReferences, rizzoPackagesMasterScriptReferences);
+    
+    var rizzoPackagesMasterStylesReferences = new Block()
+    {
+        Id = "RizzoPackagesMasterStylesReferences",
+        SortId = 23,
+        Template = RenderRizzoPackagesMasterStylesReferences()
+    };
+    rizzoPackagesReferencesBlocksPage.Add("Head", rizzoPackagesMasterStylesReferences);
+}
+
+@helper RenderRizzoPackagesMasterScriptReferences() {
+    if (Model.Area.Item.GetItem("RizzoPackages").GetBoolean("UseRizzoJavascript"))
+    {
+        const string folderName = "rizzoPackages";
+        var minify = Model.Area.Item.GetItem("Rizzo").GetBoolean("MinifyJavascript");
+        var bundle = Dna.Optimizer.Renderer.RenderScripts($"/Files/Templates/Designs/Rapido/js/{folderName}", $"-{folderName}-scripts", new List<string>(),  new List<string>(), minify, false, false);
+        <script src="@bundle"></script>
+        PushPromise(bundle);
+    }
+}
+
+@helper RenderRizzoPackagesMasterStylesReferences() {
+    if (Model.Area.Item.GetItem("RizzoPackages").GetBoolean("UseRizzoCss"))
+    {
+        const string folderName = "rizzoPackages";
+        var minify = Model.Area.Item.GetItem("Rizzo").GetBoolean("MinifyCss");
+        var variablesFile = "/Files/Templates/Designs/Rapido/css/rapido/_variables_" + Model.Area.ID + ".auto.less";
+        var bundle = Dna.Optimizer.Renderer.RenderStyles($"/Files/Templates/Designs/Rapido/css/{folderName}", $"-{folderName}-styles", new [] {variablesFile},  new[] { $"{folderName}.css", $"{folderName}.min.css" }, minify, false, false);
+        <link id="rizzoPackagesCss" type="text/css" rel="stylesheet" href="@bundle" />
+        PushPromise(bundle);
+    }
+}

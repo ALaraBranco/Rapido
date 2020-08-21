@@ -1,0 +1,84 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage loginFormPage = BlocksPage.GetBlockPage("Login");
+}
+
+@{
+    Block loginContainer = new Block
+    {
+        Id = "LoginForm",
+        Template = RenderLoginForm(),
+        SortId = 10
+    };
+    loginFormPage.Add("LoginFormPlaceholder", loginContainer);
+}
+
+
+@helper RenderLoginForm()
+{
+    string pageId = GetGlobalValue("Global:Page.ID");
+    int signInProfilePageId = GetPageIdByNavigationTag("SignInPage");
+    string specialRedirectPage = !string.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("RedirectPageId")) ? "/Default.aspx?ID=" + HttpContext.Current.Request.QueryString.Get("RedirectPageId") : "";
+    string redirectPage = !string.IsNullOrEmpty(GetString("UserManagement:User.Login.SuccessRedirectToPage")) ? GetString("UserManagement:User.Login.SuccessRedirectToPage") : specialRedirectPage;
+    string currentUserId = GetGlobalValue("Global:Extranet.UserID");
+    if (!string.IsNullOrEmpty(redirectPage) && !string.IsNullOrEmpty(currentUserId) && currentUserId != "0")
+    {
+        <script>
+            location.href = "@redirectPage";
+        </script>
+    }
+    
+    Form form = new Form { Method = FormMethod.Post };
+
+    @Render(new Heading { Title = Translate("Sign in"), Level = 2 })
+
+    if (!string.IsNullOrEmpty(GetString("DW_extranet_error_uk")))
+    {
+        @Render(new NotificationMessage
+        {
+            MessageType = NotificationMessageType.Error,
+            Message = GetString("DW_extranet_error_uk")
+        });
+    }
+
+    form.Add(new HiddenField { Name = "ID", Value = pageId });
+    form.Add(new HiddenField { Name = "DWExtranetUsernameRemember", Value = "True" });
+    form.Add(new HiddenField { Name = "DWExtranetPasswordRemember", Value = "True" });
+    form.Add(new HiddenField { Name = "LoginAction", Value = "Login" });
+    form.Add(new TextField { Id = "login-username", Type = TextFieldType.Email, Name = "username", Label = Translate("Email"), Required = true });
+    form.Add(new TextField { Id = "login-password", Type = TextFieldType.Password, Name = "password", Label = Translate("Password"), Required = true });
+    form.Add(new CheckboxField { Id = "rememberMe", Value = "True", Name = "Autologin", Label = Translate("Remember me") });
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Sign in") });
+
+    foreach (LoopItem LoginProvider in GetLoop("DWExtranetExternalLoginProviders"))
+    {
+        var ProviderName = LoginProvider.GetString("ProviderName").ToLower();
+
+        form.Add(new Link
+        {
+            Href = "/Admin/Public/Social/ExternalLogin.aspx?action=login&providerID=" + LoginProvider.GetValue("ProviderID"),
+            ButtonLayout = ButtonLayout.Clean,
+            Icon = new Icon() {
+                Prefix = "fab",
+                Name = "fa-" + ProviderName,
+                CssClass = "fa-1_5x"
+            },
+            CssClass = "btn--condensed u-no-margin u-color-" + ProviderName
+        });
+    }
+
+    form.Add(new Link
+    {
+        Href = "/Default.aspx?id=" + signInProfilePageId + "&LoginAction=Recovery",
+        ButtonLayout = ButtonLayout.None,
+        Title = Translate("Forgot your password?"),
+        CssClass = "u-padding-top u-no-margin u-pull--right"
+    });
+
+    @Render(form)
+}

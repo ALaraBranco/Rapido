@@ -1,0 +1,70 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage viewOrderModalPage = BlocksPage.GetBlockPage("RecurringOrderList");
+}
+
+@{
+    Modal modal = new Modal
+    {
+        Id = "Order",
+        Width = ModalWidth.Iframe,
+        Heading = new Heading { Title = Translate("Order details") },
+        BodyTemplate = RenderViewOrderModal()
+    };
+
+    modal.AddActions(
+        new Link
+        {
+            Href = "#",
+            Title = Translate("Download"),
+            ButtonLayout = ButtonLayout.Secondary,
+            Id = "OrderDownloadBtn",
+            Download = true,
+            Disabled = true,
+            Icon = new Icon { Prefix = "fas", Name = "fa-download" }
+        }
+    );
+
+    Block viewOrderModal = new Block
+    {
+        Id = "ViewOrderModal",
+        SortId = 30,
+        Component = modal
+    };
+    viewOrderModalPage.Add(viewOrderModal);
+
+    Block viewOrderModalScript = new Block
+    {
+        Id = "ViewOrderModalScript",
+        SortId = 20,
+        Template = RenderViewOrderModalScript()
+    };
+    viewOrderModalPage.Add(viewOrderModalScript);
+}
+
+@helper RenderViewOrderModal()
+{
+    <iframe src="about:blank" class="modal__iframe"></iframe>
+}
+
+@helper RenderViewOrderModalScript()
+{
+    int detailsPageID = GetPageIdByNavigationTag("OrderDetails");
+    var detailsParagraph = Services.Paragraphs.GetParagraphsByPageId(detailsPageID).FirstOrDefault(paragraph => paragraph.ShowParagraph);
+    string paragraphID = Converter.ToInt32(detailsParagraph == null ? 0 : detailsParagraph.ID).ToString();
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            window.orderModal = new IframeModal({
+                modalId: "OrderModal",
+                downloadBtnId: "OrderDownloadBtn",
+                linkPrefix: "/Default.aspx?ID=@detailsPageID" + "&CC" + "@paragraphID=Order&OrderID="
+            });
+        });
+    </script>
+}

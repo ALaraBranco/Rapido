@@ -1,0 +1,137 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage recurringCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+    string recurringCardHeightClass = Pageview.Device.ToString() != "Tablet" ? "u-full-height" : "";
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.PaymentMethod.RecurringSupport")) && !Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideRecurringOrder"))
+    {
+        Block recurringOrderBlock = new Block()
+        {
+            Id = "RecurringOrder",
+            SortId = 40,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "RecurringOrderHeader",
+                    SortId = 10,
+                    Component = new Heading { Level = 3, Title = Translate("Recurring order"), Icon = new Icon { Prefix = "fas", Name = "fa-calendar" } },
+                    Design = new Design {
+                        RenderType = RenderType.CardHeader,
+                        CssClass = "u-color-light--bg"
+                    }
+                },
+                new Block {
+                    Id = "RecurringOrderBody",
+                    SortId = 20,
+                    Template = RenderRecurringOrder(),
+                    Design = new Design {
+                        RenderType = RenderType.CardBody,
+                        CssClass = "u-color-light--bg " + recurringCardHeightClass
+                    }
+                }
+            }
+        };
+        recurringCheckoutPage.Add("OrderContainerRow", recurringOrderBlock);
+    }
+}
+
+@helper RenderRecurringOrder() {
+    string dateFormat = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+    string startDate = !string.IsNullOrEmpty(GetString("Ecom:Order.Recurring.StartDate.Clean")) ? GetDate("Ecom:Order.Recurring.StartDate.Clean").ToString(dateFormat) : "";
+    string endDate = !string.IsNullOrEmpty(GetString("Ecom:Order.Recurring.EndDate.Clean")) ? GetDate("Ecom:Order.Recurring.EndDate.Clean").ToString(dateFormat) : "";
+    dateFormat = dateFormat.Replace("dd", "d");
+    dateFormat = dateFormat.Replace("MM", "m");
+    dateFormat = dateFormat.Replace("yyyy", "Y");
+
+    @Render(new CheckboxField { 
+        Label = Translate("Create recurring order"), 
+        Name = "EcomRecurringOrderCreate", 
+        Id = "EcomRecurringOrderCreate", 
+        CssClass = "js-remember-state", 
+        Checked = GetBoolean("Ecom:Order.Recurring.Enabled"),
+        ExtraAttributes = new Dictionary<string, string>() {
+            { "data-expand", "EcomRecurringOrderCreate" }
+        }  
+    })
+
+    <div class="expandable--collapsed" data-trigger="EcomRecurringOrderCreate">
+        <div class="form__field-group dw-mod">
+            <label for="Country">@Translate("I want my order every")</label>
+            <div class="grid grid--external-bleed-x">
+                <div class="grid__col-6 grid__col--bleed-y">
+                    @{
+                        SelectField selectInterval = new SelectField
+                        {
+                            Id = "EcomOrderRecurringInterval",
+                            Name = "EcomOrderRecurringInterval",
+                            OnChange = "Cart.SubmitCart()",
+                            ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerState.ErrorMessage")
+                        };
+                        for (var i = 1; i <= 12; i++)
+                        {
+                            bool selected = GetInteger("Ecom:Order.Recurring.Interval") == i ? true : false;
+                            selectInterval.Options.Add(new SelectFieldOption { Label = i.ToString(), Value = i.ToString(), Checked = selected });
+                        }
+                        @Render(selectInterval)
+                    }
+                </div>
+                <div class="grid__col-6 grid__col--bleed-y">
+                    @{
+                        var units = new[] { "Days", "Weeks", "Months" };
+
+                        SelectField selectUnit = new SelectField
+                        {
+                            Id = "EcomOrderRecurringIntervalUnit",
+                            Name = "EcomOrderRecurringIntervalUnit",
+                            OnChange = "Cart.SubmitCart()",
+                            ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerState.ErrorMessage")
+                        };
+                        for (int i = 0; i < units.Length; i++)
+                        {
+                            bool selected = GetInteger("Ecom:Order.Recurring.IntervalUnit") == i ? true : false;
+                            selectUnit.Options.Add(new SelectFieldOption { Label = Translate(units[i]), Value = i.ToString(), Checked = selected });
+                        }
+                        @Render(selectUnit)
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid--external-bleed-x">
+            <div class="grid__col-6 grid__col--bleed-y">
+                @Render(new DateTimeField {
+                    Label = Translate("Start date"),
+                    Id = "EcomOrderRecurringStartDate",
+                    Name = "EcomOrderRecurringStartDate",
+                    Placeholder = Translate("Never"),
+                    Value = startDate,
+                    DateFormat = dateFormat,
+                    MinDate = "today"
+                })
+            </div>
+            <div class="grid__col-6 grid__col--bleed-y">
+                @Render(new DateTimeField {
+                    Label = Translate("And it should end on"),
+                    Id = "EcomOrderRecurringEndDate",
+                    Name = "EcomOrderRecurringEndDate",
+                    Placeholder = Translate("Never"),
+                    Value = endDate,
+                    DateFormat = dateFormat,
+                    MinDate = "today"
+                })
+            </div>
+        </div>
+    </div>
+}

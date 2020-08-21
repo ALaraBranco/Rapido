@@ -1,0 +1,76 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using System.Web
+@using Dynamicweb.Content
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+
+@* Include the components *@
+@Include("../../Components/GeneralComponents.cshtml")
+
+@{
+    BlocksPage requestAccountConfirmation = BlocksPage.GetBlockPage("RequestAccountConfirmation");
+    var receiptTemplateText = GetString("Submit.ReceiptTemplateText");
+    var table = new Table { Id = "ReceiptTable", CssClass = "table--fixed"};
+    foreach (LoopItem field in GetLoop("FieldValues").Where(f => f.GetString("SubmitData.Value").IsNotNullOrEmpty()))
+    {
+        string fieldType = field.GetString("Field.Type");
+                    
+        if (fieldType == "TextInput" || fieldType == "Textarea" || fieldType == "Email")
+        {
+            var tableRow = new TableRow { ExtraAttributes = new Dictionary<string, string> {{"style", "text-align:left; padding-left:20px"}}};
+            var leftCell = new TableCell {Content = Translate(field.GetString("SubmitData.Fieldname")), CssClass = "u-bold"};
+            var rightCell = new TableCell {Content = field.GetString("SubmitData.Value")};
+            tableRow.AddCells(leftCell, rightCell);
+            table.AddRows(tableRow);
+        }
+    }
+    Block receiptTitle = new Block
+    {
+        Id = "ReceiptTitle",
+        SortId = 10,
+       
+        Component = new Heading { Title = Translate("New Account request submitted"), Level = 2}
+    };
+    Block receiptWrapper = new Block
+    {
+        Id = "ReceiptWrapper",
+        SortId = 20,
+        Design = new Design
+        {
+            CssClass = "grid grid--justify-center",
+            RenderType = RenderType.None
+        }
+    };
+    Block receiptIntro = new Block
+    {
+        Id = "ReceiptIntro",
+        SortId = 10,
+        Component = new Text { Content = receiptTemplateText}
+    };
+    Block receiptTable = new Block
+    {
+        Id = "ReceiptTable",
+        SortId = 20,
+        Design = new Design
+        {
+            CssClass = " table--hover grid__col-12 u-no-padding-x"
+        },
+        Component = table
+    };
+    requestAccountConfirmation.Add(receiptTitle); 
+    requestAccountConfirmation.Add(receiptWrapper);
+    if (!String.IsNullOrEmpty(receiptTemplateText))
+    {
+        requestAccountConfirmation.Add("ReceiptWrapper", receiptIntro);
+    }
+    requestAccountConfirmation.Add("ReceiptWrapper",receiptTable); 
+}
+@RenderBlockList(requestAccountConfirmation.BlocksRoot.BlocksList)

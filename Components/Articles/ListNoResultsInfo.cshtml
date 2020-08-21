@@ -1,0 +1,11 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleListNoResultsInfo(ArticleListNoResultsInfo settings)
+{
+    <div class="u-margin-top--lg u-bold u-ta-center u-bold">@Translate(settings.Message)</div>
+}

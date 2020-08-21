@@ -1,0 +1,49 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@helper RenderTable(Table settings)
+{
+    Dictionary<string, string> attributes = new Dictionary<string, string>();
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    
+    var enumToClasses = new Dictionary<TableDesign, string> 
+    {
+        { TableDesign.Clean, "table--clean" },
+        { TableDesign.Bordered, "table--bordered" },
+        { TableDesign.Striped, "table--striped" },
+        { TableDesign.Hover, "table--hover" },
+        { TableDesign.Compact, "table--compact" },
+        { TableDesign.Condensed, "table--condensed" },
+        { TableDesign.NoTopBorder, "table--no-top-border" }
+    };
+    string tableDesignClass = "";
+    if (settings.Design != TableDesign.None) 
+    {
+        tableDesignClass = enumToClasses[settings.Design];
+    }
+
+    if (!string.IsNullOrEmpty(settings.CssClass) || settings.Design != TableDesign.None) { attributes.Add("class", "table " + tableDesignClass + " " + settings.CssClass + " dw-mod"); }
+    
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary(d => d.Key, d => d.Last().Value);
+
+    <table @ComponentMethods.AddAttributes(resultAttributes)>
+        @if (settings.Header != null)
+        {
+            <thead>
+                @Render(settings.Header)
+            </thead>
+        }
+        <tbody>
+            @foreach (var row in settings.GetRows())
+            {
+                @Render(row)
+            }
+        </tbody>
+        @if (settings.Footer != null)
+        {
+            <tfoot>
+                @Render(settings.Footer)
+            </tfoot>
+        }
+    </table>
+}

@@ -1,0 +1,33 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage informationPage = BlocksPage.GetBlockPage("RMADetails");
+}
+
+@{
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent")))
+    {
+        MediaListItem listItem = new MediaListItem
+        {
+            Title = Translate("ID") + ": " + GetString("Ecom:RMA.ID"),
+            CssClass = "media-list-item--gray"
+        };
+
+        listItem.AddInfoRow(Translate("Order ID"), GetString("Ecom:RMA.OrderID"));
+        listItem.AddInfoRow(Translate("State"), GetString("Ecom:RMA.Status"));
+        listItem.AddInfoRow(Translate("Date"), GetString("Ecom:RMA.Date"));
+        listItem.AddInfoRow(Translate("Type"), GetString("Ecom:RMA.Type.Name"));
+
+        Block informationBlock = new Block
+        {
+            Id = "Information",
+            SortId = 20,
+            Component = listItem
+        };
+        informationPage.Add("RmaDetailsContainer", informationBlock);
+    }
+}

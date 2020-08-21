@@ -1,0 +1,8 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@{
+    int newDefaultAccountId;
+    if (int.TryParse(System.Web.HttpContext.Current.Request["DefaultAccount"], out newDefaultAccountId))
+    {
+        Dna.AutoImpersonate.Helpers.SaveDefaultId(newDefaultAccountId.ToString());
+    }
+}

@@ -1,0 +1,322 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    BlocksPage miniCartBlocksPage = BlocksPage.GetBlockPage("Master");
+    string orderlinesView = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("OrderlinesView") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("OrderlinesView").SelectedValue : "table";
+
+    Block orderLines = new Block
+    {
+        Id = "MiniCartOrderLines",
+        SkipRenderBlocksList = true,
+        BlocksList = new List<Block>
+        {
+            new Block {
+                Id = "MiniCartOrderLinesList",
+                SortId = 20,
+                Template = RenderMiniCartOrderLinesList()
+            }
+        }
+    };
+
+    Block orderlinesScriptTemplates = new Block
+    {
+        Id = "OrderlinesScriptTemplates"
+    };
+
+    if (orderlinesView == "table")
+    {
+        orderLines.Template = RenderMiniCartOrderLinesTable();
+        orderLines.BlocksList.Add(
+            new Block {
+                Id = "MiniCartOrderlinesTableHeader",
+                SortId = 10,
+                Template = RenderMiniCartOrderLinesHeader()
+            }
+        );
+
+        orderlinesScriptTemplates.Template = RenderMiniCartScriptsTableTemplates();
+    }
+    else
+    {
+        orderLines.Template = RenderMiniCartOrderLinesBlocks();
+        orderlinesScriptTemplates.Template = RenderMiniCartScriptsListTemplates();
+    }
+
+    miniCartBlocksPage.Add("MasterBottomSnippets", orderlinesScriptTemplates);
+
+    Block miniCartScriptTemplates = new Block()
+    {
+        Id = "MasterMiniCartTemplates",
+        SortId = 1,
+        Template = RenderMiniCartScriptTemplates(),
+        SkipRenderBlocksList = true,
+        BlocksList = new List<Block>
+        {
+            orderLines,
+            new Block {
+                Id = "MiniCartFooter",
+                Template = RenderMiniCartFooter(),
+                SortId = 50,
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block>
+                {
+                    new Block {
+                        Id = "MiniCartFees",
+                        Template = RenderMiniCartFees(),
+                        SortId = 30
+                    },
+                    new Block {
+                        Id = "MiniCartPoints",
+                        Template = RenderMiniCartPoints(),
+                        SortId = 40
+                    },
+                    new Block {
+                        Id = "MiniCartTotal",
+                        Template = RenderMiniCartTotal(),
+                        SortId = 50
+                    },
+                    new Block {
+                        Id = "MiniCartDisclaimer",
+                        Template = RenderMiniCartDisclaimer(),
+                        SortId = 60
+                    },
+                    new Block {
+                        Id = "MiniCartActions",
+                        Template = RenderMiniCartActions(),
+                        SortId = 70
+                    }
+                }
+            }
+        }
+    };
+
+    miniCartBlocksPage.Add("MasterBottomSnippets", miniCartScriptTemplates);
+}
+
+@helper RenderMiniCartScriptsTableTemplates()
+{
+    <script id="MiniCartOrderline" type="text/x-template">
+        {{#unless isEmpty}}
+            <tr>
+                <td class="u-w60px"><a href="{{link}}" class="{{hideimage}}"><img class="b-lazy" src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=50&height=50&crop=5&Compression=75&image={{image}}" alt="{{name}}" title="{{name}}"></a></td>
+                <td class="u-va-middle">
+                    <a href="{{link}}" class="mini-cart-orderline__name" title="{{name}}">{{name}}</a>
+                    {{#if variantname}}
+                        <a href="{{link}}" class="mini-cart-orderline__name mini-cart-orderline__name--sm">{{variantname}}</a>
+                    {{/if}}
+                    {{#if unitname}}
+                        <div class="mini-cart-orderline__name mini-cart-orderline__name--sm">{{unitname}}</div>
+                    {{/if}}
+                </td>
+                <td class="u-ta-right u-va-middle">{{quantity}}</td>
+                <td class="u-ta-right u-va-middle">
+                    {{#if pointsTotal}}
+                        <span class="u-color--loyalty-points">{{pointsTotal}}</span> @Translate("points")
+                    {{else}}
+                        {{totalprice}}
+                    {{/if}}
+                </td>
+            </tr>
+        {{/unless}}
+    </script>
+
+    <script id="MiniCartOrderlineDiscount" type="text/x-template">
+        {{#unless isEmpty}}
+            <tr class="table__row--no-border">
+                <td class="u-w60px">&nbsp;</td>
+                <td><div class="mini-cart-orderline__name dw-mod">{{name}}</div></td>
+                <td class="u-ta-right">&nbsp;</td>
+                <td class="u-ta-right">{{totalprice}}</td>
+            </tr>
+        {{/unless}}
+    </script>
+}
+
+@helper RenderMiniCartScriptsListTemplates()
+{
+    int cartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+
+    <script id="MiniCartOrderline" type="text/x-template">
+        {{#unless isEmpty}}
+            <div class="mini-cart-orderline grid dw-mod">
+                <div class="grid__col-4">
+                    <a href="{{link}}" class="{{hideimage}}">
+                        <img class="b-lazy" src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=100&height=100&crop=5&Compression=75&image={{image}}" alt="{{name}}" title="{{name}}">
+                    </a>
+                </div>
+                <div class="grid__col-8">
+                    <a href="{{link}}" class="mini-cart-orderline__name mini-cart-orderline__name--truncate mini-cart-orderline__name--md u-padding-right--lg" title="{{name}}">{{name}}</a>
+                    {{#if variantname}}
+                        <div class="mini-cart-orderline__name mini-cart-orderline__name--sm dw-mod">@Translate("Variant"): {{variantname}}</div>
+                    {{/if}}
+                    {{#if unitname}}
+                        <div class="mini-cart-orderline__name mini-cart-orderline__name--sm dw-mod">@Translate("Unit"): {{unitname}}</div>
+                    {{/if}}
+                    <div class="mini-cart-orderline__name mini-cart-orderline__name--sm dw-mod">@Translate("Qty"): {{quantity}}</div>
+                    
+                    <div class="grid__cell-footer">
+                        <div class="grid__cell">
+                           <div class="u-pull--left mini-cart-orderline__price dw-mod">
+                                {{#if pointsTotal}}
+                                    <span class="u-color--loyalty-points">{{pointsTotal}}</span> @Translate("points")
+                                {{else}}
+                                    {{totalprice}}
+                                {{/if}}
+                            </div>
+                            <button type="button" title="@Translate("Remove orderline")" class="btn btn--clean btn--condensed u-pull--right mini-cart-orderline__remove-btn dw-mod" onclick="{{removeFromCartGoogleImpression}}; Cart.UpdateCart('miniCartContent', '/Default.aspx?ID=@cartFeedPageId', 'CartCmd=DelOrderLine&key={{orderLineId}}&redirect=false', true);">@Translate("Remove")</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{/unless}}
+    </script>
+
+    <script id="MiniCartOrderlineDiscount" type="text/x-template">
+        {{#unless isEmpty}}
+            <div class="mini-cart-orderline mini-cart-orderline--discount grid dw-mod">
+                <div class="grid__col-4">
+                    <div class="mini-cart-orderline__name mini-cart-orderline__name dw-mod">{{name}}</div>
+                </div>
+                <div class="grid__col-8">{{totalprice}}</div>
+            </div>
+        {{/unless}}
+    </script>
+}
+
+@helper RenderMiniCartScriptTemplates()
+{
+    List<Block> subBlocks = this.masterPage.GetBlockListById("MasterMiniCartTemplates").OrderBy(item => item.SortId).ToList();
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+    string cartPageLink = string.Concat("/Default.aspx?ID=", GetPageIdByNavigationTag("CartPage"));
+
+    <script id="MiniCartContent" type="text/x-template">
+        {{#.}}
+            {{#unless isEmpty}}
+                @RenderBlockList(subBlocks)
+            {{/unless}}
+        {{/.}}
+    </script>
+}
+
+@helper RenderMiniCartOrderLinesTable()
+{
+    List<Block> subBlocks = this.masterPage.GetBlockListById("MiniCartOrderLines").OrderBy(item => item.SortId).ToList();
+
+    <div class="u-overflow-auto">
+        <table class="table mini-cart-table dw-mod">
+            @RenderBlockList(subBlocks)
+        </table>
+    </div>
+}
+
+@helper RenderMiniCartOrderLinesBlocks()
+{
+    List<Block> subBlocks = this.masterPage.GetBlockListById("MiniCartOrderLines").OrderBy(item => item.SortId).ToList();
+
+    <div class="u-overflow-auto">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderMiniCartOrderLinesHeader()
+{
+    <thead>
+        <tr>
+            <td>&nbsp;</td>
+            <td>@Translate("Product")</td>
+            <td class="u-ta-right">@Translate("Qty")</td>
+            <td class="u-ta-right" width="120">@Translate("Price")</td>
+        </tr>
+    </thead>
+}
+
+@helper RenderMiniCartOrderLinesList()
+{
+    <text>
+        {{#OrderLines}}
+            {{#ifCond template "===" "CartOrderline"}}
+                {{>MiniCartOrderline}}
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineMobile"}}
+                {{>MiniCartOrderline}}
+            {{/ifCond}}
+            {{#ifCond template "===" "CartOrderlineDiscount"}}
+                {{>MiniCartOrderlineDiscount}}
+            {{/ifCond}}
+        {{/OrderLines}}
+    </text>
+}
+
+@helper RenderMiniCartFees()
+{
+        <div class="grid u-border-top grid--external-bleed-bottom">
+            <div class="grid__col-6">
+                {{paymentmethod}}
+            </div>
+            <div class="grid__col-6 grid--align-end">{{paymentfee}}</div>
+        </div>
+        <div class="grid grid--external-bleed-bottom">
+            <div class="grid__col-6">
+                {{shippingmethod}}
+            </div>
+            <div class="grid__col-6 grid--align-end">{{shippingfee}}</div>
+        </div>
+}
+
+@helper RenderMiniCartFooter()
+{
+    List<Block> subBlocks = this.masterPage.GetBlockListById("MiniCartFooter").OrderBy(item => item.SortId).ToList();
+
+    <div class="mini-cart__footer dw-mod">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderMiniCartActions()
+{
+    int cartPageId = GetPageIdByNavigationTag("CartPage");
+    
+    <button type="button" title="@Translate("Empty cart")" class="btn btn--secondary u-full-width dw-mod u-no-margin u-margin-bottom" onclick="googleEnchantImpressionEmptyCart(); Cart.EmptyCart(event);">@Translate("Empty cart")</button>
+    <a href="/Default.aspx?ID=@cartPageId" title="@Translate("Proceed to checkout")" class="btn btn--primary u-full-width u-no-margin dw-mod">@Translate("Proceed to checkout")</a>
+}
+
+@helper RenderMiniCartPoints()
+{ 
+    <text>
+        {{#if earnings}}
+            <div class="grid grid--external-bleed-bottom">
+                <div class="grid__col-6">@Translate("Earnings")</div>
+                <div class="grid__col-6 grid--align-end">
+                    <div>
+                        <span class="u-color--loyalty-points">{{earnings}}</span> @Translate("points")
+                    </div>
+                </div>
+            </div>
+        {{/if}}
+    </text>    
+}
+
+@helper RenderMiniCartTotal()
+{
+    <div class="mini-cart-totals grid u-margin-bottom dw-mod">
+        <div class="grid__col-6">@Translate("Total")</div>
+        <div class="grid__col-6 grid--align-end">{{totalprice}}</div>
+    </div>
+}
+
+@helper RenderMiniCartDisclaimer()
+{
+    <text>
+        {{#unless hideCheckoutDisclaimer}}
+        <div class="grid u-margin-bottom">
+            <small class="grid__col-12">{{checkoutDisclaimer}}</small>
+        </div>
+        {{/unless}}
+    </text>
+}

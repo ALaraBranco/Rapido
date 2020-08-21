@@ -1,0 +1,51 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderRadioButtonListField(RadioButtonListField settings)
+{
+    <div class="form__field-group @settings.CssClass u-margin-bottom dw-mod" @ComponentMethods.AddAttributes(settings.ExtraAttributes)>
+        @if (!string.IsNullOrEmpty(settings.Label))
+        {
+            <label>@settings.Label</label>
+        }
+        @if (!string.IsNullOrEmpty(settings.HelpText))
+        {
+            <small class="form__help-text">@settings.HelpText</small>
+        }
+
+        @foreach (var item in settings.Options)
+        {
+            if (settings.Required)
+            {
+                item.Required = true;
+            }
+            if (settings.Disabled)
+            {
+                item.Disabled = true;
+            }
+            if (!string.IsNullOrEmpty(settings.Name))
+            {
+                item.Name = settings.Name;
+            }
+            if (!string.IsNullOrEmpty(settings.Value) && settings.Value == item.Value)
+            {
+                item.Checked = true;
+            }
+            if (!string.IsNullOrEmpty(settings.OnClick))
+            {
+                item.OnClick = settings.OnClick;
+            }
+            if (!string.IsNullOrEmpty(settings.OnChange))
+            {
+                item.OnChange = settings.OnChange;
+            }
+            @Render(item)
+        }
+
+        @Render(new NotificationMessage { Message = settings.ErrorMessage })
+    </div>
+}

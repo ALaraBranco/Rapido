@@ -1,0 +1,270 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component for the articles *@
+
+@helper RenderArticleHeader(ArticleHeader settings) {
+    dynamic[] methodParameters = new dynamic[1]; 
+    methodParameters[0] = settings; 
+    MethodInfo customMethod = this.GetType().GetMethod("RenderArticleHeaderCustom");
+
+    if (customMethod != null)
+    {  
+        @customMethod.Invoke(this, methodParameters).ToString();                                         
+    } else {
+        switch (settings.Layout)
+        {
+            case ArticleHeaderLayout.Clean:
+                @RenderArticleCleanHeader(settings);
+                break;
+            case ArticleHeaderLayout.Split:
+                @RenderArticleSplitHeader(settings);
+                break;
+            case ArticleHeaderLayout.Banner:
+                @RenderArticleBannerHeader(settings);
+                break;
+            case ArticleHeaderLayout.Overlay:
+                @RenderArticleOverlayHeader(settings);
+                break;
+            default:
+                @RenderArticleCleanHeader(settings);
+                break;
+        }
+    }
+}
+
+@helper RenderArticleCleanHeader(ArticleHeader settings) {
+    dynamic[] methodParameters = new dynamic[1];
+    methodParameters[0] = settings;
+    MethodInfo customMethod = this.GetType().GetMethod("RenderArticleCleanHeaderCustom");
+
+    if (customMethod != null)
+    {
+            @customMethod.Invoke(this, methodParameters).ToString();
+    }
+    else
+    {
+        string contentColumns = settings.TextLayout != ArticleHeaderTextLayout.Full ? "8" : "12";
+
+        <div class="grid grid--align-content-start grid--justify-start">
+            <div class="grid__col-md-@contentColumns grid__col-sm-12 u-padding--lg dw-mod">
+                @if (!String.IsNullOrEmpty(settings.Category) || !String.IsNullOrEmpty(settings.Author) || !String.IsNullOrEmpty(settings.Date) || settings.RatingOutOf != 0)
+                {
+                    <div class="u-border-bottom u-padding-bottom">
+                        @if (!String.IsNullOrEmpty(settings.Category))
+                        {
+                            <div class="u-pull--left">
+                                <div class="article__category dw-mod" style="color: @settings.CategoryColor">@settings.Category</div>
+                            </div>
+                        }
+                        <div class="u-pull--right">
+                            @if (!String.IsNullOrEmpty(settings.Author) || !String.IsNullOrEmpty(settings.Date))
+                            {
+                                <small class="article__post-info dw-mod">@settings.Author @settings.Date</small>
+                            }
+                            @if (settings.RatingOutOf != 0)
+                            {
+                                @Render(new Rating { Score = settings.RatingScore, OutOf = settings.RatingOutOf })
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="grid__cell">
+                   @if (!String.IsNullOrEmpty(settings.Heading))
+                   {
+                        <h1 class="article__header article__header--giant dw-mod">@settings.Heading</h1>
+                   }
+                    @if (settings.Image != null)
+                    {
+                        if (settings.Image.Path != null)
+                        {
+                            <div class="u-padding-bottom--lg">
+                                @Render(settings.Image)
+                            </div>
+                        }
+                    }
+                    @if (!String.IsNullOrEmpty(settings.Subheading))
+                    {
+                        <div class="article__leadtext dw-mod">@settings.Subheading</div>
+                    }
+                    @if (!String.IsNullOrEmpty(settings.Link))
+                    {
+                        <div class="grid__cell">
+                            @Render(new Link { Href = settings.Link, Title = settings.LinkText, ButtonLayout = settings.ButtonLayout })
+                        </div>
+                    }
+                </div>
+            </div>
+            @if (settings.ExternalParagraphId != 0)
+            {
+                <div class="grid__col-md-4 grid__col-sm-12 u-padding--lg u-color-light-gray--bg dw-mod">
+                    @RenderParagraphContent(settings.ExternalParagraphId)
+                </div>
+            }
+        </div>
+    }
+}
+
+@helper RenderArticleSplitHeader(ArticleHeader settings) { 
+    dynamic[] methodParameters = new dynamic[1];
+    methodParameters[0] = settings;
+    MethodInfo customMethod = this.GetType().GetMethod("RenderArticleSplitHeaderCustom");
+
+    if (customMethod != null)
+    {
+        @customMethod.Invoke(this, methodParameters).ToString();
+    }
+    else
+    {
+        string headerColumnWidth = settings.ExternalParagraphId != 0 ? "4" : "6";
+    
+        if (settings.Image != null)
+        {
+            if (settings.Image.Path != null)
+            {
+                <section class="multiple-paragraphs-container paragraph-container--full-width">
+                    <div class="grid">
+                        <div class="grid__col-md-@headerColumnWidth grid__col-sm-12 grid__col-xs-12 paragraph-container paragraph-container--height-xl dw-mod">
+                            <div class="u-left-middle u-padding--lg">
+                                <div>
+                                    @if (!String.IsNullOrEmpty(settings.Category))
+                                    {
+                                        <div class="article__category dw-mod" style="color: @settings.CategoryColor">@settings.Category</div>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Heading))
+                                    {
+                                        <h1 class="article__header article__header--giant dw-mod">@settings.Heading</h1>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Subheading))
+                                    {
+                                        <div class="article__leadtext dw-mod">@settings.Subheading</div>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Author) || !String.IsNullOrEmpty(settings.Date))
+                                    {
+                                        <small class="article__post-info u-pull--left dw-mod">@settings.Author @settings.Date</small>
+                                    }
+                                    @if (settings.RatingOutOf != 0)
+                                    {
+                                        <div class="u-pull--right">
+                                            @Render(new Rating { Score = settings.RatingScore, OutOf = settings.RatingOutOf })
+                                        </div>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Link)) {
+                                        @Render(new Link { Href = settings.Link, Title = settings.LinkText, ButtonLayout = settings.ButtonLayout })
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid__col-md-@headerColumnWidth grid__col-sm-12 grid__col-xs-12 paragraph-container paragraph-container--height-auto dw-mod" style="background-image:url(/Admin/Public/GetImage.ashx?width=1800&amp;height=1100&amp;crop=0&amp;Compression=85&amp;DoNotUpscale=true&amp;image=@settings.Image.Path); background-position: center center; background-size: cover;"></div>
+                        @if (settings.ExternalParagraphId != 0)
+                        {
+                            <div class="grid__col-md-4 grid__col-sm-12 grid__col-xs-12 paragraph-container paragraph-container--height-auto u-color-light-gray--bg dw-mod">
+                                @RenderParagraphContent(settings.ExternalParagraphId)
+                            </div> 
+                        }
+                    </div>
+                </section>
+            }
+        }
+        else
+        {
+            @RenderArticleCleanHeader(settings);
+        } 
+    }   
+}
+
+@helper RenderArticleOverlayHeader(ArticleHeader settings) {
+    dynamic[] methodParameters = new dynamic[1];
+    methodParameters[0] = settings;
+    MethodInfo customMethod = this.GetType().GetMethod("RenderArticleOverlayHeaderCustom");
+
+    if (customMethod != null)
+    {
+        @customMethod.Invoke(this, methodParameters).ToString();
+    }
+    else
+    {
+        string contentColumns = settings.TextLayout != ArticleHeaderTextLayout.Full ? "8" : "12";
+        string contentAlignment = settings.TextLayout == ArticleHeaderTextLayout.Center ? "grid--justify-center" : "";
+
+        if (settings.Image != null)
+        {
+            if (settings.Image.Path != null)
+            {
+                if (settings.ExternalParagraphId == 0)
+                {
+                    <section class="multiple-paragraphs-container u-color-light paragraph-container--full-width">
+                        <div class="background-image image-filter image-filter--darken dw-mod">
+                            <div class="background-image__wrapper image-filter image-filter--darken dw-mod">
+                                @{ 
+                                    settings.Image.CssClass += "background-image__cover dw-mod";
+                                }
+                                @Render(settings.Image)
+                            </div>
+                        </div>
+                        <div class="center-container dw-mod">
+                            <div class="grid @contentAlignment">
+                                <div class="grid__col-md-@contentColumns grid__col-xs-12 paragraph-container paragraph-container--height-xl u-no-padding dw-mod">
+                                    @if (!String.IsNullOrEmpty(settings.Heading))
+                                    {
+                                        <h1 class="article__header article__header--giant u-padding-top--lg dw-mod" style="color: @settings.TextColor">@settings.Heading</h1>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Subheading))
+                                    {
+                                        <div class="article__leadtext dw-mod" style="color: @settings.TextColor">@settings.Subheading</div>
+                                    }
+                                    <div class="u-margin-top">
+                                        @if (!String.IsNullOrEmpty(settings.Author) || !String.IsNullOrEmpty(settings.Date))
+                                        {
+                                            <small class="article__post-info u-pull--left dw-mod" style="color: @settings.TextColor">@settings.Author @settings.Date</small>
+                                        }
+                                        @if (settings.RatingOutOf != 0)
+                                        {
+                                            <div class="u-pull--right">
+                                                @Render(new Rating { Score = settings.RatingScore, OutOf = settings.RatingOutOf })
+                                            </div>
+                                        }
+                                    </div>
+                                    @if (!String.IsNullOrEmpty(settings.Link))
+                                    {
+                                        <div class="grid__cell">
+                                            @Render(new Link { Href = settings.Link, Title = settings.LinkText, ButtonLayout = settings.ButtonLayout })
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                }
+                else
+                {
+                    @RenderArticleBanner(settings);
+                }
+            }
+        }
+        else
+        {
+            @RenderArticleCleanHeader(settings);
+        }
+    }
+}
+
+@helper RenderArticleBannerHeader(dynamic settings) { 
+    dynamic[] methodParameters = new dynamic[1];
+    methodParameters[0] = settings;
+    MethodInfo customMethod = this.GetType().GetMethod("RenderArticleBannerHeaderCustom");
+
+    if (customMethod != null)
+    {
+        @customMethod.Invoke(this, methodParameters).ToString();
+    }
+    else
+    {
+        @RenderArticleBanner(settings);
+    }
+}

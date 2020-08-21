@@ -1,0 +1,21 @@
+﻿@using Dynamicweb.Rendering
+@using Dynamicweb.Ecommerce.ProductCatalog
+@inherits ViewModelTemplate<ProductListViewModel>
+
+@{
+    string apiUrl = "/dwapi/products/getProductList?LanguageID=Lang1&CurrencyCode=EUR&ProductIds=";
+
+    string productIDs = "";
+
+    foreach (var product in Model.Products)
+    {
+        productIDs += product.Id + ",";
+    }
+
+    apiUrl += productIDs;
+}
+
+@apiUrl
+
+
+

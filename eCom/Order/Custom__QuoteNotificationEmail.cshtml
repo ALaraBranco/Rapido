@@ -1,0 +1,91 @@
+@inherits RazorTemplateBase<RazorTemplateModel<Template>>
+@using Dynamicweb.Rendering;
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Security;
+@MasterPageFile("../../RizzoEmailMaster.cshtml")
+@Include("../../RizzoEmailHelpers.cshtml")
+
+@CreatePreheader(GetString("Ecom:Order.ReceiptURL"))
+
+<table bgcolor="#FFFFFF" border="0" cellpadding="0" cellspacing="0" width="500" id="emailBody">
+    @RenderHeaderSection()
+    @RenderMessage()
+    @RenderOrderList()
+    @RenderGiftcards()
+    @RenderComments()
+    @RenderReviewButton()
+    @RenderFooterSection()
+</table>
+
+@* CONTENT HELPERS *@
+
+@helper RenderHeaderSection()
+{
+    @RenderHeaderImage();
+    
+    Column info = new Column();
+    info.header = Translate("Quote Notification");
+    info.text.Add(Translate("Quote no.") + " " + GetString("Ecom:Order.ID"));
+    info.align = "center";
+
+    @CreateRow(info);
+
+    @CreateRowDivider();
+}
+
+@helper RenderMessage()
+{  Column message = new Column();
+    message.text.Add(Translate("Hi") + " " + GetString("EmailMessaging:Recipient.Name"));
+    message.text.Add("");
+    message.text.Add(Translate("A new Quote Cart was submitted at") + " <a href='" + Dynamicweb.Context.Current.Request.Url.Scheme + "://" + GetGlobalValue("Global:Request.Host") + "'>" + GetGlobalValue("Global:Request.Host") + "</a> " + Translate("and is awaiting for your followup") + ".");
+    message.text.Add(Translate("As an extra service we therefore send you this mail") + ".");
+
+    @CreateRow(message);
+}
+
+@helper RenderOrderList()
+{
+    foreach (LoopItem orderline in GetLoop("OrderLines"))
+    {
+        @RenderOrderline(orderline);
+
+        @CreateRowDivider();
+    }
+
+    @RenderSummary();
+    @RenderTotal();
+}
+
+
+@helper RenderSummary()
+{
+    Column summaryLeft = new Column();
+    summaryLeft.text.Add(Translate("Total"));
+    summaryLeft.text.Add(Translate("VAT"));
+
+    Column summaryRight = new Column();
+    summaryRight.text.Add(GetString("Ecom:Order.Price.PriceWithoutVATFormatted"));
+    summaryRight.text.Add(GetString("Ecom:Order.Price.VATFormatted"));
+    summaryRight.align = "right";
+
+    @CreateRow(summaryLeft, summaryRight);
+}
+
+
+@helper RenderTotal()
+{
+    Column totalsLeft = new Column();
+    totalsLeft.subheader = Translate("Total");
+
+    Column totalsRight = new Column();
+    totalsRight.subheader = GetString("Ecom:Order.Price.PriceWithVATFormatted");
+    totalsRight.align = "right";
+
+    @CreateRow(totalsLeft, totalsRight, new RowSettings { backgroundColor = "#e4e4e4" });
+}
+
+@helper RenderReviewButton()
+{
+    @RenderButton(GetString("Ecom:Order.ReceiptURL"), "Review quote online");
+}

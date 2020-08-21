@@ -1,0 +1,59 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage productGroupsPage = BlocksPage.GetBlockPage("ProductGroups");
+}
+
+@{
+    var groupsGrid = new Block
+    {
+        Id = "GroupsGrid",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--external-bleed-x"
+        },
+        Template = RenderGroups()
+    };
+
+    productGroupsPage.Add(groupsGrid);
+}
+
+@helper RenderGroups()
+{
+    foreach (LoopItem item in GetLoop("Groups"))
+    {
+        <div class="grid__col-lg-3 grid__col-md-3 grid__col-sm-6 grid__col-xs-12">
+            @Render(new Heading { Title = item.GetString("Ecom:Group.Name"), Level = 3, CssClass = "u-no-margin", Link = item.GetString("Ecom:Group.Link.Clean") })
+            @if (!string.IsNullOrEmpty(item.GetString("Ecom:Group.SmallImage")))
+            {
+                @Render(new Image
+               {
+                   Path = item.GetString("Ecom:Group.SmallImage"),
+                   Title = item.GetString("Ecom:Group.Name"),
+                   ImageDefault = new ImageSettings
+                   {
+                       Width = 300,
+                       Height = 180,
+                       Crop = 5,
+                       Compression = 75,
+                       FillCanvas = true,
+                       DoNotUpscale = true
+                   },
+                   Link = item.GetString("Ecom:Group.Link.Clean")
+               })
+            }
+        </div>
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+
+@* Include the Blocks for the page *@
+
+@RenderBlockList(productGroupsPage.BlocksRoot.BlocksList)

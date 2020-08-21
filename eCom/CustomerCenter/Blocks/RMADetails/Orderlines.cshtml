@@ -1,0 +1,73 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage orderlinesPage = BlocksPage.GetBlockPage("RMADetails"); 
+}
+
+@{
+    Block orderlines = new Block
+    {
+        Id = "RmaDetailsOrderLines",
+        SortId = 30,
+        Design = new Design
+        {
+            CssClass = "js-order-lines-container"
+        },
+        Template = RenderOrderLines()
+    };
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasRMAOrderLines"))) {
+        orderlinesPage.Add("RmaDetailsForm", orderlines);
+    }
+}
+
+@helper RenderOrderLines() {
+    foreach (LoopItem orderline in GetLoop("RMAOrderLines"))
+    {
+        <div class="u-margin-top--lg">
+            @RenderRmaDetailsOrderLine(orderline)
+        </div>
+    }    
+}
+
+@helper RenderRmaDetailsOrderLine(LoopItem orderline)
+{
+    string header = Translate("Product No") + ": " + orderline.GetString("Ecom:RMA:OrderLine.ProductNumber");
+    bool hasOrderlineAddContent = !string.IsNullOrWhiteSpace(orderline.GetString("Ecom:CustomerCenter.RMA.HasAddContent"));
+    bool hasOrderlineAddComment = !string.IsNullOrWhiteSpace(orderline.GetString("Ecom:CustomerCenter.RMA.HasAddComment"));
+
+    MediaListItem listItem = new MediaListItem { };
+
+    listItem.AddInfoRow(Translate("Quantity"), orderline.GetString("Ecom:RMA:OrderLine.Quantity"));
+    listItem.AddInfoRow(Translate("Description"), orderline.GetString("Ecom:RMA:OrderLine.ProductName"));
+    listItem.AddInfoRow(Translate("Total price"), orderline.GetString("Ecom:RMA:OrderLine.TotalPrice"));
+
+    if (hasOrderlineAddContent)
+    {
+        string orderlineid = GetString("ParagraphID") + "OrderLineID" + orderline.GetString("Ecom:RMA:OrderLine.ID");
+        string sernumbid = GetString("ParagraphID") + "SerNumber" + orderline.GetString("Ecom:RMA:OrderLine.ID");
+        string commentcontid = GetString("ParagraphID") + "ProductCommentContainer" + orderline.GetString("Ecom:RMA:OrderLine.ID");
+
+        listItem.Title = Render(new CheckboxField { Id = orderlineid, Name = orderlineid, Label = header, OnClick = "setRmaItem(this.checked, '" + sernumbid + "', '" + commentcontid + "');" }).ToString();
+    }
+    else
+    {
+        listItem.Title = header;
+    }
+
+    if (hasOrderlineAddComment)
+    {
+        string commentContainerId = orderline.GetString("ParagraphID") + "ProductCommentContainer" + orderline.GetString("Ecom:RMA:OrderLine.ID");
+        string commentId = orderline.GetString("ParagraphID") + "ProductComment" + orderline.GetString("Ecom:RMA:OrderLine.ID");
+
+        <div id="@commentContainerId" class="u-margin-top">
+            @Render(new TextareaField { Id = commentId, Name = commentId, Rows = 3, Label = Translate("Add comment"), CssClass = "u-full-width" })
+        </div>
+    }
+
+    @Render(listItem);
+}

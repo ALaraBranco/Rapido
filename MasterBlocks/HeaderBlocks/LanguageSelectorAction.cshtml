@@ -1,0 +1,68 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Core;
+@using System.Text.RegularExpressions
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    Block masterDesktopActionsMenuLanguageSelector = new Block
+    {
+        Id = "MasterDesktopActionsMenuLanguageSelector",
+        SortId = 40,
+        Template = RenderLanguageSelector()
+    };
+
+    BlocksPage.GetBlockPage("Master").Add("MasterDesktopActionsMenu", masterDesktopActionsMenuLanguageSelector);
+}
+
+@helper RenderLanguageSelector()
+{
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string liClasses = topLayout != "normal" ? "menu__item--top-level u-hidden-xxs" : "menu--clean";
+    string menuLinkClass = topLayout != "normal" ? "menu__link menu__link--icon" : "header-menu__link header-menu__link--icon";
+    string languageViewType = !string.IsNullOrEmpty(Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("LanguageSelector").SelectedValue) ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("LanguageSelector").SelectedValue.ToLower() : "";
+
+    if (Model.Languages.Count > 1)
+    {
+        <li class="menu__item menu__item--horizontal @liClasses menu__item--icon is-dropdown is-dropdown--no-icon dw-mod">
+            <div class="@menuLinkClass dw-mod" title="@Translate("Language")">
+                <i class="@Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("LanguageIcon").SelectedValue fa-1_5x"></i>
+            </div>
+            <div class="menu menu--dropdown menu--dropdown-right languages-dropdown dw-mod grid__cell">
+                @foreach (var lang in Model.Languages)
+                {
+                    string langInfo = "<span class=\"flag-icon flag-icon-" + Dynamicweb.Services.Areas.GetArea(lang.ID).EcomCountryCode.ToLower() + " u-margin-right\"></span>" + lang.Name;
+                    string cultureName = Regex.Replace(Dynamicweb.Services.Areas.GetArea(lang.ID).CultureInfo.NativeName, @" ?\(.*?\)", string.Empty);
+                    cultureName = char.ToUpper(cultureName[0]) + cultureName.Substring(1);
+
+                    if (languageViewType == "flag-culture")
+                    {
+                        langInfo = "<span class=\"flag-icon flag-icon-" + Dynamicweb.Services.Areas.GetArea(lang.ID).EcomCountryCode.ToLower() + " \"></span> " + cultureName;
+                    }
+
+                    if (languageViewType == "flag")
+                    {
+                        langInfo = "<span class=\"flag-icon flag-icon-" + Dynamicweb.Services.Areas.GetArea(lang.ID).EcomCountryCode.ToLower() + " \"></span>";
+                    }
+
+                    if (languageViewType == "name")
+                    {
+                        langInfo = lang.Name;
+                    }
+
+                    if (languageViewType == "culture")
+                    {
+                        langInfo = cultureName;
+                    }
+
+                    <div class="menu__item dw-mod menu__item--fixed-width">
+                        <a href="/Default.aspx?AreaID=@Dynamicweb.Services.Pages.GetPage(lang.Page.ID).Area.ID" class="menu-dropdown__link dw-mod">@langInfo</a>
+                    </div>
+                }
+            </div>
+        </li>
+    }
+}

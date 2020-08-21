@@ -1,0 +1,75 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Configuration;
+@using Dynamicweb.Core;
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+}
+
+@Include("../../../eCom/Stickers.cshtml")
+@Include("../../../GetProductImage.cshtml")
+
+@functions {
+    public class Product
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public string number { get; set; }
+        public string price { get; set; }
+        public string viewMoreText { get; set; }
+        public string stockState { get; set; }
+        public string stockText { get; set; }
+        public string deliveryText { get; set; }
+        public string discount { get; set; }
+        public string onSale { get; set; }
+        public string shortGridInfo { get; set; }
+        public string link { get; set; }
+        public string image { get; set; }
+        public string noImage { get; set; }
+        public string secondaryImage { get; set; }
+
+        public List<StickersCollection> StickersContainers { get; set; }
+    }
+}
+
+@{
+    List<Product> feedObject = new List<Product>();
+    bool onlyPreview = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Pageview.User == null;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+
+    foreach (LoopItem product in GetLoop("Products"))
+    {
+        Product productObject = new Product();
+        productObject.id = product.GetString("Ecom:Product.ID");
+        productObject.name = product.GetString("Ecom:Product.Name");
+        productObject.stockState = product.GetInteger("Ecom:Product.Stock") > 0 ? "stock-icon--in" : "stock-icon--not";
+        productObject.stockText = product.GetString("Ecom:Product:Stock.Text");
+        productObject.deliveryText = string.IsNullOrEmpty(product.GetString("Ecom:Product:Stock.DeliveryText")) ? "" : ", " + Translate("Delivery") + " " + product.GetString("Ecom:Product:Stock.DeliveryText") + " " + product.GetString("Ecom:Product:Stock.DeliveryUnit");
+        productObject.number = product.GetString("Ecom:Product.Number");
+        productObject.discount = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Price.PriceFormatted") : "";
+        productObject.price = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") != product.GetString("Ecom:Product.Price.PriceFormatted") ? product.GetString("Ecom:Product.Discount.Price.PriceFormatted") : product.GetString("Ecom:Product.Price.PriceFormatted");
+        productObject.onSale = product.GetString("Ecom:Product.Discount.Price.PriceFormatted") == product.GetString("Ecom:Product.Price.PriceFormatted") ? "u-hidden" : "";
+        productObject.link = "/" + product.GetString("Ecom:Product.LinkGroup.Clean") + (!String.IsNullOrEmpty(product.GetString("Ecom:Product.VariantID")) ? "&VariantID=" + product.GetString("Ecom:Product.VariantID") : "");
+        productObject.image = GetProductImage(product);
+        productObject.noImage = string.IsNullOrEmpty(GetProductImage(product)) ? "u-hidden" : "";
+        productObject.viewMoreText = Translate("View");
+        productObject.shortGridInfo = onlyPreview ? "product-list__grid-item__price-info--short" : "";
+        productObject.secondaryImage = product.GetLoop("Ecom:Product.AlternativeImages").FirstOrDefault(im => !string.IsNullOrEmpty(im.GetString("Ecom:Product.AlternativeImages.Image"))) != null ? product.GetLoop("Ecom:Product.AlternativeImages").FirstOrDefault(im => !string.IsNullOrEmpty(im.GetString("Ecom:Product.AlternativeImages.Image"))).GetString("Ecom:Product.AlternativeImages.Image") : String.Empty;
+
+        productObject.StickersContainers = GetStickersContainersList(
+            product.GetLoop("ProductDiscounts"),
+            product.GetDouble("Ecom:Product.Discount.Price.Price"),
+            product.GetDouble("Ecom:Product.Price.Price"),
+            product.GetDate("Ecom:Product.Created"),
+            product.GetString("Ecom:Product:Field.CustomSticker.Value")
+        );
+
+        feedObject.Add(productObject);
+    }
+
+    string jsonFeed = Newtonsoft.Json.JsonConvert.SerializeObject(feedObject);
+}
+
+@jsonFeed

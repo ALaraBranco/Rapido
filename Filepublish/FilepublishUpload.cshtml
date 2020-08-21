@@ -1,0 +1,27 @@
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{
+    Form form = new Form { Action = "/admin/public/Upload.aspx", Method = FormMethod.Post, Enctype = FormEnctype.multipart };
+    form.Add(new HiddenField { Name = "Notify", Value = GetString("FilepublishUploadNotify") });
+    form.Add(new HiddenField { Name = "Folder", Value = GetString("FilepublishUploadFolder") });
+    form.Add(new HiddenField { Name = "Subject", Value = GetString("FilepublishUploadSubject") });
+    form.Add(new HiddenField { Name = "Recipient", Value = GetString("FilepublishUploadRecipient") });
+    form.Add(new HiddenField { Name = "RecipientCC", Value = GetString("FilepublishUploadRecipientCC") });
+    form.Add(new HiddenField { Name = "RecipientBCC", Value = GetString("FilepublishUploadRecipientBCC") });
+    form.Add(new HiddenField { Name = "Text", Value = GetString("FilepublishUploadText") });
+    form.Add(new HiddenField { Name = "Confirm", Value = GetString("FilepublishUploadConfirm") });
+    form.Add(new FileField {
+        Name = "File",
+        Multiple = true,
+        UploadButton = new Button
+        {
+            ButtonType = ButtonType.Submit,
+            Title = Translate("Upload")
+        }
+    });
+}
+@Render(form)
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+@Include("../Components/GeneralComponents.cshtml")

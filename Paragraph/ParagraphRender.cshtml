@@ -1,0 +1,308 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using Dynamicweb.Frontend
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    public class ContentParagraph
+    {
+        public string Title { get; set; }
+        public Image Image { get; set; }
+        public string Text { get; set; }
+        public string Link { get; set; }
+        public bool SetImageAsBackground { get; set; }
+        public bool HideOuterPadding { get; set; }
+        public string InnerPaddingCss { get; set; }
+        public string CardCss { get; set; }
+        public string ButtonWrapperCss { get; set; }
+        public string Layout { get; set; }
+        public string Module { get; set; }
+        public Link ButtonPrimary { get; set; }
+        public Link ButtonSecondary { get; set; }
+    }
+}
+
+@helper RenderParagraph(ItemViewModel item)
+{
+    if (item != null) {
+        string layout = item.GetList("ContentPositions").SelectedValue;
+
+        string paragraphClasses = "";
+        string paragraphWidth = !String.IsNullOrEmpty(item.GetString("Width")) ? item.GetList("Width").SelectedValue : "12";
+        paragraphClasses += " grid__col-lg-" + paragraphWidth + " grid__col-md-" + paragraphWidth + " grid__col-sm-" + paragraphWidth;
+        paragraphClasses += " grid__col-xs-" + item.GetList("WidthMobile").SelectedValue;
+        paragraphClasses += item.GetBoolean("HidePadding") ? " paragraph-container--no-padding" : "";
+        paragraphClasses += layout == "middle-center" || layout == "middle-left" ? " u-middle-horizontal grid--justify-center grid--align-self-center" : "";
+        var designLayout = Model.Item.GetItem("CustomSettings") != null ? Model.Item.GetItem("CustomSettings").GetString("DesignLayout") != null ? Model.Item.GetItem("CustomSettings").GetList("DesignLayout").SelectedValue : "" : "";
+        paragraphClasses += !String.IsNullOrEmpty(designLayout) ? (" " + designLayout) : "";
+
+        string title = item.GetBoolean("ShowTitle") ? item.GetString("Title") : "";
+        string cardClass = item.GetBoolean("ShowAsCard") ? "paragraph-card" : "grid__cell";
+        cardClass = Pageview.Device.ToString() != "Tablet" ? cardClass : "grid__cell";
+        string buttonSpacing = "";
+        string buttonAlignment = layout == "all-centered" || layout == "middle-center" ? "grid--justify-center" : "";
+
+        string image = item.GetFile("Image") != null ? item.GetFile("Image").ToString() + "&" + item.GetFile("Image").GetFocalPointParameters() : "";
+        int cropMode = !String.IsNullOrEmpty(Converter.ToString(item.GetList("ImageCrop"))) ? Convert.ToInt32(item.GetList("ImageCrop").SelectedValue) : 0;
+        ImageStyle imageStyle = item.GetList("ImageStyle").SelectedValue == "ball" ? ImageStyle.Ball : ImageStyle.None;
+        ButtonLayout primaryButtonLayout = !String.IsNullOrEmpty(item.GetList("ButtonDesign").SelectedValue) ? (ButtonLayout)System.Enum.Parse(typeof(ButtonLayout), char.ToUpper(item.GetList("ButtonDesign").SelectedValue[0]) + item.GetList("ButtonDesign").SelectedValue.Substring(1)) : ButtonLayout.Primary;
+        ButtonLayout secondaryButtonLayout = !String.IsNullOrEmpty(item.GetList("SecondaryButtonDesign").SelectedValue) ? (ButtonLayout)System.Enum.Parse(typeof(ButtonLayout), char.ToUpper(item.GetList("SecondaryButtonDesign").SelectedValue[0]) + item.GetList("SecondaryButtonDesign").SelectedValue.Substring(1)) : ButtonLayout.Secondary;
+        ImageFilter primaryImageFilter = !String.IsNullOrEmpty(item.GetList("ImageFilterPrimary").SelectedValue) ? (ImageFilter)System.Enum.Parse(typeof(ImageFilter), char.ToUpper(item.GetList("ImageFilterPrimary").SelectedValue[0]) + item.GetList("ImageFilterPrimary").SelectedValue.Substring(1)) : ImageFilter.None;
+        ImageFilter secondaryImageFilter = !String.IsNullOrEmpty(item.GetList("ImageFilterSecondary").SelectedValue) ? (ImageFilter)System.Enum.Parse(typeof(ImageFilter), char.ToUpper(item.GetList("ImageFilterSecondary").SelectedValue[0]) + item.GetList("ImageFilterSecondary").SelectedValue.Substring(1)) : ImageFilter.None;
+        string imageFilterColorCode = item.GetString("ColorForTheFilter").StartsWith("#") && primaryImageFilter == ImageFilter.Colorize ? GenerateRgba(item.GetString("ColorForTheFilter"), 0.3) : "";
+        bool setImageAsBackground = item.GetList("ImageStyle").SelectedValue.ToLower() == "background" ? true : false;
+
+        Image paragraphImage = null;
+        if (!String.IsNullOrEmpty(image))
+        {
+            paragraphImage = new Image
+            {
+                Path = image,
+                Link = item.GetString("Link"),
+                FilterPrimary = primaryImageFilter,
+                FilterSecondary = secondaryImageFilter,
+                FilterColor = imageFilterColorCode,
+                Style = imageStyle,
+                ImageDefault = new ImageSettings
+                {
+                    Crop = cropMode,
+                    Height = 875,
+                    Width = 1920
+                },
+                ImageMedium = new ImageSettings
+                {
+                    Crop = cropMode,
+                    Height = 450,
+                    Width = 1024
+                },
+                ImageSmall = new ImageSettings
+                {
+                    Crop = cropMode,
+                    Height = 544,
+                    Width = 640
+                }
+            };
+        }
+
+        if (paragraphWidth != "auto" && paragraphImage != null) {
+            if (Convert.ToInt32(paragraphWidth) < 7)
+            {
+                paragraphImage.ImageDefault = new ImageSettings
+                {
+                    Crop = cropMode,
+                    Height = 544,
+                    Width = 640
+                };
+            }
+        }
+
+        ContentParagraph paragraph = new ContentParagraph
+        {
+            Title = title,
+            Text = item.GetString("Text"),
+            Image = paragraphImage,
+            Link = item.GetString("Link"),
+            Module = !String.IsNullOrEmpty(Model.GetModuleOutput()) ? Model.GetModuleOutput() : "",
+            InnerPaddingCss = item.GetList("InnerPadding") != null ? "paragraph-container__body--padding-" + item.GetList("InnerPadding").SelectedValue : "",
+            CardCss = cardClass,
+            HideOuterPadding = item.GetBoolean("HidePadding"),
+            SetImageAsBackground = item.GetList("ImageStyle").SelectedValue.ToLower() == "background" ? true : false,
+            ButtonWrapperCss = buttonSpacing + buttonAlignment,
+            Layout = layout
+        };
+
+        if (!String.IsNullOrEmpty(item.GetString("Link")))
+        {
+            paragraph.ButtonPrimary = new Link
+            {
+                Href = item.GetString("Link"),
+                Title = item.GetString("LinkText"),
+                ButtonLayout = primaryButtonLayout
+            };
+        }
+
+        if (!String.IsNullOrEmpty(item.GetString("SecondaryLink")))
+        {
+            paragraph.ButtonSecondary = new Link
+            {
+                Href = item.GetString("SecondaryLink"),
+                Title = item.GetString("SecondaryLinkText"),
+                ButtonLayout = secondaryButtonLayout
+            };
+        }
+
+        <div class="paragraph-container @paragraphClasses dw-mod">
+            @if (setImageAsBackground == true && paragraphImage != null)
+            {
+                paragraphImage.CssClass = "background-image__cover";
+
+                <div class="background-image dw-mod">
+                    <div class="background-image__wrapper dw-mod">
+                        @Render(paragraphImage)
+                    </div>
+                </div>
+            }
+        @{
+            switch (layout)
+            {
+                case "title-top":
+                    @SetLayoutTitleTop(paragraph);
+                    break;
+                case "image-left":
+                    @SetLayoutImageLeft(paragraph);
+                    break;
+                case "image-right":
+                    @SetLayoutImageRight(paragraph);
+                    break;
+                case "all-centered":
+                    @SetLayoutAllCentered(paragraph);
+                    break;
+                case "middle-center":
+                case "middle-left":
+                    @SetLayoutMiddle(paragraph);
+                    break;
+                default:
+                    @SetLayoutImageTop(paragraph);
+                    break;
+            }
+        }
+        </div>
+    }
+}
+
+
+@helper SetLayoutTitleTop(ContentParagraph settings) {
+    <div class="@settings.CardCss @settings.InnerPaddingCss dw-mod">
+        @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+        @if (!settings.SetImageAsBackground && settings.Image != null)
+        {
+            <div class="u-margin-bottom--lg">
+                @Render(settings.Image)
+            </div>
+        }
+        @Render(new Text { Content = settings.Text})
+        @Render(new ContentModule { Content = settings.Module })
+
+        <div class="grid__cell">
+            <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+                @Render(settings.ButtonPrimary)
+                @Render(settings.ButtonSecondary)
+            </div>
+        </div>
+    </div>
+}
+
+@helper SetLayoutImageLeft(ContentParagraph settings) {
+    <div class="grid">
+        @if (!settings.SetImageAsBackground && settings.Image != null)
+        {
+            <div class="u-margin-bottom--lg">
+                @Render(settings.Image)
+            </div>
+        }
+        <div class="grid__col-9 @settings.InnerPaddingCss dw-mod">
+            @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+            @Render(new Text { Content = settings.Text })
+            @Render(new ContentModule { Content = settings.Module })
+            <div class="grid__cell">
+                <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+                    @Render(settings.ButtonPrimary)
+                    @Render(settings.ButtonSecondary)
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@helper SetLayoutImageRight(ContentParagraph settings) {
+    <div class="grid">
+        <div class="grid__col-9 @settings.InnerPaddingCss dw-mod">
+            @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+            @Render(new Text { Content = settings.Text })
+            @Render(new ContentModule { Content = settings.Module })
+            <div class="grid__cell">
+                <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+                    @Render(settings.ButtonPrimary)
+                    @Render(settings.ButtonSecondary)
+                </div>
+            </div>
+        </div>
+        <div class="grid__col-3">
+            @if (!settings.SetImageAsBackground && settings.Image != null)
+            {
+                <div class="u-margin-bottom--lg">
+                    @Render(settings.Image)
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@helper SetLayoutAllCentered(ContentParagraph settings) {
+    <div class="@settings.CardCss @settings.InnerPaddingCss dw-mod">
+        <div class="u-ta-center">
+            @if (!settings.SetImageAsBackground && settings.Image != null)
+            {
+                <div class="u-margin-bottom--lg">
+                    @Render(settings.Image)
+                </div>
+            }
+            @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+            @Render(new Text { Content = settings.Text })
+            @Render(new ContentModule { Content = settings.Module })
+        </div>
+    </div>
+    <div class="grid__cell">
+        <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+            @Render(settings.ButtonPrimary)
+            @Render(settings.ButtonSecondary)
+        </div>
+    </div>
+}
+
+@helper SetLayoutMiddle(ContentParagraph settings) {
+    <div>
+        <div class="@settings.CardCss @settings.InnerPaddingCss dw-mod">
+            <div class="@(settings.Layout == "middle-center" ? "u-ta-center" : "")">
+                @if (!settings.SetImageAsBackground && settings.Image != null)
+                {
+                    <div class="u-margin-bottom--lg">
+                        @Render(settings.Image)
+                    </div>
+                }
+                @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+                @Render(new Text { Content = settings.Text })
+                @Render(new ContentModule { Content = settings.Module })
+            </div>
+        </div>
+        <div class="grid__cell">
+            <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+                @Render(settings.ButtonPrimary)
+                @Render(settings.ButtonSecondary)
+            </div>
+        </div>
+    </div>
+}
+
+@helper SetLayoutImageTop(ContentParagraph settings) {
+    <div class="@settings.CardCss">
+        @if (!settings.SetImageAsBackground && settings.Image != null)
+        {
+        <div class="u-margin-bottom--lg">
+            @Render(settings.Image)
+        </div>
+        }
+
+        <div class="@settings.InnerPaddingCss dw-mod">
+            @Render(new Heading { Level = 2, Title = settings.Title, Link = settings.Link })
+            @Render(new Text { Content = settings.Text })
+            @Render(new ContentModule { Content = settings.Module })
+        </div>
+    </div>
+    <div class="grid__cell">
+        <div class="paragraph-container__button @settings.ButtonWrapperCss dw-mod">
+            @Render(settings.ButtonPrimary)
+            @Render(settings.ButtonSecondary)
+        </div>
+    </div>
+}

@@ -1,0 +1,16 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>@Model.Item.GetString("Title")</title>
+
+    <!-- Load paper.css for happy printing -->
+    <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/printable/printable.min.css">
+</head>
+
+@ContentPlaceholder()
+
+</html>

@@ -1,0 +1,91 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Frontend.Devices
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Core
+@using System
+@using System.IO
+@using System.Web
+@using Dynamicweb.Rapido.Blocks
+
+
+@functions {
+    BlocksPage mapPage = BlocksPage.GetBlockPage("MapPage");
+}
+
+@{
+    Block mapContainer = new Block
+    {
+        Id = "MapContainer",
+        SortId = 10,
+        Template = RenderMapContainer(),
+        SkipRenderBlocksList = true
+    };
+
+    mapPage.Add(mapContainer);
+
+    Block mapSettings = new Block
+    {
+        Id = "MapSettings",
+        SortId = 20,
+        Template = MapSettings()
+    };
+
+    mapPage.Add(mapSettings);
+}
+
+@Include("Blocks/MapsForm.cshtml")
+@Include("Blocks/MapsList.cshtml")
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@helper RenderMapContainer()
+{
+    List<Block> subBlocks = this.mapPage.GetBlockListById("MapContainer").OrderBy(item => item.SortId).ToList();
+
+    <div class="dynamicweb-map" id="@GetString("ElementID")" data-list-position="@GetString("ListPosition")">
+        <div class="dynamicweb-map__wrap" style="width: @GetString("MapWidth"); height: @GetString("MapHeight");">
+            <div id="@GetString("MapElementID")" class="dynamicweb-map__map"></div>
+        </div>
+
+        @RenderBlockList(subBlocks)
+
+        @if (GetInteger("NumberOfLocations") == 0)
+        {
+            @RenderHeading(new Heading { Title = Translate("No locations found"), Level = 2 })
+        }
+    </div>
+
+}
+
+@helper MapSettings()
+{
+    <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?v=3&key=@GetString("GoogleMapsAPIKey")"></script>
+    <script src="/Files/Templates/Designs/Rapido/js/source/DynamicwebMap.js"></script>
+
+    <script>
+        (function () {
+            Dynamicweb.MapSettings = {
+                search: {
+                    byName: function (marker, element) {
+                        var query = document.getElementById('dynamicweb-map-query').value;
+                        var array = element.querySelectorAll('.js-location-search-item');
+                        for (var i = 0; i < array.length; i++) {
+                            if (array[i].innerText.toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) > -1) {
+                                return true;
+                            }
+                        };
+                        return false;
+                    }
+                }
+            }
+        }());
+    </script>
+}
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(mapPage.BlocksRoot.BlocksList)
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

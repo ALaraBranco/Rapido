@@ -1,0 +1,99 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage shopInfoPage = BlocksPage.GetBlockPage("Details");
+
+    public bool isShopInfoVisible() {
+        string businessAddress = Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null ? Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("StreetAddress") : "";
+        return Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null && !string.IsNullOrWhiteSpace(businessAddress);
+    }
+
+    public string GetShopInfoColumnWidth()
+    {
+
+        bool showDelivery = !string.IsNullOrWhiteSpace(GetString("Ecom:Order.Delivery.Address"));
+        string columnWidth = (showDelivery || isShopInfoVisible()) ? "4" : "6";
+        columnWidth = Pageview.Device.ToString() == "Mobile" ? "12" : columnWidth;
+
+        return columnWidth;
+    }
+}
+
+
+@{
+
+    @*vars columnWidth and shop info defined in OrderDetails file.*@
+    string columnWidth = Pageview.Device.ToString() == "Mobile" ? "12" : GetShopInfoColumnWidth();
+
+    if (isShopInfoVisible())
+    {
+        Block shopInfo = new Block
+        {
+            Id = "ShopInfo",
+            SortId = 30,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = columnWidth,
+                CssClass = "pdf-column"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "ShopInfoTitle",
+                    SortId = 10,
+                    Component = new Heading {
+                        Title = Translate("Shop information"),
+                        Level = 3, Icon = new Icon { Prefix = "fas", Name = "fa-building" },
+                        CssClass = "u-no-margin"
+                    }
+                },
+                new Block {
+                    Id = "ShopInfoContent",
+                    SortId = 20,
+                    Design = new Design {
+                        CssClass = "grid__cell"
+                    },
+                    Template = RenderShopInfo()
+                }
+            }
+        };
+
+        shopInfoPage.Add("FooterContent", shopInfo);
+    }
+}
+
+@helper RenderShopInfo()
+{
+
+    string businessName = "";
+    string businessCountry = "";
+    string businessCity = "";
+    string businessRegion = "";
+    string businessZip = "";
+    string businessAddress = "";
+    string businessCVR = "";
+
+    if (Pageview.AreaSettings.GetItem("Settings").GetItem("Address") != null)
+    {
+        businessName = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("Name");
+        businessCountry = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("Country");
+        businessCity = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("City");
+        businessRegion = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("Region");
+        businessZip = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("PostalCode");
+        businessAddress = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("StreetAddress");
+        businessCVR = Pageview.AreaSettings.GetItem("Settings").GetItem("Address").GetString("CVRNumber");
+    }
+
+    <div>@businessName</div>
+    <div>@businessAddress</div>
+    <div>@businessZip @businessCity, @businessCountry</div>
+
+    if (!string.IsNullOrWhiteSpace(businessCVR))
+    {
+        <div>@Translate("Business number"): @businessCVR</div>
+    }
+}

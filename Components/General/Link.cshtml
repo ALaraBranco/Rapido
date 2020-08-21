@@ -1,0 +1,72 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Core
+
+@* Component *@
+
+@helper RenderLink(Link settings)
+{
+    if (settings != null && !string.IsNullOrEmpty(settings.Href) && (!string.IsNullOrEmpty(settings.Title) || settings.Icon != null))
+    {
+        Dictionary<string, string> attributes = new Dictionary<string, string>();
+        List<string> classList = settings.CssClass != null ? settings.CssClass.Split(' ').ToList() : new List<string>();
+        if (settings.Disabled) 
+        {
+            attributes.Add("disabled", "true");
+            classList.Add("disabled");
+        }
+        
+        if (!string.IsNullOrEmpty(settings.AltText)) 
+        { 
+            attributes.Add("title", settings.AltText); 
+        } 
+        else if (!string.IsNullOrEmpty(settings.Title)) 
+        { 
+            attributes.Add("title", settings.Title); 
+        }
+
+        if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+        if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+        if (!string.IsNullOrEmpty(settings.OnClick)) { attributes.Add("onClick", settings.OnClick); }
+        attributes.Add("href", settings.Href);
+
+        if (settings.ButtonLayout != ButtonLayout.None) 
+        {
+            classList.Add("btn");
+            string btnLayout = Enum.GetName(typeof(ButtonLayout), settings.ButtonLayout).ToLower();
+            if (btnLayout == "linkclean") 
+            {
+                btnLayout = "link-clean"; //fix
+            }
+            classList.Add("btn--" + btnLayout);
+        }
+        
+        string content = settings.Title;
+        if (settings.Icon != null)
+        {
+            content = settings.Icon.LabelPosition == IconLabelPosition.Before ? 
+                      Converter.ToString(Render(settings.Icon)) + content : 
+                      content + Converter.ToString(Render(settings.Icon));
+        }
+        
+        if (settings.Target == LinkTargetType.Blank && settings.Rel == LinkRelType.None) 
+        {
+            settings.Rel = LinkRelType.Noopener;
+        }
+        if (settings.Target != LinkTargetType.None) 
+        { 
+            attributes.Add("target", "_" + Enum.GetName(typeof(LinkTargetType), settings.Target).ToLower()); 
+        }
+        if (settings.Download) 
+        { 
+            attributes.Add("download", "true"); 
+        }
+        if (settings.Rel != LinkRelType.None) 
+        { 
+            attributes.Add("rel", Enum.GetName(typeof(LinkRelType), settings.Rel).ToLower()); 
+        }
+
+        <a class="@string.Join(" ", classList) dw-mod" @ComponentMethods.AddAttributes(attributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>@content</a>
+    }
+}

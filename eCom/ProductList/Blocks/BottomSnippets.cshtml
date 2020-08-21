@@ -1,0 +1,195 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage productListBottomSnippetsPage = BlocksPage.GetBlockPage("ProductList");
+
+    Block productListStickers = new Block
+    {
+        Id = "Stickers",
+        SortId = 10,
+        Template = RenderStickersTemplates()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListStickers);
+
+    Block productListUnits = new Block
+    {
+        Id = "Units",
+        SortId = 20,
+        Template = RenderUnitTemplates()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListUnits);
+
+    Block productListVariants = new Block
+    {
+        Id = "Variants",
+        SortId = 30,
+        Template = RenderVariantTemplates()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListVariants);
+
+    Block productListFavorites = new Block
+    {
+        Id = "Favorites",
+        SortId = 40,
+        Template = RenderFavoritesTemplates()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListFavorites);
+
+    Block productListPreRender = new Block
+    {
+        Id = "PreRenders",
+        SortId = 50,
+        Template = RenderPreRenderTemplates()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListPreRender);
+
+    Block productListInitializers = new Block
+    {
+        Id = "Initializers",
+        SortId = 60,
+        Template = RenderInitializers()
+    };
+    productListBottomSnippetsPage.Add("BottomSnippets", productListInitializers);
+}
+
+@Include("../../Blocks/Shared/FavoritesTemplates.cshtml")
+
+@helper RenderStickersTemplates()
+{
+    <script id="StickersContainer" type="text/x-template">
+        <div class="stickers-container stickers-container--{{{convertStickerPositionToClassName Position}}} dw-mod">
+            {{#Stickers}}
+                {{>Sticker}}
+            {{/Stickers}}
+        </div>
+    </script>
+
+    <script id="Sticker" type="text/x-template">
+        <div class="stickers-container__tag {{CssClass}} dw-mod">{{Title}}</div>
+    </script>
+
+    <script id="MiniSticker" type="text/x-template">
+        <div class="stickers-container__tag stickers-container__tag--micro {{CssClass}} dw-mod">{{Title}}</div>
+    </script>
+}
+
+@helper RenderUnitTemplates()
+{
+    <script id="UnitOption" type="text/x-template">
+        <div class="dropdown__item dw-mod" onclick="HandlebarsBolt.UpdateContent('Product{{id}}', '{{link}}&feed=true&UnitID={{value}}&rid={{id}}')">{{name}}</div>
+    </script>
+}
+
+@helper RenderVariantTemplates() {
+    <script id="VariantsTemplate" type="text/x-template">
+        {{#.}}
+            <div>
+                <div class="u-bold">{{name}}</div>
+                <div>
+                    {{#VariantOptions}}
+                        {{>VariantOption}}
+                    {{/VariantOptions}}
+                </div>
+            </div>
+        {{/.}}
+    </script>
+
+    <script id="VariantOption" type="text/x-template">
+        {{#if color}}
+            <button type="button" data-variant-id="{{variantId}}" data-variant-group="{{groupId}}" onclick="MatchVariants.SelectThis(event)" class="btn btn--colorbox u-margin-right {{disabled}} {{selected}} js-variant-option" data-check="{{selected}}" {{disabled}} style="background-color: {{color}}"></button>
+        {{else}} 
+            {{#if image}}
+                <img data-variant-id="{{variantId}}" data-variant-group="{{groupId}}" src="{{image}}" onclick="MatchVariants.SelectThis(event)" alt="{{name}}" title="{{name}}" class="btn btn--tag {{selected}} js-variant-option" data-check="{{selected}}" />
+            {{else}}
+                <button type="button" data-variant-id="{{variantId}}" data-variant-group="{{groupId}}" onclick="MatchVariants.SelectThis(event)" class="btn btn--tag {{disabled}} {{selected}} js-variant-option" data-check="{{selected}}" {{disabled}}>{{name}}</button>
+            {{/if}}
+        {{/if}}
+    </script>
+
+    <script id="DropdownVariantsTemplate" type="text/x-template">
+        {{#.}}
+        <div>
+            <div class="u-bold">{{name}}</div>
+            <select id="VariantSelector_{{id}}" class="u-full-width dw-mod" name="VariantSelector_{{id}}" onchange="MatchVariants.SelectOnChange(event)" >
+                <option>@Translate("Choose")</option>
+                {{#VariantOptions}}
+                    {{>DropdownVariantOption}}
+                {{/VariantOptions}}
+            </select>
+        </div>
+        {{/.}}
+    </script>
+
+    <script id="DropdownVariantOption" type="text/x-template">
+        <option class="js-variant-option {{selected}}" id="{{groupId}}_{{variantId}}" value="{{groupId}}_{{variantId}}" data-variant-id="{{variantId}}" data-variant-group="{{groupId}}" {{#if selected}}selected{{/if}} data-check="{{selected}}">{{name}}</option>
+    </script>
+
+    <script id="StaticVariantsTemplate" type="text/x-template">
+        {{#.}}
+            {{#if isFirstGroup}}
+                <div>
+                    {{#VariantOptions}}
+                        {{>StaticVariantOption}}
+                    {{/VariantOptions}}
+                </div>
+            {{/if}}
+        {{/.}}
+    </script>
+
+    <script id="StaticVariantOption" type="text/x-template">
+        {{#if color}}
+            <div class="static-variant static-variant--color dw-mod" style="background-color: {{color}}" title="{{name}}"></div>
+        {{else}}
+            <div class="static-variant dw-mod">{{name}} </div>
+        {{/if}}
+    </script>
+
+    <script id="VariantOptionImage" type="text/x-template">
+        <img data-variant-id="{{variantId}}" data-friends="{{friendsList}}" data-variant-group="{{groupId}}" onclick="MatchVariants.SelectThis(event)" src="/Admin/Public/GetImage.ashx?width=100&amp;height=50&amp;crop=5&amp;Compression=75&amp;image=/Images/{{image}}" alt="{{name}}" title="{{name}}" class="btn btn--tag {{disabled}} {{selected}} js-variant-option" data-check="{{selected}}" {{disabled}} />
+    </script>
+}
+
+@helper RenderPreRenderTemplates() {
+    string facetsViewMode = !String.IsNullOrEmpty(Pageview.AreaSettings.GetItem("ProductList").GetString("FacetsViewMode")) ? Pageview.AreaSettings.GetItem("ProductList").GetString("FacetsViewMode").ToLower() : "left";
+
+    <script id="ProductPreRenderContainer" type="text/x-template">
+        @if (facetsViewMode == "left" && Pageview.Device.ToString() != "Mobile")
+        {
+            <div class="grid__col-3">
+                <div class="pre-render-element pre-render-element--xs"></div>
+                <div class="pre-render-element pre-render-element--md"></div>
+                <div class="pre-render-element pre-render-element--md"></div>
+                <div class="pre-render-element pre-render-element--md"></div>
+            </div>
+        }
+        <div class="grid__col-auto">
+            <div class="pre-render-element pre-render-element--xs"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+        </div>
+    </script>
+}
+
+@helper RenderInitializers() {
+    <script>
+	    document.addEventListener("DOMContentLoaded", function (event) {
+		    document.getElementById("productList").addEventListener('contentLoaded', function (e) {
+		        if (getTarget(e).id === "productList") {
+			        Search.Init();
+			        Facets.Init("selectedFacets", "productList");
+			    }
+		    }, false);
+	    });
+    </script>
+}
+    
+@Include("../../../Components/GeneralComponents.cshtml")

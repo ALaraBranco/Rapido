@@ -1,0 +1,230 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Frontend.Devices
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Core
+@using System
+@using System.IO
+@using System.Web
+@using System.Collections.Generic;
+@using System.Linq
+@using System.Text.RegularExpressions
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage filesPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block pageContainer = new Block()
+    {
+        Id = "PageContainer",
+        Template = RenderPageContainer(),
+        SortId = 20
+    };
+
+    filesPage.Add(pageContainer);
+
+
+    Block filesScript = new Block()
+    {
+        Id = "ScriptTemplates",
+        SortId = 30,
+        BlocksList = new List<Block>
+        {
+            new Block()
+            {
+                Id = "FilesContainerScript",
+                SortId = 10,
+                Template = RenderFilesContainerScript(),
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block> {
+                    new Block()
+                    {
+                        Id = "LeftNavigation",
+                        SortId = 10,
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = "3"
+                        }
+                    },
+                    new Block()
+                    {
+                        Id = "FilesList",
+                        SortId = 20,
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = "auto"
+                        },
+                        BlocksList = new List<Block> {
+                            new Block()
+                            {
+                                Id = "Top",
+                                SortId = 10
+                            },
+                            new Block()
+                            {
+                                Id = "Files",
+                                SortId = 20,
+                                Template = RenderFiles()
+                            },
+                            new Block()
+                            {
+                                Id = "LoadMoreRow",
+                                SortId = 30,
+                                Design = new Design
+                                {
+                                    RenderType = RenderType.Row
+                                },
+                                BlocksList = new List<Block>
+                                {
+                                    new Block()
+                                    {
+                                        Id = "LoadMore",
+                                        SortId = 10,
+                                        Design = new Design
+                                        {
+                                            RenderType = RenderType.Column,
+                                            Size = "12"
+                                        },
+                                        Template = RenderLoadMore()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            new Block()
+            {
+                Id = "preRenderTemplate",
+                Template = RenderPreRenderTemplate()
+            },
+            new Block()
+            {
+                Id = "PIMJavascript",
+                Template = RenderJavascript()
+            }
+        }
+    };
+
+    filesPage.Add(filesScript);
+}
+
+@Include("Blocks/PIMFiles/DownloadModal.cshtml")
+@Include("Blocks/PIMFiles/ImageModal.cshtml")
+@Include("Blocks/PIMFiles/Facets.cshtml")
+@Include("Blocks/PIMFiles/TopNavigation.cshtml")
+@Include("Blocks/PIMFiles/ViewGrid.cshtml")
+@Include("Blocks/PIMFiles/ViewDetails.cshtml")
+@Include("Blocks/PIMFiles/ViewList.cshtml")
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml")
+@Include("Blocks/PIMFiles/Custom__Blocks.cshtml")
+
+
+@RenderBlockList(filesPage.BlocksRoot.BlocksList)
+
+@helper RenderPageContainer()
+{
+    int feedPageId = GetPageIdByNavigationTag("FilesFeed");
+    string pageUrl = GetGlobalValue("Global:Pageview.Url.Raw");
+    string feedPageUrl = new Regex("([?&]ID)=[^?&]+").Replace(pageUrl, "?ID=" + feedPageId);
+
+    <div class="grid grid--align-content-start u-padding js-handlebars-root" id="FilesListContainer" data-template="FilesContainerScript" data-pre-render-template="FilesPreRenderContainer" data-json-feed="@feedPageUrl" data-save-cookie="true" data-preloader="overlay"></div>
+}
+
+@helper RenderFilesContainerScript()
+{
+    List<Block> subBlocks = this.filesPage.GetBlockListById("FilesContainerScript").OrderBy(item => item.SortId).ToList();
+
+    <script id="FilesContainerScript" type="text/x-template">
+        {{#each .}}
+        @RenderBlockList(subBlocks)
+        {{else}}
+        <div class="grid__col-12">
+            @Render(new Heading { Level = 2, Title = Translate("Your search gave 0 results"), CssClass = "u-ta-center" })
+        </div>
+        {{/each}}
+    </script>
+}
+
+@helper RenderFiles()
+{
+    <div id="Files" data-template="{{listTemplate}}" class="grid product-list grid--external-bleed-x dw-mod" data-save-cookie="true">
+        {{#Files}}
+        {{> (lookup . 'template') }}
+        {{/Files}}
+    </div>
+}
+
+@helper RenderLoadMore()
+{
+    int feedPageId = GetPageIdByNavigationTag("FilesFeed");
+
+    Button loadMore = new Button
+    {
+        Title = Translate("Load") + " {{pageSize}} " + Translate("more"),
+        OnClick = "LoadMore.Next(this)",
+        ButtonLayout = ButtonLayout.Primary,
+        CssClass = "btn--full {{nextdisabled}}",
+        Disabled = !String.IsNullOrEmpty("{{nextdisabled}}") ? false : true
+    };
+    loadMore.ExtraAttributes.Add("data-current", "{{currentPage}}");
+    loadMore.ExtraAttributes.Add("data-page-size", "{{pageSize}}");
+    loadMore.ExtraAttributes.Add("data-total", "{{totalPages}}");
+    loadMore.ExtraAttributes.Add("data-container", "Files");
+    loadMore.ExtraAttributes.Add("data-feed-url", "/Default.aspx?ID=" + feedPageId);
+
+    @Render(loadMore)
+    @Render(new Button { Title = Translate("Return to top"), ButtonLayout = ButtonLayout.Clean, OnClick = "window.scroll(0, 0)" })
+}
+
+@helper RenderPreRenderTemplate()
+{
+    <script id="FilesPreRenderContainer" type="text/x-template">
+        <div class="grid__col-3">
+            <div class="pre-render-element pre-render-element--xs"></div>
+            <div class="pre-render-element pre-render-element--md"></div>
+            <div class="pre-render-element pre-render-element--md"></div>
+            <div class="pre-render-element pre-render-element--md"></div>
+        </div>
+        <div class="grid__col-auto">
+            <div class="pre-render-element pre-render-element--xs"></div>
+            <div class="pre-render-element pre-render-element--xs"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+            <div class="pre-render-element pre-render-element--lg"></div>
+        </div>
+    </script>
+}
+
+@helper RenderJavascript()
+{
+    int filesFeedPageId = GetPageIdByNavigationTag("FilesFeed");
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function (event) {
+
+            document.getElementById("FilesListContainer").addEventListener('contentLoaded', function (e) {
+                if (getTarget(e).id === "FilesListContainer") {
+                    Search.Init();
+                    Facets.Init("selectedFacets", "FilesListContainer");
+                }
+            }, false);
+        });
+
+        function addFileToDownloads(path) {
+            document.getElementById('assetPath').value = path;
+            document.getElementById('DownloadModalTrigger').checked = true;
+        }
+    </script>
+}

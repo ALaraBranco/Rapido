@@ -1,0 +1,34 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{
+    Block WarningWindow = new Block
+    {
+        Id = "WarningWindowModal",
+        SortId = 1,
+        Component = new Modal {
+            Id = "WarningWindow",
+            Heading = new Heading {
+                Title = Translate("Reorder")
+            },
+            BodyTemplate = RenderWarningWindow(),
+            Width = ModalWidth.Lg
+        }
+    };
+    orderListPage.Add(WarningWindow);
+}
+
+@helper RenderWarningWindow()
+{
+    <p id="warningMessage">@Translate("Some products may not be available.")</p>
+
+    @RenderButton(new Button
+    {
+        ButtonLayout = ButtonLayout.Primary,
+        CssClass = "u-margin-top u-w120px",
+        Id = "OkButton",
+        Title = Translate("Ok"),
+        OnClick = "ReorderValidation.prototype.toggleWarningWindowModal()"
+    })
+}

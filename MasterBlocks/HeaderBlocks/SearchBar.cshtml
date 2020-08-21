@@ -1,0 +1,183 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    public class SearchConfiguration
+    {
+        public string searchFeedId { get; set; }
+        public string searchSecondFeedId { get; set; }
+        public int groupsFeedId { get; set; }
+        public string resultPageLink { get; set; }
+        public string searchPlaceholder { get; set; }
+        public string searchType { get; set; }
+        public string searchTemplate { get; set; }
+        public string searchContentTemplate { get; set; }
+        public string searchValue { get; set; }
+        public bool showGroups { get; set; }
+
+        public SearchConfiguration()
+        {
+            searchFeedId = "";
+            searchSecondFeedId = "";
+            searchType = "product-search";
+            searchContentTemplate = "";
+            showGroups = true;
+        }
+    }
+}
+@{
+    Block masterSearchBar = new Block
+    {
+        Id = "MasterSearchBar",
+        SortId = 40,
+        Template = RenderSearch("bar"),
+        Design = new Design
+        {
+            Size = "auto",
+            HidePadding = true,
+            RenderType = RenderType.Column
+        }
+    };
+
+    Block masterSearchAction = new Block
+    {
+        Id = "MasterDesktopActionsMenuSearch",
+        SortId = 10,
+        Template = RenderSearch()
+    };
+
+    BlocksPage.GetBlockPage("Master").Add("MasterHeader", masterSearchBar);
+    BlocksPage.GetBlockPage("Master").Add("MasterDesktopActionsMenu", masterSearchAction);
+}
+
+@helper RenderSearch(string type = "mini-search")
+{
+    string productsPageId = Converter.ToString(GetPageIdByNavigationTag("ProductsPage"));
+    string contentSearchPageLink = GetPageIdByNavigationTag("ContentSearchResults") + "&Areaid=" + Model.Area.ID;
+    string searchType = Model.Area.Item.GetItem("Layout").GetList("TopSearch") != null ? Model.Area.Item.GetItem("Layout").GetList("TopSearch").SelectedValue : "productSearch";
+
+    SearchConfiguration searchConfiguration = null;
+
+    switch (searchType) {
+        case "contentSearch":
+            searchConfiguration = new SearchConfiguration() {
+                searchFeedId = GetPageIdByNavigationTag("ContentSearchFeed") + "&Areaid=" + Model.Area.ID + "&pagesOnly=true",
+                resultPageLink = contentSearchPageLink,
+                searchPlaceholder = Translate("Search page"),
+                groupsFeedId = 0,
+                searchType = "content-search",
+                searchTemplate = "SearchPagesTemplate",
+                showGroups = false
+            };
+            break;
+        case "combinedSearch":
+            searchConfiguration = new SearchConfiguration() {
+                searchFeedId = productsPageId + "&feed=true",
+                searchSecondFeedId = GetPageIdByNavigationTag("ContentSearchFeed") + "&Areaid=" + Model.Area.ID + "&pagesOnly=true",
+                resultPageLink = Converter.ToString(productsPageId),
+                searchPlaceholder = Translate("Search products or pages"),
+                groupsFeedId = GetPageIdByNavigationTag("ProductGroupsFeed"),
+                searchType = "combined-search",
+                searchTemplate = "SearchProductsTemplateWrap",
+                searchContentTemplate = "SearchPagesTemplateWrap",
+                showGroups = Model.Area.Item.GetItem("Layout").GetBoolean("ShowGroupsSelector")
+            };
+            break;
+        default: //productSearch
+            searchConfiguration = new SearchConfiguration() {
+                resultPageLink = Converter.ToString(productsPageId),
+                searchFeedId = productsPageId + "&feed=true",
+                groupsFeedId = GetPageIdByNavigationTag("ProductGroupsFeed"),
+                searchPlaceholder = Translate("Search products"),
+                searchTemplate = "SearchProductsTemplate",
+                searchType = "product-search",
+                showGroups = Model.Area.Item.GetItem("Layout").GetBoolean("ShowGroupsSelector")
+            };
+            break;
+    }
+    searchConfiguration.searchValue = HttpContext.Current.Request.QueryString.Get("Search") ?? "";
+
+    if (type == "mini-search") {
+        @RenderMiniSearch(searchConfiguration)
+    } else {
+        @RenderSearchBar(searchConfiguration)
+    }
+}
+
+@helper RenderSearchBar(SearchConfiguration options)
+{
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    bool showPrice = !Pageview.AreaSettings.GetItem("Layout").GetBoolean("HidePriceInSearchResults");
+    bool isLiveProductInfoActive = false;  // to be replaced with Dynamicweb LiveIntegration assembly property
+    
+    <div class="typeahead typeahead--centered u-color-inherit js-typeahead dw-mod" id="ProductSearchBar"
+         data-page-size="7" 
+         data-search-feed-id="@options.searchFeedId" 
+         data-search-second-feed-id="@options.searchSecondFeedId" 
+         data-result-page-id="@options.resultPageLink" 
+         data-groups-page-id="@options.groupsFeedId" 
+         data-search-type="@options.searchType"
+         data-live-price="@((isLiveProductInfoActive && showPrice && !pointShopOnly).ToString().ToLowerInvariant())">
+        @if (options.showGroups)
+        {
+            <button type="button" class="btn btn--condensed u-color-light-gray--bg typeahead-group-btn dw-mod js-typeahead-groups-btn" data-group-id="all">@Translate("All")</button>
+            <ul class="dropdown dropdown--absolute-position u-min-w220px js-handlebars-root js-typeahead-groups-content dw-mod" id="ProductSearchBarGroupsContent" data-template="SearchGroupsTemplate" data-json-feed="/Default.aspx?ID=@options.groupsFeedId&feedType=productGroups" data-init-onload="false" data-preloader="minimal"></ul>
+        }
+        <div class="typeahead-search-field">
+            <input type="text" class="u-no-margin u-full-width u-full-height js-typeahead-search-field" placeholder="@options.searchPlaceholder" value="@options.searchValue">
+            @if (string.IsNullOrEmpty(options.searchSecondFeedId))
+            {
+                <ul class="dropdown dropdown--absolute-position u-min-w220px u-full-width js-handlebars-root js-typeahead-search-content dw-mod" id="ProductSearchBarContent" data-template="@options.searchTemplate" data-json-feed="/Default.aspx?ID=@options.searchFeedId&feedType=productsOnly" data-init-onload="false"></ul>
+            }
+            else
+            {
+                <div class="dropdown dropdown--absolute-position dropdown--combined grid">
+                    <div class="js-typeahead-search-content grid__col-sm-7 grid__col--bleed-y" id="ProductSearchBarContent" data-template="@options.searchTemplate" data-init-onload="false"></div>
+                    <div class="js-typeahead-additional-search-content grid__col-sm-5 grid__col--bleed-y" id="ContentSearchBarContent" data-template="@options.searchContentTemplate" data-init-onload="false"></div>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn btn--condensed btn--primary u-no-margin dw-mod js-typeahead-enter-btn" title="@Translate("Search")"><i class="@Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SearchIcon").SelectedValue"></i></button>
+    </div>
+}
+
+@helper RenderMiniSearch(SearchConfiguration options)
+{
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    bool showPrice = !Pageview.AreaSettings.GetItem("Layout").GetBoolean("HidePriceInSearchResults");
+    bool isLiveProductInfoActive = false; // to be replaced with Dynamicweb LiveIntegration assembly property
+    
+    <li class="menu__item menu__item--horizontal menu__item--top-level menu__item--icon u-hidden-xxs is-dropdown is-dropdown--no-icon dw-mod" onmouseover="if (typeof Search != 'undefined') { Search.ShowMiniSearch(this) }">
+        <div class="menu__link menu__link--icon dw-mod" title="@Translate("Search")">
+            <i class="@Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SearchIcon").SelectedValue fa-1_5x"></i>
+        </div>
+        <div class="menu menu--dropdown menu--dropdown-right u-no-padding u-w380px grid__cell dw-mod">
+            <div class="typeahead js-typeahead" id="ProductSearchBar" 
+                 data-page-size="7" 
+                 data-search-feed-id="@options.searchFeedId" 
+                 data-search-second-feed-id="@options.searchSecondFeedId" 
+                 data-result-page-id="@options.resultPageLink" 
+                 data-search-type="@options.searchType"
+                 data-live-price="@((isLiveProductInfoActive && showPrice && !pointShopOnly).ToString().ToLowerInvariant())">
+                <div class="typeahead-search-field">
+                    <input type="text" class="u-no-margin u-full-width js-typeahead-search-field" id="headerSearch" placeholder="@options.searchPlaceholder" value="@options.searchValue">
+                    @if (string.IsNullOrEmpty(options.searchSecondFeedId))
+                    {
+                        <ul class="dropdown dropdown--absolute-position u-min-w220px u-full-width js-handlebars-root js-typeahead-search-content dw-mod" id="ProductSearchBarContent" data-template="@options.searchTemplate" data-json-feed="/Default.aspx?ID=@options.searchFeedId&feedType=productsOnly" data-init-onload="false"></ul>
+                    }
+                    else
+                    {
+                        <div class="dropdown dropdown--absolute-position dropdown--combined grid dropdown--right-aligned">
+                            <div class="js-handlebars-root js-typeahead-search-content grid__col-sm-7 grid__col--bleed-y" id="ProductSearchBarContent" data-template="@options.searchTemplate" data-json-feed="/Default.aspx?ID=@options.searchFeedId&feedType=productsOnly" data-init-onload="false"></div>
+                            <div class="js-handlebars-root js-typeahead-additional-search-content grid__col-sm-5 grid__col--bleed-y" id="ContentSearchBarContent" data-template="@options.searchContentTemplate" data-json-feed="/Default.aspx?ID=@options.searchSecondFeedId" data-init-onload="false"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </li>
+}

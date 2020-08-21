@@ -1,0 +1,366 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("Master.cshtml")
+
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Content.Items
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("DynamicArticle");
+
+    public string GetParentSettingsItem(string systemName) {
+        string item = null;
+
+        Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Model.ID);
+        while (current != null && current.Parent != current) {
+            var temp = current.Item != null ? current.Item[systemName] : "";
+
+            if (temp != null) {
+                item = temp.ToString();
+
+                if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase)) {
+                    break;
+                }
+            }
+
+            current = current.Parent;
+        }
+
+        return item;
+    }
+
+    public string GetArticleCategory(int pageId)
+    {
+        string categoryName = null;
+
+        //Secure that the article is not in the root folder = Actual has a category
+        if (Dynamicweb.Services.Pages.GetPage(pageId).Parent != null) {
+            if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent != null) {
+                if (!String.IsNullOrEmpty(Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent.ItemType))
+                {
+                    categoryName = Dynamicweb.Services.Pages.GetPage(pageId).Parent.GetDisplayName();
+                }
+            }
+        }
+
+        return categoryName;
+    }
+
+    public string GetArticleCategoryColor(int pageId)
+    {
+        string categoryColor = "";
+
+        //Secure that the article is not in the root folder = Actual has a category
+        if (Dynamicweb.Services.Pages.GetPage(pageId).Parent != null) {
+            if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent != null) {
+                if (!String.IsNullOrEmpty(Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent.ItemType))
+                {
+                    if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Item["CategoryColor"] != null)
+                    {
+                        var service = new ColorSwatchService();
+                        categoryColor = Dynamicweb.Services.Pages.GetPage(pageId).Parent.Item["CategoryColor"].ToString();
+
+                        if (!categoryColor.Contains("#")) {
+                            categoryColor = service.GetHexColor(Converter.ToInt32(Model.Area.ID), categoryColor);
+                        }
+                    }
+                }
+            }
+        }
+
+        return categoryColor;
+    }
+}
+
+@{
+    string listPageId = Converter.ToString(GetPageIdByNavigationTag("DynamicListFeed"));
+    string parentPageId = Dynamicweb.Services.Pages.GetPage(Model.ID).Parent.ID.ToString();
+    string topLayout = Model.Item.GetList("TopLayout") != null ? Model.Item.GetList("TopLayout").SelectedValue : "default";
+    topLayout = topLayout == "default" && GetParentSettingsItem("ArticleTopLayout") != null ? GetParentSettingsItem("ArticleTopLayout").ToString().ToLower() : topLayout;
+    string textLayout = Model.Item.GetList("TextLayout") != null ? Model.Item.GetList("TextLayout").SelectedValue : "default";
+    textLayout = textLayout == "default" && GetParentSettingsItem("ArticleTextLayout") != null ? GetParentSettingsItem("ArticleTextLayout").ToString().ToLower() : textLayout;
+    string imageLayout = Model.Item.GetList("ImageLayout") != null ? Model.Item.GetList("ImageLayout").SelectedValue : "default";
+    imageLayout = imageLayout == "default" && GetParentSettingsItem("ArticleImageLayout") != null ? GetParentSettingsItem("ArticleImageLayout").ToString().ToLower() : imageLayout;
+
+    string imageColumns = imageLayout == "straight" && textLayout != "full" ? "8" : "12";
+    string contentColumns = textLayout != "full" ? "8" : "12";
+
+    int externalParagraphId = Model.Item.GetItem("CTAParagraphLink") != null ? Model.Item.GetItem("CTAParagraphLink").ParagraphID : 0;
+
+    ArticleHeaderLayout headerLayout;
+
+    switch (topLayout)
+    {
+        case "default":
+            headerLayout = ArticleHeaderLayout.Clean;
+            break;
+        case "split":
+            headerLayout = ArticleHeaderLayout.Split;
+            break;
+        case "banner":
+            headerLayout = ArticleHeaderLayout.Banner;
+            break;
+        case "overlay":
+            headerLayout = ArticleHeaderLayout.Overlay;
+            break;
+        default:
+            headerLayout = ArticleHeaderLayout.Clean;
+            break;
+    }
+
+
+    Block articleContainer = new Block
+    {
+        Id = "ArticleContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleBody",
+                SortId = 30,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    HidePadding = true
+                }
+            }
+        }
+    };
+    articlePage.Add(articleContainer);
+
+    ButtonLayout topBannerButtonLayout = ButtonLayout.Primary;
+
+    switch (Model.Item.GetString("ButtonDesign")) {
+        case "primary":
+            topBannerButtonLayout = ButtonLayout.Primary;
+            break;
+        case "secondary":
+            topBannerButtonLayout = ButtonLayout.Secondary;
+            break;
+        case "teritary":
+            topBannerButtonLayout = ButtonLayout.Tertiary;
+            break;
+        case "link":
+            topBannerButtonLayout = ButtonLayout.Link;
+            break;
+    }
+
+    ArticleHeader topBanner = new ArticleHeader
+    {
+        Layout = headerLayout,
+        Image = new Image { Path = Model.Item.GetFile("Image"), ImageDefault = new ImageSettings { Width = 1920, Height = 640 } },
+        Heading = Model.Item.GetString("Title"),
+        Subheading = Model.Item.GetString("Summary"),
+        TextColor = "#fff",
+        Author = Model.Item.GetString("Author"),
+        Date = Model.Item.GetString("Date"),
+        Category = GetArticleCategory(Model.ID),
+        CategoryColor = GetArticleCategoryColor(Model.ID),
+        Link = Model.Item.GetString("Link"),
+        LinkText = Model.Item.GetString("LinkText"),
+        ButtonLayout = topBannerButtonLayout,
+        RatingScore = Model.Item.GetString("Rating") != null ? Converter.ToInt32(Model.Item.GetList("Rating").SelectedValue) : 0,
+        RatingOutOf = Model.Item.GetString("Rating") != null ? Model.Item.GetList("Rating").Options.Count : 0,
+        ExternalParagraphId = externalParagraphId
+    };
+
+    Block articleTop = new Block
+    {
+        Id = "ArticleHead",
+        SortId = 20,
+        Component = topBanner,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12",
+            HidePadding = true,
+            CssClass = "article-head"
+        }
+    };
+    articlePage.Add("ArticleContainer", articleTop);
+
+
+    Block articleBodyRow = new Block
+    {
+        Id = "ArticleBodyRow",
+        SortId = 10,
+        SkipRenderBlocksList = true
+    };
+    articlePage.Add("ArticleBody", articleBodyRow);
+
+
+    if (Model.Item.GetString("Paragraphs") != null)
+    {
+        int count = 0;
+        foreach (var paragraph in Model.Item.GetItems("Paragraphs"))
+        {
+            if (!paragraph.GetBoolean("RenderAsQuote"))
+            {
+                string enableDropCap = Model.Item.GetString("EnableDropCap") != null ? Model.Item.GetList("EnableDropCap").SelectedValue.ToLower() : "default";
+                enableDropCap = enableDropCap == "default" && GetParentSettingsItem("EnableDropCap") != null ? GetParentSettingsItem("EnableDropCap").ToString().ToLower() : enableDropCap;
+                string text = paragraph.GetString("Text") != null ? paragraph.GetString("Text") : "";
+
+                if (!String.IsNullOrEmpty(text) && enableDropCap == "true" && count == 0 && paragraph.GetString("Text").Substring(0, 3) == "<p>")
+                {
+                    string firstLetter = paragraph.GetString("Text").Substring(3, 1);
+                    text = paragraph.GetString("Text").Remove(3, 1);
+                    text = text.Insert(3, "<span class=\"article__drop-cap\">" + firstLetter + "</span>");
+                }
+
+                if (paragraph.GetFile("Image") != null)
+                {
+                    string imageTitle = !string.IsNullOrEmpty(paragraph.GetString("Heading")) ? paragraph.GetString("Heading") : "";
+
+                    Block articleParagraphImage = new Block
+                    {
+                        Id = "ArticleParagraph" + count + "Image",
+                        SortId = (count * 10),
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = imageColumns,
+                            CssClass = "u-color-light--bg u-padding--lg"
+                        }
+                    };
+
+                    if (imageLayout == "banner")
+                    {
+                        ArticleBanner banner = new ArticleBanner
+                        {
+                            Image = new Image { Path = paragraph.GetFile("Image"), ImageDefault = new ImageSettings { Height = 650, Width = 1300 } },
+                            Heading = imageTitle,
+                            Subheading = paragraph.GetString("ImageCaption"),
+                            UseFilters = false
+                        };
+                        articleParagraphImage.Component = banner;
+                    }
+                    else
+                    {
+                        ArticleImage image = new ArticleImage
+                        {
+                            Image = new Image
+                            {
+                                Path = paragraph.GetFile("Image"),
+                                Title = imageTitle,
+                                ImageDefault = new ImageSettings { Height = 650, Width = 1300 },
+                                Caption = paragraph.GetString("ImageCaption")
+                            }
+                        };
+                        articleParagraphImage.Component = image;
+                    }
+
+                    articlePage.Add("ArticleBodyRow", articleParagraphImage);
+                }
+
+                if (!String.IsNullOrEmpty(paragraph.GetString("VideoURL")))
+                {
+                    Block articleParagraphVideo = new Block
+                    {
+                        Id = "ArticleParagraph" + count + "Video",
+                        SortId = (count * 10) + 1,
+                        Component = new ArticleVideo { Url = paragraph.GetString("VideoURL"), AutoPlay = "false" },
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = imageColumns,
+                            CssClass = "u-color-light--bg u-padding--lg"
+                        }
+                    };
+                    articlePage.Add("ArticleBodyRow", articleParagraphVideo);
+                }
+
+                if (!String.IsNullOrEmpty(paragraph.GetString("Heading")))
+                {
+                    Block articleParagraphHeader = new Block
+                    {
+                        Id = "ArticleParagraph" + count + "Heading",
+                        SortId = (count * 10) + 2,
+                        Component = new ArticleSubHeader { Title = paragraph.GetString("Heading") },
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = contentColumns,
+                            CssClass = "u-color-light--bg u-padding--lg"
+                        }
+                    };
+                    articlePage.Add("ArticleBodyRow", articleParagraphHeader);
+                }
+
+                if (!String.IsNullOrEmpty(text))
+                {
+                    Block articleParagraphText = new Block
+                    {
+                        Id = "ArticleParagraph" + count + "Text",
+                        SortId = (count * 10) + 3,
+                        Component = new ArticleText { Text = text },
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = contentColumns,
+                            CssClass = "u-color-light--bg u-padding--lg"
+                        }
+                    };
+
+                    articlePage.Add("ArticleBodyRow", articleParagraphText);
+                }
+            }
+            else
+            {
+                if (!String.IsNullOrEmpty(paragraph.GetString("Text")))
+                {
+                    string quoteText = paragraph.GetString("Text") != null ? paragraph.GetString("Text") : "";
+                    string quoteAuthor = paragraph.GetString("Heading") != null ? paragraph.GetString("Heading") : "";
+
+                    Block articleParagraphQuote = new Block
+                    {
+                        Id = "ArticleParagraph" + count + "Quote",
+                        SortId = (count * 10) + 3,
+                        Component = new ArticleQuote { Image = new Image { Path = paragraph.GetFile("Image") }, Text = quoteText, Author = quoteAuthor },
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Column,
+                            Size = contentColumns,
+                            CssClass = "u-color-light--bg u-padding--lg"
+                        }
+                    };
+                    articlePage.Add("ArticleBodyRow", articleParagraphQuote);
+                }
+            }
+
+            count++;
+        }
+    }
+
+    articleBodyRow.Component = new ArticleBodyRow { SubBlocks = articleBodyRow.BlocksList, TopLayout = topLayout, TextLayout = textLayout };
+
+
+    //Related
+    string showRelatedArtices = Model.Item.GetString("ShowRelatedArticles") != null ? Model.Item.GetList("ShowRelatedArticles").SelectedValue.ToLower() : "default";
+    showRelatedArtices = showRelatedArtices == "default" && GetParentSettingsItem("ShowRelatedArticles") != null ? GetParentSettingsItem("ShowRelatedArticles").ToString().ToLower() : showRelatedArtices;
+
+    if (showRelatedArtices == "true")
+    {
+        Block articleRelated = new Block
+        {
+            Id = "ArticleRelated",
+            SortId = 30,
+            Component = new ArticleRelated { Title = Translate("Related articles"), FeedPageId = listPageId, Query = "sourceType=Page&sourcePage=" + parentPageId, PageSize = 4, CurrentPageId = Model.ID.ToString() },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        articlePage.Add("ArticleContainer", articleRelated);
+    }
+}
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)

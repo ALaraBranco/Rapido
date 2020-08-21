@@ -1,0 +1,14 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@* Component *@
+
+@helper RenderHandlebarsRoot(HandlebarsRoot settings) {
+    string preRender = !String.IsNullOrEmpty(settings.PreRenderScriptTemplate) ? "data-pre-render-template=\"" + settings.PreRenderScriptTemplate + "\"" : "";
+
+    <div class="@settings.CssClass dw-mod js-handlebars-root" id="@settings.Id" data-template="@settings.ScriptTemplate" data-json-feed="@settings.FeedUrl" data-init-onload="@settings.InitOnLoad.ToString()" data-preloader="@settings.Preloader" @preRender>
+        @if (settings.SubBlocks != null) {
+            @RenderBlockList(settings.SubBlocks)
+        }
+    </div>
+}

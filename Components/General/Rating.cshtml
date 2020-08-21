@@ -1,0 +1,38 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component *@
+
+@helper RenderRating(Rating settings)
+{
+    if (settings.Score > 0)
+    {
+        int rating = settings.Score;
+        string iconType = "fa-star";
+
+        switch (settings.Type.ToString()) {
+            case "Stars":
+                iconType = "fa-star";
+                break;
+            case "Hearts":
+                iconType = "fa-heart";
+                break;
+            case "Lemons":
+                iconType = "fa-lemon";
+                break;
+            case "Bombs":
+                iconType = "fa-bomb";
+                break;
+        }
+
+        <div class="u-ta-right">
+            @for (int i = 0; i < settings.OutOf; i++)
+            {
+                <i class="@(rating > i ? "fas" : "far") @iconType"></i>
+            }
+        </div>
+    }
+}

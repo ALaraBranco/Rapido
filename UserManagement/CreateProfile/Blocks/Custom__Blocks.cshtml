@@ -1,0 +1,46 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks
+@Include("Rizzo/Rizzo__Blocks.cshtml")
+@Include("RizzoPackages/RizzoPackages__Blocks.cshtml")
+@functions {
+    BlocksPage customCreateAccountPage = BlocksPage.GetBlockPage("CreateAccount");
+}
+@{
+    Block CustomCreateAccountForm = new Block {
+        Id = "CreateAccountForm",
+        Template = RenderCreateAccountFormCustom(),
+    };
+    customCreateAccountPage.ReplaceBlock(CustomCreateAccountForm);
+}
+
+@helper RenderCreateAccountFormCustom()
+{
+    int createProfilePageId = GetPageIdByNavigationTag("CreateAccount");
+    int gdprPagePageId = GetPageIdByNavigationTag("GDPR");
+    string forgotPasswordPageId = GetPageIdByNavigationTag("SignInPage").ToString() + "&LoginAction=Recovery";
+    bool isEmailExist = GetString("UserManagement:User.Email.Input.Error") == "User with specified email exists.";
+    Form form = new Form { Name="UserManagementEditForm", Action = "/Default.aspx?ID=" + createProfilePageId, Method = FormMethod.Post };
+
+    @RenderHeading(new Heading { Title = Translate("Create user account"), Level = 2 });
+
+    form.Add(new HiddenField { Name = "UserManagementForm", Value = "1" });
+    form.Add(new TextField { Id = "UserManagement_Form_Name", Name = "UserManagement_Form_Name", Type = TextFieldType.Text, Label = Translate("Name"), Value = GetString("UserManagement:User.Name"), Required = true, ErrorMessage = GetString("UserManagement:User.Name.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_Email", Name = "UserManagement_Form_Email", Type = TextFieldType.Email, Label = Translate("Email"), Value = GetString("UserManagement:User.Email"), Required = true, ErrorMessage = isEmailExist ? "You already exist in our system click below to reset your password" : GetString("UserManagement:User.Email.Input.Error") });
+        
+    if (isEmailExist)
+    {
+        form.Add(new Link { Href = "/default.aspx?ID=" + forgotPasswordPageId, Title = Translate("Reset password"), ButtonLayout = ButtonLayout.Secondary });
+    }
+        
+    form.Add(new TextField { Id = "UserManagement_Form_NewPassword", Name = "UserManagement_Form_NewPassword", Type = TextFieldType.Password, Label = Translate("Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPassword.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_NewPasswordConfirm", Name = "UserManagement_Form_NewPasswordConfirm", Type = TextFieldType.Password, Label = Translate("Confirm Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPasswordConfirm.Input.Error") });
+    
+    form.Add(new HiddenField { Id = "UserManagement_Form_EmailAllowed_ApplyValue", Name = "UserManagement_Form_EmailAllowed_ApplyValue", Value = "AllowEmail" });
+    form.Add(new CheckboxField { Id = "UserManagement_Form_EmailAllowed", Name = "UserManagement_Form_EmailAllowed", CssClass="u-pull--left", Label = Translate("I give my consent (... GDPR terms)"), Value = "False" });
+    form.Add(new Link { Href = "/Default.aspx?ID=" + gdprPagePageId, Title = Translate("Click here to read our GDPR Policy"), Target = LinkTargetType.Blank, CssClass="u-pull--left u-margin-top", ButtonLayout = ButtonLayout.LinkClean, });
+    
+    form.Add(new Button { Id = "submitter", ButtonType = ButtonType.Submit, Title = Translate("Create your new account"), CssClass="u-pull--right",OnClick = "Buttons.LockButton(event)" });
+
+    @Render(form)
+}

@@ -1,0 +1,80 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+   BlocksPage viewListPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block listViewTemplate = new Block()
+    {
+        Id = "ListViewTemplate",
+        Template = RenderListViewTemplate()
+    };
+
+    viewListPage.Add("ScriptTemplates", listViewTemplate);
+}
+
+@helper RenderListViewTemplate()
+{
+    @* List view *@
+    <script id="FileItemContainer" type="text/x-template">
+        {{#.}}
+            <div id="File{{id}}" class="grid__col-12 dw-mod">
+                <div class="grid product-list__list-item dw-mod">
+                    <div class="grid__col-md-4 {{noImage}} product-list__list-item__left u-no-padding u-color-light--bg dw-mod">
+                        <div class="grid__cell">
+                            <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')" class="u-flex u-full-height">
+                                {{#if icon}}
+                                    @Render(new Image { Path = "{{icon}}", Title = "{{name}}", CssClass = "grid__cell-img--centered u-padding--lg" })
+                                {{else}}
+                                    @Render(new Image { Path = "{{path}}", Title = "{{name}}", CssClass = "grid__cell-img--centered u-padding", ImageDefault = new ImageSettings { Width = 300, Height = 300, Crop = 5, FillCanvas = true } })
+                                {{/if}}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid__col-md-auto product-list__list-item__right dw-mod">
+                        <div class="grid__cell">
+                            <h2 class="u-no-margin">
+                                <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')">{{name}}</label>
+                            </h2>
+                            <div class="item-number dw-mod">{{path}}</div>
+                            <ul class="list list--clean u-margin-top dw-mod">
+                                <li><strong>@Translate("Updated"):</strong> {{lastWriteTime}}</li>
+                                <li><strong>@Translate("File size"):</strong> {{size}} KB</li>
+                                <li><strong>@Translate("File type"):</strong> {{extension}}</li>
+                                {{#if dimension}}
+                                    <li><strong>@Translate("Dimension"):</strong> {{dimension}}</li>
+                                {{/if}}
+                                {{#if colors}}
+                                    <li><strong>@Translate("Colors"):</strong> {{colors}}</li>
+                                {{/if}}
+                            </ul>
+                        </div>
+
+                        @if (Pageview.User != null)
+                        {
+                            <div class="grid__cell-footer">
+                                <div class="grid__cell">
+                                       @Render(new Button
+                                       {
+                                           ButtonType = ButtonType.Button,
+                                           ButtonLayout = ButtonLayout.Primary,
+                                           OnClick = "addFileToDownloads('{{path}}');",
+                                           CssClass = "u-no-margin btn--condensed u-no-margin u-pull--right",
+                                           Icon = new Icon
+                                           {
+                                               Prefix = "fas",
+                                               Name = "fa-download"
+                                           }
+                                       })
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        {{/.}}
+    </script>
+}

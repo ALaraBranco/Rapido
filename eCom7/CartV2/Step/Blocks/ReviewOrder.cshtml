@@ -1,0 +1,528 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions{
+    BlocksPage reviewOrderCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+    int cartFeedPageId;
+}
+
+@{ 
+    string reviewOrderType = checkoutPageType ?? "onestep"; //The "checkoutPageType" comes from the main template for the cart page
+    cartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+
+    Block reviewOrderBlock = new Block()
+    {
+        Id = "ReviewOrder",
+        SortId = 50,
+        SkipRenderBlocksList = true,
+        Template = RenderReviewOrder()
+    };
+    reviewOrderCheckoutPage.Add("OrderContainerRow", reviewOrderBlock);
+
+    if (reviewOrderType == "onestep")
+    {
+        Block inlineAcceptanceBlock = new Block()
+        {
+            Id = "Acceptance",
+            SortId = 10,
+            Template = RenderInlineAcceptance()
+        };
+        reviewOrderCheckoutPage.Add("ReviewOrder", inlineAcceptanceBlock);
+
+        Block reviewOrderFooterBlock = new Block()
+        {
+            Id = "ReviewOrderFooter",
+            SortId = 20,
+            Template = RenderReviewOrderFooter()
+        };
+        reviewOrderCheckoutPage.Add("ReviewOrder", reviewOrderFooterBlock);
+    }
+
+    if (reviewOrderType == "quote")
+    {
+        Block reviewOrderFooterBlock = new Block()
+        {
+            Id = "ReviewOrderFooter",
+            SortId = 20,
+            Template = RenderReviewOrderFooterQuote()
+        };
+        reviewOrderCheckoutPage.Add("ReviewOrder", reviewOrderFooterBlock);
+    }
+
+    Block reviewOrderScriptTemplates = new Block()
+    {
+        Id = "ReviewOrderScriptTempaltes",
+        SortId = 30,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "CartContentTemplate",
+                SortId = 10,
+                Template = RenderCartContentTemplate()
+            },
+            new Block {
+                Id = "CartOrderlineTemplate",
+                SortId = 20,
+                Template = RenderCartOrderlineTemplate()
+            },
+            new Block {
+                Id = "CartOrderlineMobileTemplate",
+                SortId = 30,
+                Template = RenderCartOrderlineMobileTemplate()
+            },
+            new Block {
+                Id = "CartOrderlineDiscountTemplate",
+                SortId = 40,
+                Template = RenderCartOrderlineDiscountTemplate()
+            },
+            new Block {
+                Id = "EmptyCartTemplate",
+                SortId = 50,
+                Template = RenderEmptyCartTemplate()
+            },
+            new Block
+            {
+                Id = "EmptyCartObserver",
+                SortId = 60,
+                Template = RenderEmptyCartObserver()
+            }
+        }
+    };
+    reviewOrderCheckoutPage.Add("CheckoutBottomSnippets", reviewOrderScriptTemplates);
+
+    Block reviewOrderScripts = new Block()
+    {
+        Id = "ReviewOrderScripts",
+        SortId = 40,
+        Template = RenderOrderScripts()
+    };
+    reviewOrderCheckoutPage.Add("CheckoutBottomSnippets", reviewOrderScripts);
+}
+
+@helper RenderReviewOrder() {
+    <div class="grid__col-12">
+        <div class="js-handlebars-root" id="Cart" data-template="CartContent" data-cart-id="@cartFeedPageId" data-json-feed="/Default.aspx?ID=@cartFeedPageId" data-preloader="overlay"></div>
+    </div>
+}
+
+@helper RenderCartContentTemplate() {
+    List<Block> subBlocks = reviewOrderCheckoutPage.GetBlockListById("ReviewOrder").OrderBy(item => item.SortId).ToList();
+    bool pointShop = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+    bool isSalesTaxWebsite = true; //Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("IsSalesTaxWebsite");
+
+    <script id="CartContent" type="text/x-template">
+        {{#.}}
+            @if (useGoogleTagManager)
+            {
+                <text>{{{googleEnchantImpressionEmptyCart OrderLines}}}</text>
+            }
+            <div class="card-header u-color-light--bg dw-mod">
+                @Render(new Heading { Title = Translate("Review order") + "({{numberofproducts}})", Level = 3, Icon = new Icon { Prefix = "fas", Name = "fa-list-ul" } })
+            </div>
+            <div class="card u-color-light--bg u-no-padding--xs dw-mod">
+                {{#unless isEmpty}}
+                    <table class="table cart-table dw-mod">
+                        <tbody id="OrderLines">
+                            {{#OrderLines}}
+                                {{> (lookup . 'template') }}
+                            {{/OrderLines}}
+                        </tbody>
+                    </table>
+                {{/unless}}
+                <div class="grid u-border-top">
+                    <div class="grid__col-sm-6">
+                        @if (Dynamicweb.Security.Licensing.LicenseManager.LicenseHasFeature("LoyaltyPoints") && !string.IsNullOrWhiteSpace(GetGlobalValue("Global:Extranet.UserName")))
+                        {
+                            <text>
+                                {{#if userPoints}}
+                                <div class="u-border u-border-color--loyalty-points u-padding--lg u-full-height">
+                                    @Render(new Heading { Title = Translate("Your point balance"), Level = 3 })
+                                    <div class="u-font-size--lg u-margin-bottom">
+                                        <span class="u-color--loyalty-points">{{userPoints}}</span> @Translate("points")
+                                    </div>
+                                    <div>@Translate("On this order you will use"): <span class="u-color--loyalty-points">{{pointsUsedInCart}}</span> @Translate("points")</div>
+                                </div>
+                                {{/if}}
+                            </text>
+                        }
+                    </div>
+
+                    <div class="grid__col-sm-6">
+                        @if (!pointShop)
+                        {
+                            <div class="{{hideSubTotal}}">
+                                <div class="cart-summary__subtotals dw-mod">@Translate("Subtotal")</div>
+                                <div class="cart-summary__subtotals u-pull--right dw-mod">{{subtotalprice}}</div>
+                            </div>
+                            <div class="{{hidePaymentfee}}">
+                                <div class="cart-summary__info dw-mod">@Render(new Icon { Prefix = "fas", Name = "fa-credit-card", Label = "{{paymentmethod}}", LabelPosition = IconLabelPosition.After })</div>
+                                <div class="cart-summary__info u-pull--right dw-mod">{{paymentfee}}</div>
+                            </div>
+                        }
+                        <div class="{{hideShippingfee}}">
+                            <div class="cart-summary__info dw-mod">@Render(new Icon { Prefix = "fas", Name = "fa-truck", Label = "{{shippingmethod}}", LabelPosition = IconLabelPosition.After })</div>
+                            <div class="cart-summary__info u-pull--right dw-mod">{{shippingfee}}</div>
+                        </div>
+                        @if (!pointShop)
+                        {
+                            if (isSalesTaxWebsite)
+                            {
+                                <div>
+                                    <div class="cart-summary__info dw-mod">@Translate("Taxes")</div>
+                                    <div class="cart-summary__info u-pull--right dw-mod">{{totaltaxes}}</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div>
+                                    <div class="cart-summary__info dw-mod">@Translate("VAT")</div>
+                                    <div class="cart-summary__info u-pull--right dw-mod">{{totalvat}}</div>
+                                </div>
+                            }
+                        }
+                        @if (Pageview.User != null && Dynamicweb.Security.Licensing.LicenseManager.LicenseHasFeature("LoyaltyPoints"))
+                        {
+                            <text>
+                                {{#if earnings}}
+                                <div>
+                                    <div class="cart-summary__info dw-mod">@Translate("Earnings")</div>
+                                    <div class="cart-summary__info u-pull--right dw-mod"><span class="u-color--loyalty-points">{{earnings}}</span> @Translate("points")</div>
+                                </div>
+                                {{/if}}
+                            </text>
+                        }
+                        <div class="cart-summary__totals-container dw-mod">
+                            <div class="cart-summary__totals dw-mod">@Translate("Total")</div>
+                            <div class="cart-summary__totals u-pull--right dw-mod">
+                                @if (pointShop)
+                                {
+                                    <span class="u-color--loyalty-points">{{pointsUsedInCart}}</span> @Translate("points")
+                                }
+                                else
+                                {
+                                    <text>{{totalprice}}</text>
+                                }
+                            </div>
+                        </div>
+                        {{#unless hideCheckoutDisclaimer}}
+                            <small class="col-xs-12 noPadding">{{checkoutDisclaimer}}</small>
+                        {{/unless}}
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="grid__col-12 grid__col--line-top"></div>
+                </div>
+
+                <div class="grid__cell u-padding--xs {{hideComment}}">
+                    @Render(new TextareaField { Rows = 3, Placeholder = Translate("Enter comment"), Name = "EcomOrderCustomerComment", Id = "EcomOrderCustomerComment", Value = "{{comment}}" })
+                </div>
+                <div class="u-margin-bottom--lg">
+                    @foreach (LoopItem error in GetLoop("ValidationErrors"))
+                    {
+                        @Render(new NotificationMessage { Message = error.GetString("Ecom:Cart.ValidationError.ErrorMessage"), MessageType = NotificationMessageType.Error })
+                    }
+                </div>
+
+                @RenderBlockList(subBlocks)
+            </div>
+        {{/.}}
+    </script>
+}
+
+@helper RenderCartOrderlineTemplate() {
+    bool pointShop = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    int quotesCartPageId = GetPageIdByNavigationTag("QuotesCartPage");
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+
+    @* Template for the orderlines *@
+    <script id="CartOrderline" type="text/x-template">
+        {{#unless isEmpty}}
+            <tr id="Orderline{{id}}" class="cart-orderline">
+                <td class="cart-orderline__cell cart-table__image u-hidden-xs u-hidden-xxs dw-mod">
+                    <div class="cart-orderline__cell__block {{hideimage}} dw-mod">
+                        @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                    </div>
+                </td>
+                <td class="cart-orderline__cell dw-mod" title="{{name}} {{variantname}}">
+                    <a href="{{link}}" class="u-color-inherit cart-orderline__name">{{name}}</a>
+                    <div class="cart-orderline__cell__block item-number dw-mod">#{{productnumber}}</div>
+                    {{#if variantname}}
+                        <div class="cart-orderline__cell__block item-number dw-mod">{{variantname}}</div>
+                    {{/if}}
+                    {{#if unitname}}
+                        <div class="cart-orderline__cell__block item-number dw-mod">{{unitname}}</div>
+                    {{/if}}
+                </td>
+                <td class="cart-orderline__cell u-ta-right u-hidden-xs u-hidden-xxs dw-mod" width="120">
+                    {{#if pointsTotal}}
+                        <span class="u-color--loyalty-points">{{pointPrice}}</span> @Translate("points")
+                    {{else}}
+                        {{unitprice}}
+                    {{/if}}
+                </td>
+
+                @if (!Dynamicweb.Ecommerce.Common.Context.Cart.IsQuote)
+                {
+                    <td class="cart-orderline__cell u-ta-right dw-mod" width="80">
+                        @Render(new NumberField { Id = "Quantity_{{orderLineId}}", Min = 1, OnChange = "Cart.ChangeQuantity('" + cartFeedPageId + "', '{{orderLineId}}', this.value)", Name = "QuantityOrderLine{{orderLineId}}", Value = "{{quantity}}", CssClass = "u-w80px" })
+                    </td>
+                    <td class="cart-orderline__cell u-ta-left dw-mod u-no-padding-x" width="50">
+                        @Render(new Button {
+                            ButtonType = ButtonType.Button,
+                            ButtonLayout = ButtonLayout.Clean,
+                            CssClass = "btn--condensed",
+                            OnClick = "{{removeFromCartGoogleImpression}}; Cart.UpdateCart(null, '/Default.aspx?ID=" + cartFeedPageId + "', 'CartCmd=DelOrderLine&key={{orderLineId}}&redirect=false', true);",
+                            Icon = new Icon { Prefix = "fas", Name = "fa-times" } 
+                        })
+                    </td>
+                }
+                else
+                {
+                    <td class="cart-orderline__cell u-ta-right dw-mod" width="80">
+                        @Render(new HiddenField { Id = "Quantity_{{orderLineId}}", Name = "QuantityOrderLine{{orderLineId}}", Value = "{{quantity}}" })
+                        <div class="u-w80px u-no-margin">{{quantity}}</div>
+                    </td>
+                }
+
+                <td class="cart-orderline__cell u-ta-right dw-mod">
+                    {{#if pointsTotal}}
+                        <span class="u-color--loyalty-points">{{pointsTotal}}</span> @Translate("points")
+                    {{else}}
+                        <div>{{totalprice}}</div>
+                    {{/if}}
+                    {{#if canBePurchasedWithPoints}}
+                        @Render(new Button { Title = Translate("Use") + " {{pointPrice}} " + Translate("points"), ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Clean, CssClass = "btn--loyalty-points btn--sm u-no-margin", OnClick = "Cart.BuyForPoints('" + GetGlobalValue("Global:Page.ID") + "', '" + cartFeedPageId + "', '{{orderLineId}}', '{{id}}', '{{variantId}}');", Icon = new Icon { Prefix = "far", Name = "fa-tag" } })
+                    {{/if}}
+                </td>
+            </tr>
+        {{/unless}}
+        <tr class="{{hideBomItems}}">
+            <td class="cart-table__image u-hidden-xs u-hidden-xxs dw-mod"><div class="{{hideimage}}"></div></td>
+            <td colspan="5" class="u-no-padding">
+                <table class="u-no-margin u-color-light-gray--bg">
+                    <tbody>
+                        {{#BomItems}}
+                            <tr>
+                                <td class="cart-table__image u-hidden-xs u-hidden-xxs dw-mod">
+                                    @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                                </td>
+                                <td title="{{name}} {{variantname}}">
+                                    <a href="{{link}}" class="u-color-inherit dw-mod">{{name}}</a>
+                                    <div class="item-number dw-mod">#{{productnumber}}</div>
+                                    {{#if variantname}}
+                                        <div class="item-number dw-mod">{{variantname}}</div>
+                                    {{/if}}
+                                    {{#if unitname}}
+                                        <div class="item-number dw-mod">{{unitname}}</div>
+                                    {{/if}}
+                                </td>
+                                <td class="u-hidden-xs u-hidden-xxs">&nbsp;</td>
+                                <td>{{quantity}}</td>
+                                <td>&nbsp;</td>
+                                <td class="cart-table__price u-ta-right dw-mod">&nbsp;</td>
+                            </tr>
+                        {{/BomItems}}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </script>
+}
+
+@helper RenderCartOrderlineMobileTemplate() {
+    <script id="CartOrderlineMobile" type="text/x-template">
+        {{#unless isEmpty}}
+            <tr id="Orderline{{id}}">
+                <td class="cart-table__image dw-mod">
+                    <div class="{{hideimage}}">
+                        @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                    </div>
+                </td>
+                <td title="{{name}} {{variantname}}" colspan="4">
+                    <a href="{{link}}" class="u-color-inherit">{{name}}</a>
+                    <div>#{{productnumber}}</div>
+                    {{#if variantname}}
+                        <div>{{variantname}}</div>
+                    {{/if}}
+                    {{#if unitname}}
+                        <div>{{unitname}}</div>
+                    {{/if}}
+                </td>
+            </tr>
+            <tr class="table__row--no-border">
+                <td class="cart-table__image dw-mod"></td>
+                <td colspan="4">
+                    <div class="u-pull--left">
+                        @Render(new NumberField { Id = "Quantity_{{orderLineId}}", Min = 1, OnChange = "Cart.ChangeQuantity('" + cartFeedPageId + "', '{{orderLineId}}', this.value)", Name = "QuantityOrderLine{{orderLineId}}", Value = "{{quantity}}", CssClass = "u-w80px" })
+                        <span>
+                            @Render(new Button { ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Clean, CssClass = "btn--condensed u-no-margin", OnClick = "{{removeFromCartGoogleImpression}}; Cart.UpdateCart(null, '/Default.aspx?ID=" + cartFeedPageId + "', 'CartCmd=DelOrderLine&key={{orderLineId}}&redirect=false', true);", Icon = new Icon { Prefix = "fas", Name = "fa-times" } })
+                        </span>
+                    </div>
+                    <div class="u-pull--right u-ta-right">
+                        {{#if pointsTotal}}
+                            <span class="u-color--loyalty-points">{{pointsTotal}}</span> @Translate("points")
+                        {{else}}
+                            <div>{{totalprice}}</div>
+                        {{/if}}
+                        {{#if canBePurchasedWithPoints}}
+                            @Render(new Button { Title = Translate("Use") + "{{pointPrice}}" + Translate("points"), ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Clean, CssClass = "btn--loyalty-points btn--sm u-no-margin", OnClick = "Cart.BuyForPoints('" + GetGlobalValue("Global:Page.ID") + "', '" + cartFeedPageId + "', '{{orderLineId}}', '{{id}}', '{{variantId}}');", Icon = new Icon { Prefix = "far", Name = "fa-tag" } })
+                        {{/if}}
+                    </div>
+                </td>
+            </tr>
+        {{/unless}}
+        <tr class="{{hideBomItems}}">
+            <td colspan="6" class="u-no-padding">
+                <table class="u-no-margin u-color-light-gray--bg">
+                    <tbody>
+                        {{#BomItems}}
+                            <tr>
+                                <td class="cart-table__image u-hidden-xs u-hidden-xxs dw-mod">
+                                    @Render(new Image { Path = "{{image}}", Title = "{{name}} {{variantname}}", ImageDefault = new ImageSettings { Width = 60, Height = 60, Crop = 5 } })
+                                </td>
+                                <td title="{{name}} {{variantname}}">
+                                    <a href="{{link}}" title="{{name}} {{variantname}}">{{name}}</a>
+                                    <div>#{{productnumber}}</div>
+                                    {{#if variantname}}
+                                        <div>{{variantname}}</div>
+                                    {{/if}}
+                                    {{#if unitname}}
+                                        <div>{{unitname}}</div>
+                                    {{/if}}
+                                </td>
+                                <td class="u-hidden-xs u-hidden-xxs">&nbsp;</td>
+                                <td>{{quantity}}</td>
+                                <td>&nbsp;</td>
+                                <td class="cart-table__price u-ta-right dw-mod">&nbsp;</td>
+                            </tr>
+                        {{/BomItems}}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </script>
+}
+
+@helper RenderCartOrderlineDiscountTemplate() {
+    <script id="CartOrderlineDiscount" type="text/x-template">
+        <tr class="table__row--no-border">
+            <td class="cart-table__image dw-mod">&nbsp;</td>
+            <td colspan="3">{{name}}</td>
+            <td class="u-hidden-xs u-hidden-xxs">&nbsp;</td>
+            <td class="cart-table__price u-ta-right dw-mod">{{totalprice}}</td>
+        </tr>
+    </script>
+}
+
+@helper RenderEmptyCartTemplate() {
+    <script id="EmptyCart" type="text/x-template">
+        @Translate("You have no items in the cart")
+    </script>
+}
+
+@helper RenderInlineAcceptance() {
+    string termsPageIt = GetPageIdByNavigationTag("TermsAndConditions").ToString();
+
+    <div class="grid__cell u-padding--xs">
+        @if (GetBoolean("Ecom:Cart.UseNewsletterSubscription"))
+        {
+            @Render(new HiddenField { Name = "EcomOrderSubscribeToNewsletter" })
+            @Render(new CheckboxField { Name = "EcomOrderSubscribeToNewsletter", Id = "EcomOrderSubscribeToNewsletter", Label = Translate("Subscribe to newsletter") })
+        }
+        @Render(new CheckboxField { Name = "EcomOrderCustomerAccepted", Id = "EcomOrderCustomerAccepted", OnChange = "Cart.EnableCheckoutButton()", Label = "<a href=\"/Default.aspx?ID=" + termsPageIt + "\" target=\"_blank\"> " + Translate("I accept the terms and conditions") + "</a>", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerAccepted.ErrorMessage") })
+    </div>
+}
+
+@helper RenderReviewOrderFooter() {
+    int quotesCartPageId = GetPageIdByNavigationTag("QuotesCartPage");
+
+    <div class="grid">
+        <div class="grid__col-12 grid__col--line-top"></div>
+    </div>
+
+    <div class="grid__cell-footer">
+        <div class="grid__cell u-padding--xs">
+            <div class="u-pull--right">
+                @Render(new Button {
+                    ButtonType = ButtonType.Submit,
+                    ButtonLayout = ButtonLayout.Primary,
+                    CssClass = "btn--condensed u-pull--right u-no-margin",
+                    Title = Translate("Go to checkout"),
+                    Id = GetString("CartV2.NextStepButtonName"),
+                    OnClick = "Buttons.LockButton(event, true)",
+                    Disabled = true,
+                    Name = GetString("CartV2.NextStepButtonName") 
+                })
+            </div>
+            <div class="u-pull--left">
+                @Render(new Button { ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Secondary, CssClass = "btn--condensed u-pull--left u-no-margin", Title = Translate("Empty cart"), OnClick = "googleEnchantImpressionEmptyCart(); Cart.EmptyCart(event);" })
+            </div>
+            @if (!Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideQuotesCartLink"))
+            {
+                <div class="u-pull--right">
+                    @Render(new Link { Href = "/Default.aspx?ID=" + quotesCartPageId, ButtonLayout = ButtonLayout.Link, CssClass = "btn--condensed u-no-margin u-margin-right--lg u-no-margin--xs", Title = Translate("Create quote request") })
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@helper RenderReviewOrderFooterQuote() {
+    <div class="grid">
+        <div class="grid__col-12 grid__col--line-top"></div>
+    </div>
+
+    <div class="grid__cell-footer">
+        <div class="grid__cell u-padding--xs">
+            <div class="u-pull--right">
+                @Render(new Button {
+                    ButtonType = ButtonType.Submit,
+                    ButtonLayout = ButtonLayout.Primary,
+                    CssClass = "btn--condensed u-pull--right u-no-margin",
+                    Title = Translate("Submit quote request"),
+                    Id = GetString("CartV2.NextStepButtonName"),
+                    OnClick = "Buttons.LockButton(event, true)",
+                    Name = GetString("CartV2.NextStepButtonName") 
+                })
+            </div>
+            <div class="u-pull--left">
+                @Render(new Button { ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Secondary, CssClass = "btn--condensed u-pull--left u-no-margin", OnClick = "googleEnchantImpressionEmptyCart(); Cart.EmptyCart(event);", Title = Translate("Empty cart") })
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderOrderScripts() {
+    if (!string.IsNullOrWhiteSpace(Pageview.AreaSettings.GetItem("Settings").GetString("FacebookPixelID")))
+    {
+        <script>
+            fbq('track', 'InitiateCheckout', {
+                currency: '@GetString("Ecom:Order.Price.Currency.Code")',
+                value: @GetDouble("Ecom:Order.Price.Price"),
+                num_items: "@GetInteger("Ecom:Order.OrderLines.TotalProductQuantity")"
+            });
+        </script>
+    }
+}
+
+@helper RenderEmptyCartObserver() 
+{
+    <script>
+        document.addEventListener("cartUpdated", function(event) {
+            let data = event.detail.data[0];
+            if (data.numberofproducts == 0) {
+                location.reload();
+            } else {
+                HandlebarsBolt.CreateItemsFromJson(data, "Cart");
+            }
+        });
+    </script>
+}

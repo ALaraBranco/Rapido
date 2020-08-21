@@ -1,0 +1,12 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+
+@helper Render(ComponentBase component)
+{
+    if (component != null)
+    {
+        @component.Render(this)
+    }
+}

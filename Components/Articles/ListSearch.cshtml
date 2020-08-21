@@ -1,0 +1,22 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleListSearch(ArticleListSearch settings)
+{
+    string searchString = !string.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("Title")) ? HttpContext.Current.Request.QueryString.Get("Title").Trim('*') : "";
+    string className = "u-w340px u-pull--right u-margin-left";
+
+    if (Pageview.Device.ToString() == "Mobile" || Pageview.Device.ToString() == "Tablet")
+    {
+        className = "u-full-width";
+    }
+    
+    <div class="typeahead u-color-inherit u-margin-bottom dw-mod @className">
+        <input type="text" class="typeahead-search-field u-no-margin dw-mod" placeholder="@Translate("Search in list")" value="@searchString" id="ArticleListSearchInput" onchange="QueryArray.setParameterInCurrentURL('Title', '*' + document.getElementById('ArticleListSearchInput').value + '*')">
+        <button type="button" class="btn btn--condensed btn--primary u-no-margin dw-mod"><i class="fas fa-search"></i></button>
+    </div>
+}

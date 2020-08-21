@@ -1,0 +1,60 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleListCategoryFilter(ArticleListCategoryFilter settings)
+{
+    string pageId =  Pageview.ID.ToString();
+    string selectedFilter = !String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("sourcePage")) ? HttpContext.Current.Request.QueryString.Get("sourcePage") : Translate("All");
+    var query = HttpUtility.ParseQueryString(HttpContext.Current.Request.QueryString.ToString());
+
+    foreach (var option in settings.Categories)
+    {
+        selectedFilter = selectedFilter == option.Value ? option.Key : selectedFilter;
+    }
+
+    if (selectedFilter == pageId)
+    {
+        selectedFilter = Translate("All");
+    }
+
+    if (Pageview.Device.ToString() != "Mobile" && Pageview.Device.ToString() != "Tablet")
+    {
+        <div class="u-pull--right u-margin-left">
+            <div class="collection u-no-margin">
+                <h5>@Translate("Category")</h5>
+                <input type="checkbox" id="CategorySelector" class="dropdown-trigger" />
+                <div class="dropdown u-w180px dw-mod">
+                    <label class="dropdown__header dropdown__btn dw-mod" for="CategorySelector">@Translate(selectedFilter)</label>
+                    <div class="dropdown__content dw-mod">
+                        @foreach (var option in settings.Categories)
+                        {
+                        <div class="dropdown__item" onclick="QueryArray.setParametersInCurrentURL({ sourceType: 'Page', sourcePage: '@(option.Key.ToLower() == "all" ? pageId : option.Value)' })">@Translate(option.Key)</div>
+                        }
+                    </div>
+                    <label class="dropdown-trigger-off" for="CategorySelector"></label>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="u-full-width u-margin-bottom">
+            <h5 class="u-no-margin">@Translate("Category")</h5>
+            <input type="checkbox" id="CategorySelector" class="dropdown-trigger" />
+            <div class="dropdown u-full-width dw-mod">
+                <label class="dropdown__header dropdown__btn dw-mod" for="CategorySelector">@Translate(selectedFilter)</label>
+                <div class="dropdown__content dw-mod">
+                    @foreach (var option in settings.Categories)
+                    {
+                    <div class="dropdown__item" onclick="QueryArray.setParametersInCurrentURL({ sourceType: 'Page', sourcePage: '@(option.Key.ToLower() == "all" ? pageId : option.Value)' })">@Translate(option.Key)</div>
+                    }
+                </div>
+                <label class="dropdown-trigger-off" for="CategorySelector"></label>
+            </div>
+        </div>
+    }
+}

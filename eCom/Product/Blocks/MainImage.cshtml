@@ -1,0 +1,254 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@Include("../../Stickers.cshtml")
+
+@functions {
+    BlocksPage mainImagePage = BlocksPage.GetBlockPage("Product");
+    bool showThumbs;
+    bool thumbsOnTheSide;
+}
+
+@{
+    string imageBlockWidth = Pageview.AreaSettings.GetItem("ProductPage").GetList("TopLayout") != null ? Pageview.AreaSettings.GetItem("ProductPage").GetList("TopLayout").SelectedValue : "6";
+    string blocksPosition = Pageview.AreaSettings.GetItem("ProductPage").GetList("ImageSectionPosition") != null ? Pageview.AreaSettings.GetItem("ProductPage").GetList("ImageSectionPosition").SelectedValue : "thumbs-image-info";
+    bool infoOnTheRight = blocksPosition.LastIndexOf("info") == blocksPosition.Length - 4;
+    showThumbs = blocksPosition.IndexOf("thumbs") != -1;
+    thumbsOnTheSide = showThumbs && blocksPosition.IndexOf("thumbsBottom") == -1;
+    bool thumbsOnTheLeft = blocksPosition.IndexOf("image") > blocksPosition.IndexOf("thumbs");
+
+    Block mainImageBlock = new Block()
+    {
+        Id = "MainImage",
+        SortId = infoOnTheRight ? 10 : 20,
+        Design = new Design
+        {
+            Size = imageBlockWidth,
+            RenderType = RenderType.Column
+        },
+        BlocksList = new List<Block>
+        {
+            new Block {
+                Id = "MainImageRow",
+                SortId = 10,
+                Design = new Design
+                {
+                    RenderType = RenderType.Row
+                },
+                BlocksList = new List<Block>
+                {
+                    new Block
+                    {
+                        Id = "Carousel",
+                        SortId = 10,
+                        Template = RenderThumbnails(),
+                        Design = new Design
+                        {
+                            Size = thumbsOnTheSide ? "2" : "12",
+                            RenderType = RenderType.Column,
+                            CssClass = thumbsOnTheSide ? "u-hidden-xxs" : ""
+                        }
+                    }
+                }
+            }
+        }
+    };
+    mainImagePage.Add("Top", mainImageBlock);
+
+    mainImagePage.Add("MainImageRow",
+    new Block()
+    {
+        Id = "ProductImageModal",
+        SortId = 0,
+        Component = new Modal {
+            Id = "Gallery",
+            Width = ModalWidth.Lg,
+            Height = ModalHeight.Full,
+            BodyTemplate = RenderProductImagesCarousel("modalCarousel", 1, "horizontal", 3, true)
+        }
+    });
+
+    if (showThumbs)
+    {
+        mainImagePage.Add("MainImageRow",
+        new Block
+        {
+            Id = "Image",
+            SortId = thumbsOnTheLeft ? 20 : 0,
+            Template = RenderProductImage(),
+            Design = new Design
+            {
+                Size = thumbsOnTheSide ? "auto" : "12",
+                RenderType = RenderType.Column
+            }
+        });
+    }
+}
+
+@helper RenderProductStickers()
+{
+    List<StickersCollection> StickersContainers = GetStickersContainersList(
+        GetLoop("ProductDiscounts"),
+        GetDouble("Ecom:Product.Discount.Price.Price"),
+        GetDouble("Ecom:Product.Price.Price"),
+        GetDate("Ecom:Product.Created"),
+        GetString("Ecom:Product:Field.CustomSticker.Value")
+    );
+
+    foreach (StickersCollection stickersContainer in StickersContainers)
+    {
+        @Render(new StickersCollection { Stickers = stickersContainer.Stickers, Position = stickersContainer.Position })
+    }
+}
+
+@helper RenderProductImage()
+{
+    <label for="GalleryModalTrigger" class="product__image-container u-position-relative">
+        @{
+            Image productImage = new Image
+            {
+                Path = GetProductImage(),
+                Id = "Image_" + GetString("Ecom:Product.ID"),
+                CssClass = "product__image-container__image dw-mod",
+                Title = GetString("Ecom:Product.Name"),
+                OnClick = "modalCarousel.GoToSlide('modalCarousel', this.getAttribute('data-number'))",
+                ImageDefault = new ImageSettings
+                {
+                    Width = 800,
+                    Height = 800,
+                    Crop = 5,
+                    FillCanvas = true
+                }
+            };
+            productImage.ExtraAttributes.Add("data-for", "FullImage");
+            productImage.ExtraAttributes.Add("data-number", "0");
+        }
+        @Render(productImage)
+        @RenderProductStickers()
+    </label>
+}
+
+@helper RenderThumbnails()
+{
+    <div class="@(showThumbs ? "product__thumbs" : "") dw-mod">
+        @RenderProductImagesCarousel(
+            "productCarousel",
+            !showThumbs ? 1 : 5,
+            thumbsOnTheSide ? "vertical" : "horizontal",
+            !showThumbs ? 3 : 2
+        )
+        @if (!showThumbs)
+        {
+            @RenderProductStickers()
+        }
+    </div>
+}
+
+@helper RenderProductImagesCarousel(string id, int slidesInView, string direction, int preloaderSize, bool isModal = false)
+{
+    HashSet<string> images = new HashSet<string>();
+
+    images.Add(GetProductImage());
+
+    foreach (LoopItem alternativeImage in GetLoop("Ecom:Product.AlternativeImages"))
+    {
+        string alt_image = alternativeImage.GetString("Ecom:Product.AlternativeImages.Image");
+
+        if (!string.IsNullOrEmpty(alt_image))
+        {
+            images.Add(alt_image);
+        }
+    }
+
+    foreach (LoopItem detail in GetLoop("Details"))
+    {
+        string detail_image = detail.GetString("Ecom:Product:Detail.Image.Clean");
+
+        if (!string.IsNullOrEmpty(detail_image))
+        {
+            string ext = Path.GetExtension(detail_image).ToLower();
+            if (ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".png")
+            {
+                images.Add(detail_image);
+            }
+        }
+    }
+
+    <div class="carousel dw-mod" id="@id">
+        <div class="thumb-list carousel__container @(slidesInView != 1 ? "carousel__container--hidden" : "") js-carousel-slides dw-mod">
+            @{ var i = 0; }
+            @foreach (var image in images)
+            {
+                @RenderProductImage(image, slidesInView == 1, isModal ? "modal--full__img" : "", i == 0, isModal)
+                i++; //first is active
+            }
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                @id = new CarouselModule('#@id', {
+                    slidesInView: @slidesInView,
+                    direction: "@direction",
+                    preloaderSize: @preloaderSize,
+                    showCounter: @isModal.ToString().ToLower()
+                });
+            });
+        </script>
+    </div>
+}
+
+@helper RenderProductImage(string image, bool isBig, string cssClass = "", bool isActive = false, bool isModal = false)
+{
+    string productId = GetString("Ecom:Product.ID");
+    string imagePrefix = "/Admin/Public/GetImage.ashx?width=800&amp;height=800&amp;crop=5&FillCanvas=True&DoNotUpscale=true&amp;Compression=75&amp;image=";
+
+    Image productImage = new Image {
+        Path = image,
+        Title = GetString("Ecom:Product.Name"),
+        ImageDefault = new ImageSettings {
+            Width = 800,
+            Height = 800,
+            Crop = 5,
+            FillCanvas = true
+        },
+        CssClass = "js-gallery " + cssClass,
+        OnClick = "modalCarousel.GoToSlide('modalCarousel', this.closest('.carousel__slide').index());"
+    };
+    productImage.ExtraAttributes.Add("data-for", "FullImage");
+    productImage.ExtraAttributes.Add("data-image", image);
+
+    Image productThumb = productImage;
+    productThumb.ImageDefault = new ImageSettings
+    {
+        Width = 200,
+        Height = 200,
+        Crop = 5,
+        FillCanvas = true
+    };
+
+    <div class="carousel__slide dw-mod">
+        @if (isModal)
+        {
+            @Render(new Image { Path = image, CssClass = cssClass, Title = GetString("Ecom:Product.Name"), DisableImageEngine = true, DisableLazyLoad = true });
+        }
+        else if (isBig)
+        {
+            <label for="GalleryModalTrigger">
+                @Render(productImage)
+            </label>
+        }
+        else
+        {
+            <div class="thumb-list__item dw-mod js-thumb js-gallery @(isActive ? "js-thumb--active thumb-list__item--active" : "")" data-for="Image_@productId" data-image="@imagePrefix@image" onmouseover="Gallery.openImage(this)">
+                <label for="GalleryModalTrigger">
+                     @Render(productThumb)
+                </label>
+            </div>
+        }
+    </div>
+}

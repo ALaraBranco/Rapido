@@ -1,0 +1,655 @@
+﻿@functions {
+    public class Text
+    {
+        public string content {
+            get {
+                return string.Join("<br>", this.Lines.ToArray());
+            }
+            set {}
+        }
+        public List<string> Lines { get; set; }
+
+        public Text()
+        {
+            Lines = new List<string>();
+        }
+
+        public void Add(string textString)
+        {
+            Lines.Add(textString);
+        }
+    }
+
+    public class RowSettings
+    {
+        public string backgroundColor { get; set; }
+        public string smallScreenTable { get; set; }
+        public string background { get; set; }
+        public string padding { get; set; }
+
+        //Defaults
+        public RowSettings()
+        {
+            backgroundColor = "#FFFFFF";
+            background = "";
+            padding = "25";
+        }
+    }
+
+    public class Column
+    {
+        public string image { get; set; }
+        public string icon { get; set; }
+        public string imageSize { get; set; }
+        public string preheader { get; set; }
+        public string introheader { get; set; }
+        public string header { get; set; }
+        public string subheader { get; set; }
+        public Text text { get; set; }
+        public string textColor { get; set; }
+        public string introheaderTextColor { get; set; }
+        public string align { get; set; }
+        public string link { get; set; }
+        public string altText { get; set; }
+        public string linkText { get; set; }
+        public string buttonColor { get; set; }
+        public string buttonType { get; set; }
+        public string buttonAlign { get; set; }
+        public string width { get; set; }
+
+        //Defaults
+        public Column()
+        {
+            textColor = "#333";
+            introheaderTextColor = "#333";
+            align = "left";
+            buttonColor = "#EC683B";
+            buttonType = "Primary";
+            buttonAlign = "left";
+
+            //Initialize the text object
+            this.text = new Text();
+        }
+
+        public bool isEmpty()
+        {
+            return string.IsNullOrEmpty(this.image) &&
+                   string.IsNullOrEmpty(this.preheader) &&
+                   string.IsNullOrEmpty(this.introheader) &&
+                   string.IsNullOrEmpty(this.header) &&
+                   string.IsNullOrEmpty(this.subheader) &&
+                   string.IsNullOrEmpty(this.text.content) &&
+                   string.IsNullOrEmpty(this.link) &&
+                   string.IsNullOrEmpty(this.linkText);
+        }
+    }
+
+    string emailBgColor = "#d3d3d3";
+    string emailTextColor = "color:#828282;";
+    string emailTableBorder = "border-top:1px solid #a8a8a8;";
+    string emailText = "font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#828282;text-align:center;line-height:120%;";
+    string emailTextLarge = "font-family:Helvetica,Arial,sans-serif;font-size:15px;margin-bottom:0;line-height:135%;word-break: break-word;";
+    string emailTextSmall = "line-height:125%;font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:normal;margin-top:0;margin-bottom:3px;";
+    string emailHeaderOneStyle = "text-transform:uppercase;line-height:135%;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:normal;margin-bottom:5px;";
+    string emailHeaderTwoStyle = "font-weight:normal;font-family:Helvetica,Arial,sans-serif;font-size:23px;margin-bottom:10px;line-height:135%;";
+    string emailHeaderThreeStyle = "line-height:125%;font-family:Helvetica,Arial,sans-serif;font-size:20px;font-weight:normal;margin-top:0;margin-bottom:3px;";
+    string emailTableFixedStyle = "table-layout: fixed;max-width:100% !important;width: 100% !important;min-width: 100% !important;";
+    string emailLinkStyle = "text-decoration:none;color:#828282;";
+    string emailLinkUnderlineStyle = "text-decoration:underline;color:#828282;";
+    string emailTableWidth = "500";
+    string emailTableMaxWidth = "max-width:100%;";
+    string emailFlexibleImage = "height: auto !important;max-width: 100% !important;display: block;";
+    string emailHiddenBlock = "display:none !important; mso-hide:all;";
+    string emailNoTopBottomInnerSpace = "padding-top:0px;padding-bottom:0px;";
+    string emailContent = "height:100% !important;margin:0;padding:0;width:100% !important;font-family:Helvetica, Arial,'Lucida Grande',sans-serif;";
+}
+
+@helper CreatePreheader(string viewInBrowserLink = "#")
+{
+    <!-- EMAIL HEADER // -->
+    <!--
+        The table "emailBody" is the email's container.
+        Its width can be set to 100% for a color band
+        that spans the width of the page.
+    -->
+    <table class="content--bg" bgcolor="@emailBgColor" border="0" cellpadding="0" cellspacing="0" width="@emailTableWidth" id="emailHeader">
+
+        <!-- HEADER ROW // -->
+        <tr>
+            <td align="center" valign="top">
+                <!-- CENTERING TABLE // -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td align="center" valign="top">
+                            <!-- FLEXIBLE CONTAINER // -->
+                            <table border="0" cellpadding="10" cellspacing="0" width="@emailTableWidth">
+                                <tr>
+                                    <td valign="top" width="@emailTableWidth">
+
+                                        <!-- CONTENT TABLE // -->
+                                        <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <!--
+                                                    The "invisibleIntroduction" is the text used for short preview
+                                                    of the email before the user opens it (50 characters max). Sometimes,
+                                                    you do not want to show this message depending on your design but this
+                                                    text is highly recommended.
+
+                                                    You do not have to worry if it is hidden, the next <td> will automatically
+                                                    center and apply to the width 100% and also shrink to 50% if the first <td>
+                                                    is visible.
+                                                -->
+                                                <td class="content--hidden" align="left" valign="middle" id="invisibleIntroduction" style="@emailHiddenBlock">
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="@emailTableMaxWidth">
+                                                        <tr>
+                                                            <td align="left">
+                                                                <div class="text" style="@emailText">
+
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                                <td align="right" valign="middle">
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="@emailTableMaxWidth">
+                                                        <tr>
+                                                            <td align="left">
+                                                                <!-- CONTENT // -->
+                                                                <div class="text" style="@emailText">
+                                                                    @Translate("If you can't see this message")
+                                                                    @{
+                                                                        string title = Translate("View it in your browser");
+                                                                    }
+                                                                    <a href="@viewInBrowserLink" class="link" target="_blank" style="@emailLinkUnderlineStyle;" title="@title">
+                                                                        <span class="label" style="@emailTextColor">@Translate("view it in your browser")</span>
+                                                                    </a>.
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- // FLEXIBLE CONTAINER -->
+                        </td>
+                    </tr>
+                </table>
+                <!-- // CENTERING TABLE -->
+            </td>
+        </tr>
+        <!-- // END -->
+
+    </table>
+    <!-- // END -->
+}
+
+@helper CreateSubscriptionFooter(string subscriptionLink = "#")
+{
+    <!-- EMAIL FOOTER // -->
+    <!--
+        The table "emailBody" is the email's container.
+        Its width can be set to 100% for a color band
+        that spans the width of the page.
+    -->
+    <table class="content--bg" bgcolor="@emailBgColor" border="0" cellpadding="0" cellspacing="0" width="@emailTableWidth" id="emailFooter">
+
+        <!-- FOOTER ROW // -->
+        <!--
+            To move or duplicate any of the design patterns
+            in this email, simply move or copy the entire
+            MODULE ROW section for each content block.
+        -->
+        <tr>
+            <td align="center" valign="top">
+                <!-- CENTERING TABLE // -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td align="center" valign="top">
+                            <!-- FLEXIBLE CONTAINER // -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="@emailTableWidth">
+                                <tr>
+                                    <td align="center" valign="top" width="@emailTableWidth">
+                                        <table border="0" cellpadding="30" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td class="content--bg" valign="top" bgcolor="@emailBgColor">
+
+                                                    <div class="text" style="@emailText">
+                                                        <div>@Translate("Click here if you wish to") <a href="@subscriptionLink" class="link link--no-decoration" target="_blank" style="@emailLinkStyle;" title="@Translate("Unsubscribe")"><span class="label" style="@emailTextColor">@Translate("unsubscribe")</span></a>.</div>
+                                                    </div>
+
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- // FLEXIBLE CONTAINER -->
+                        </td>
+                    </tr>
+                </table>
+                <!-- // CENTERING TABLE -->
+            </td>
+        </tr>
+    </table>
+    <!-- // END -->
+}
+
+@helper CreateRow(Column columnObjectOne, RowSettings rowSettings = null)
+{
+    if (rowSettings == null)
+    {
+        rowSettings = new RowSettings();
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.imageSize))
+    {
+        columnObjectOne.imageSize = "500";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.width))
+    {
+        columnObjectOne.width = "500";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.align))
+    {
+        columnObjectOne.align = "center";
+    }
+
+    @CreateOneColumn(columnObjectOne, rowSettings);
+}
+
+@helper CreateRow(Column columnObjectOne, Column columnObjectTwo, RowSettings rowSettings = null)
+{
+    if (rowSettings == null)
+    {
+        rowSettings = new RowSettings();
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.imageSize))
+    {
+        columnObjectOne.imageSize = "210";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectTwo.imageSize))
+    {
+        columnObjectTwo.imageSize = "210";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.width))
+    {
+        columnObjectOne.width = "210";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectTwo.width))
+    {
+        columnObjectTwo.width = "210";
+    }
+
+    @CreateTwoColumns(columnObjectOne, columnObjectTwo, rowSettings);
+}
+
+@helper CreateRow(Column columnObjectOne, Column columnObjectTwo, Column columnObjectThree, RowSettings rowSettings = null)
+{
+    if (rowSettings == null)
+    {
+        rowSettings = new RowSettings();
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.imageSize))
+    {
+        columnObjectOne.imageSize = "126";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectTwo.imageSize))
+    {
+        columnObjectTwo.imageSize = "126";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectThree.imageSize))
+    {
+        columnObjectThree.imageSize = "126";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectOne.width))
+    {
+        columnObjectOne.width = "126";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectTwo.width))
+    {
+        columnObjectTwo.width = "126";
+    }
+
+    if (string.IsNullOrEmpty(columnObjectThree.width))
+    {
+        columnObjectThree.width = "126";
+    }
+
+    @CreateThreeColumns(columnObjectOne, columnObjectTwo, columnObjectThree, rowSettings);
+}
+
+@helper CreateRowDivider()
+{
+    <tr>
+        <td align="center" valign="top">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                    <td align="center" valign="top">
+                        <table border="0" cellpadding="0" cellspacing="0" width="@emailTableWidth">
+                            <tr>
+                                <td class="no-top-bottom-inner-space" align="center" valign="top" style="@emailNoTopBottomInnerSpace">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td class="table-content-border--top" align="center" valign="top" style="@emailTableBorder"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+}
+
+@helper CreateOneColumn(Column columnObject, RowSettings rowSettings)
+{
+    <tr>
+        <td align="center" valign="top">
+            <table border="0" cellpadding="0" cellspacing="0" width="500" style="color:@columnObject.textColor; background: @rowSettings.background;" bgcolor="@rowSettings.backgroundColor">
+                <tr>
+                    <td align="center" valign="top">
+                        <table border="0" cellpadding="0" cellspacing="0" width="@columnObject.width">
+                            <tr>
+                                <td align="@columnObject.align" valign="top" width="@emailTableWidth">
+                                    <table border="0" cellpadding="@rowSettings.padding" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="@columnObject.align" style="text-align: @columnObject.align" valign="top">
+                                                @CreateColumnBlock(columnObject)
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+}
+
+@helper CreateTwoColumns(Column columnObjectOne, Column columnObjectTwo, RowSettings rowSettings)
+{
+    <tr mc:hideable=mc:hideable>
+        <td align="center" valign="top">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="color:@columnObjectOne.textColor" bgcolor="@rowSettings.backgroundColor">
+                <tr>
+                    <td align="center" valign="top">
+                        <table border="0" cellpadding="10" cellspacing="0" width="@emailTableWidth">
+                            <tr>
+                                <td valign="top" width="@emailTableWidth">
+                                    <table align="center" border="0" cellpadding="10" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="left" valign="top">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="@columnObjectOne.width" style="@emailTableMaxWidth">
+                                                    <tr>
+                                                        <td align="left">
+                                                            @CreateColumnBlock(columnObjectOne)
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                            <td align="right" valign="top">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="@columnObjectTwo.width" style="@emailTableMaxWidth">
+                                                    <tr>
+                                                        <td align="left">
+                                                            @CreateColumnBlock(columnObjectTwo)
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+}
+
+@helper CreateThreeColumns(Column columnObjectOne, Column columnObjectTwo, Column columnObjectThree, RowSettings rowSettings)
+{
+    <tr mc:hideable=mc:hideable>
+        <td align="center" valign="top">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="color:@columnObjectOne.textColor" bgcolor="@rowSettings.backgroundColor">
+                <tr>
+                    <td align="center" valign="top">
+                        <table border="0" cellpadding="10" cellspacing="0" width="@emailTableWidth">
+                            <tr>
+                                <td valign="top" width="@emailTableWidth">
+                                    <table align="left" border="0" cellpadding="10" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="left" valign="top">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="@columnObjectOne.width" style="@emailTableMaxWidth">
+                                                    <tr>
+                                                        <td align="left">
+                                                            @CreateColumnBlock(columnObjectOne)
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                            <td align="center" valign="top">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="@columnObjectTwo.width" style="@emailTableMaxWidth">
+                                                    <tr>
+                                                        <td align="left">
+                                                            @CreateColumnBlock(columnObjectTwo)
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                            <td align="right" valign="top">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="@columnObjectThree.width" style="@emailTableMaxWidth">
+                                                    <tr>
+                                                        <td align="left">
+                                                            @CreateColumnBlock(columnObjectThree)
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+}
+
+@helper CreateColumnBlock(Column columnObject)
+{
+    @CreateColumnBlockContent(columnObject)
+}
+
+@helper CreateColumnBlockContent(Column columnObject)
+{
+    if (!String.IsNullOrEmpty(columnObject.preheader))
+    {
+        <small class="text text--small" style="color:@columnObject.textColor;text-align:@columnObject.align;@emailTextSmall;">@columnObject.preheader</small>
+    }
+
+    if (!string.IsNullOrEmpty(columnObject.image))
+    {
+        string image = Dynamicweb.Context.Current.Request.Url.Scheme + "://" + GetGlobalValue("Global:Request.Host") + "/Admin/Public/GetImage.ashx?width=" + columnObject.imageSize + "&crop=1&image=" + columnObject.image;
+        string altText = !string.IsNullOrEmpty(columnObject.altText) ? columnObject.altText : columnObject.linkText;
+        if (!string.IsNullOrEmpty(columnObject.link) && !string.IsNullOrEmpty(altText))
+        {
+            <a href="@columnObject.link" style="display: inline-block" title="@altText">
+                <img src="@image" width="@columnObject.imageSize" class="flexibleImage" style="@emailFlexibleImage" alt="@altText" />
+            </a>
+        }
+        else
+        {
+            <img src="@image" width="@columnObject.imageSize" class="flexibleImage" style="@emailFlexibleImage" alt="@altText" />
+        }
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.image) && (!String.IsNullOrEmpty(columnObject.introheader) || !String.IsNullOrEmpty(columnObject.header) || !String.IsNullOrEmpty(columnObject.text.content)))
+    {
+        <br />
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.introheader))
+    {
+        <h1 style="color:@columnObject.introheaderTextColor;text-align:@columnObject.align;@emailHeaderOneStyle">@columnObject.introheader</h1>
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.header))
+    {
+        <h2 style="color:@columnObject.textColor;text-align:@columnObject.align;@emailHeaderTwoStyle">
+            @if (!String.IsNullOrEmpty(columnObject.icon))
+            {
+                <img src="@columnObject.icon" class="flexibleImage" style="@emailFlexibleImage" alt="@columnObject.header" />
+            }
+            @columnObject.header
+        </h2>
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.subheader))
+    {
+        <h3 style="color:@columnObject.textColor;text-align:@columnObject.align;@emailHeaderThreeStyle">@columnObject.subheader</h3>
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.text.content))
+    {
+        <div class="text text--large text--center" style="color:@columnObject.textColor;text-align:@columnObject.align;@emailTextLarge">@columnObject.text.content</div>
+    }
+
+    if (!String.IsNullOrEmpty(columnObject.link) && !String.IsNullOrEmpty(columnObject.linkText))
+    {
+        string bgColor = "#EC683B";
+        string borderColor = "#EC683B";
+        string fontColor = "#FFFFFF";
+        string fontSize = "17";
+        string fontWeight = "normal";
+        string buttonDesign = "";
+        string buttonDesignStyles = "";
+        string borderRadius = "";
+        string textAlignment = "center";
+
+        if (!String.IsNullOrEmpty(columnObject.buttonType))
+        {
+            string btnId;
+
+            switch (columnObject.buttonType)
+            {
+                case "Link":
+                    btnId = null;
+                    bgColor = "";
+                    borderColor = "";
+                    string linksColor = Dynamicweb.Core.Converter.ToString(Pageview.AreaSettings.GetItem("Layout").GetString("LinksColor"));
+                    fontColor = !String.IsNullOrEmpty(linksColor) ? linksColor : "#333";
+                    buttonDesignStyles = "background-color: transparent; text-decoration: underline; padding: 0;";
+                    textAlignment = "left";
+                    break;
+                case "Secondary":
+                    btnId = "SecondaryButton";
+                    break;
+                case "Tertiary":
+                    btnId = "TertiaryButton";
+                    break;
+                default:
+                    btnId = "PrimaryButton";
+                    break;
+            }
+
+            if (!String.IsNullOrEmpty(btnId))
+            {
+                var item = Pageview.AreaSettings.GetItem("Layout").GetItem(btnId);
+
+                if (item != null)
+                {
+                    if (!String.IsNullOrEmpty(item.GetString("BackgroundColor")))
+                    {
+                        bgColor = item.GetString("BackgroundColor");
+                        borderColor = item.GetString("BackgroundColor");
+                    }
+                    if (!String.IsNullOrEmpty(item.GetString("FontColor")))
+                    {
+                        fontColor = item.GetString("FontColor");
+                    }
+                    if (!String.IsNullOrEmpty(item.GetString("FontSize")))
+                    {
+                        fontSize = item.GetString("FontSize");
+                    }
+                    if (!String.IsNullOrEmpty(item.GetString("FontWeight")))
+                    {
+                        fontWeight = item.GetString("FontWeight");
+                    }
+                    if (!String.IsNullOrEmpty(item.GetString("ButtonDesign")))
+                    {
+                        buttonDesign = item.GetString("ButtonDesign");
+                    }
+                }
+
+                switch (buttonDesign)
+                {
+                    case "rounded":
+                        borderRadius = "0.2rem";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                    case "round":
+                        borderRadius = "200px";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                    case "outline-square":
+                        borderRadius = "0";
+                        bgColor = "transparent";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                    case "outline-rounded":
+                        borderRadius = "0.2rem";
+                        bgColor = "transparent";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                    case "outline-round":
+                        borderRadius = "200px";
+                        bgColor = "transparent";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                    default:
+                        borderRadius = "0";
+                        buttonDesignStyles = "border: 1px " + borderColor + " solid; border-radius: " + borderRadius + "; background-color:" + bgColor + ";";
+                        break;
+                }
+            }
+        }
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td>
+                    <table align="@columnObject.buttonAlign" style="text-align: @columnObject.buttonAlign" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td align="@columnObject.buttonAlign" style="text-align: @columnObject.buttonAlign; border-radius: @borderRadius;" bgcolor="@bgColor">
+                                <a href="@columnObject.link" style="display: inline-block;padding: 10px;text-align: center; text-decoration:none;font-family:Helvetica,Arial,sans-serif; color: @fontColor; font-size: @(Int32.Parse(fontSize) + 2)px; font-weight: @fontWeight; @buttonDesignStyles; width: inherit" target="_blank" title="@columnObject.linkText">
+                                    @columnObject.linkText
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    }
+}

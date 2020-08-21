@@ -1,0 +1,63 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Frontend.Devices
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Core
+@using System
+@using System.IO
+@using System.Web
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage myListPage = BlocksPage.GetBlockPage("MyList");
+}
+
+@{
+    Block myListPageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10
+    };
+
+    myListPage.Add(myListPageContainer);
+
+    Block localScript = new Block
+    {
+        Id = "LocalScript",
+        SortId = 100,
+        Template = LocalScript()
+    };
+
+    myListPage.Add(localScript);
+}
+
+@Include("Blocks/MyList/ListEdit.cshtml")
+@Include("Blocks/MyList/List.cshtml")
+@Include("Blocks/MyList/Custom__Blocks.cshtml")
+
+@helper LocalScript()
+{
+    @* WILD HACK TO MAKE REDIRECTION TO THE FAVORITE LIST WORK *@
+    if (string.IsNullOrEmpty(GetString("Ecom:CustomerCenter.ProductList.Mode")))
+    {
+        string listId = HttpContext.Current.Request.QueryString.Get("ListID");
+        string listName = "";
+    
+        foreach (LoopItem listitem in GetLoop("Lists"))
+        {
+            listName = listitem.GetString("Ecom:CustomerCenter.List.Name");
+        }
+
+        <script>
+            location.href = "/Default.aspx?ID=@(Converter.ToString(GetPageIdByNavigationTag("ProductsPage")))&ListID=@listId&ListName=@listName";
+        </script>
+    }
+}
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(myListPage.BlocksRoot.BlocksList)
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

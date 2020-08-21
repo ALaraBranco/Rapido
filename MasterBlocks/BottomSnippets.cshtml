@@ -1,0 +1,82 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{ 
+    BlocksPage bottomSnippetsBlocksPage = BlocksPage.GetBlockPage("Master");
+
+    Block primaryBottomSnippets = new Block()
+    {
+        Id = "MasterJavascriptInitializers",
+        SortId = 100,
+        Template = RenderPrimaryBottomSnippets()
+    };
+    bottomSnippetsBlocksPage.Add(MasterBlockId.MasterReferences, primaryBottomSnippets);
+}
+
+@helper RenderPrimaryBottomSnippets() {
+    bool isWireframeMode = Model.Area.Item.GetItem("Settings").GetBoolean("WireframeMode");
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+
+    if (isWireframeMode)
+    {
+        <script>
+            Wireframe.Init(true);
+        </script>
+    }
+
+
+    if (useGoogleTagManager)
+    {
+        <script>
+            document.addEventListener('addToCart', function(event) {
+                var googleImpression = event.detail.productInfo.googleImpression;
+                dataLayer.push({
+                    'event': 'addToCart',
+                    'ecommerce': {
+                        'currencyCode': '@Dynamicweb.Ecommerce.Services.Currencies.GetDefaultCurrency().Code',
+                        'add': {
+                            'products': [{
+                                'name': googleImpression.name,
+                                'id': googleImpression.id,
+                                'price': googleImpression.price,
+                                'brand': googleImpression.brand,
+                                'category': googleImpression.category,
+                                'variant': googleImpression.variant,
+                                'quantity': event.detail.quantity
+                            }]
+                        }
+                    }
+                });
+            });
+        </script>
+}
+
+    //if digitalwarehouse
+    if (Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("ShowDownloadCart")) 
+    {
+        string cartContextId = Converter.ToString(HttpContext.Current.Application["DownloadCartContext"]);
+
+        if (string.IsNullOrEmpty(cartContextId)) {
+            var moduleProps = Dynamicweb.Modules.Properties.GetParagraphModuleSettings(GetPageIdByNavigationTag("DownloadCart"), "eCom_CartV2");
+            var cartSettings = new Dynamicweb.Ecommerce.Cart.ModuleSettings(moduleProps);
+            cartContextId = cartSettings.OrderContextID;
+            HttpContext.Current.Application["DownloadCartContext"] = cartContextId;
+        }
+        
+        <script>
+            let downloadCart = new DownloadCart({
+                cartPageId: @GetPageIdByNavigationTag("MiniCartFeed"),
+                contextId: "@cartContextId",
+                addButtonText: "@Translate("Add")",
+                removeButtonText: "@Translate("Remove")"
+            });
+        </script>
+    }
+
+    <!--@Javascripts-->
+}

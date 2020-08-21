@@ -1,0 +1,105 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage selectOrderPage = BlocksPage.GetBlockPage("RMADetails"); 
+
+
+    public SelectField GetOrders()
+    {
+
+        SelectField orders = new SelectField
+        {
+            Id = GetString("ParagraphID") + "RMAOrderID",
+            Name = GetString("ParagraphID") + "RMAOrderID",
+            Label = Translate("Select order"),
+            OnChange = "document.forms['" + GetString("ParagraphID") + "AddRmaForm'].submit();"
+        };
+
+        orders.Options.Add(new SelectFieldOption
+        {
+            Label = Translate("Nothing selected"),
+            Value = ""
+        });
+
+        foreach (var order in GetLoop("Orders"))
+        {
+            orders.Options.Add(new SelectFieldOption
+            {
+                Label = order.GetString("Ecom:Order.Date") + ", #" + order.GetString("Ecom:Order.ID") + ", Price: " + order.GetString("Ecom:Order.OrderLines.Total.Price"),
+                Value = order.GetString("Ecom:Order.ID"),
+                Checked = !string.IsNullOrEmpty(order.GetString("Ecom:Order.Selected"))
+            });
+        }
+
+        return orders;
+    }
+}
+
+@{
+    bool hasAddContent = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent"));
+    bool hasCancelContent = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasCancelContent"));
+
+    string formText = GetString("ParagraphID");
+
+    if (!hasAddContent)
+    {
+        formText += hasCancelContent ? "CancelRmaForm" : "AddRmaCommentForm";
+    }
+    else
+    {
+        formText += "AddRmaForm";
+    }
+
+    string rmatypestr = GetString("ParagraphID") + "RMATypeID";
+
+    SelectField rmaTypes = new SelectField
+    {
+        Id = rmatypestr,
+        Name = rmatypestr,
+        Label = Translate("Request type"),
+        OnChange = "document.forms['" + formText + "'].submit();"
+    };
+
+    foreach (var type in GetLoop("RMATypes"))
+    {
+        rmaTypes.Options.Add(new SelectFieldOption
+        {
+            Label = Translate(type.GetString("Ecom:RMA.Type.Name")),
+            Value = type.GetString("Ecom:RMA.Type.ID"),
+            Checked = !string.IsNullOrEmpty(type.GetString("Ecom:RMA.Type.Selected"))
+        });
+    }
+
+    Block selectOrderContainer = new Block
+    {
+        Id = "SelectOrderContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "SelectOrderType",
+                SortId = 10,
+                Component = rmaTypes
+            }
+        }
+    };
+
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:RMA.OrderID.IsSetFromRequest")))
+    {
+        Block selectOrder = new Block
+        {
+            Id = "SelectOrder",
+            SortId = 20,
+            Component = GetOrders()
+        };
+        selectOrderContainer.Add(selectOrder);
+    }
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent")))
+    {
+        selectOrderPage.Add("RmaDetailsForm", selectOrderContainer);
+    }
+}

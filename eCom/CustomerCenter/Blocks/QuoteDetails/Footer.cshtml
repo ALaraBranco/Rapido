@@ -1,0 +1,62 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage footerPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+    Block footer = new Block
+    {
+        Id = "Footer",
+        SortId = 30,
+        Design = new Design
+        {
+            CssClass = "u-color-light-gray--bg u-padding"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "FooterTitle",
+                SortId = 10,
+                Component = new Heading {
+                    Title = Translate("Billing address"),
+                    Icon = new Icon { Prefix = "fas", Name = "fa-home" },
+                    CssClass = "u-no-margin",
+                    Level = 3
+                }
+            },
+            new Block {
+                Id = "FooterContent",
+                SortId = 20,
+                Template = RenderFooter()
+            }
+        }
+    };
+
+    footerPage.Add("PageContainer", footer);
+}
+
+
+@helper RenderFooter()
+{
+    <div class="grid__cell">
+        <div>@GetString("Ecom:Order.Customer.Company")</div>
+        <div>@GetString("Ecom:Order.Customer.Name")</div>
+        <div>@GetString("Ecom:Order.Customer.Address")</div>
+        <div>@GetString("Ecom:Order.Customer.Address2")</div>
+        <div>@GetString("Ecom:Order.Customer.Zip") @GetString("Ecom:Order.Customer.City"), @GetString("Ecom:Order.Customer.Country")</div>
+
+        @if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Customer.Email")))
+        {
+            <div>@Translate("Email"): @GetString("Ecom:Order.Customer.Email")</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Customer.Phone")))
+        {
+            <div>@Translate("Phone"): @GetString("Ecom:Order.Customer.Phone")</div>
+        }
+    </div>
+}

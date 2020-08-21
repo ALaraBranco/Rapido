@@ -1,0 +1,106 @@
+@using System.Text.RegularExpressions
+@using System.Web;
+@using System.IO;
+
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage fileListPage = BlocksPage.GetBlockPage("FilepublishList");
+}
+
+@{
+    Block fileListTable = new Block
+    {
+        Id = "FileListTable",
+        SortId = 10,
+        Template = RenderTableHeader(),
+        Design = new Design
+        {
+            RenderType = RenderType.Table
+        },
+        BlocksList = new List<Block>
+        {
+            new Block {
+                Id = "Folders",
+                SortId = 10,
+                Template = RenderFolders()
+            },
+            new Block {
+                Id = "Files",
+                SortId = 20,
+                Template = RenderFiles()
+            }
+        }
+    };
+
+    fileListPage.Add(fileListTable);
+}
+
+@helper RenderTableHeader()
+{
+    <thead>
+        <tr>
+            <th colspan="2">@Translate("File name")</th>
+            <th class="u-ta-right">@Translate("Date")</th>
+            <th class="u-ta-right">@Translate("File size")</th>
+        </tr>
+    </thead>
+}
+
+@helper RenderFolders()
+{
+    foreach (LoopItem item in GetLoop("FoldersLoop"))
+    {
+        Match match = Regex.Match(item.GetString("FilepublishFileIcon"), "src=\\\"(.*?)\\\"");
+        <tr>@RenderTableRowData(item, match.Groups[1])</tr>
+    }
+}
+
+@helper RenderFiles()
+{
+    foreach (LoopItem item in GetLoop("FilesLoop"))
+    {
+        Match match = Regex.Match(item.GetString("FilepublishFileIcon"), "src=\\\"(.*?)\\\"");
+        <tr>@RenderTableRowData(item, match.Groups[1])</tr>
+    }
+}
+
+@helper RenderTableRowData(LoopItem item, Group img)
+{
+    <td class="u-w50px u-ta-right">
+        @if (!string.IsNullOrEmpty(item.GetString("FilepublishFileDatemodified")))
+        {
+
+            @Render(new Image {
+               Link = item.GetString("FilepublishFileLink"),
+               Path = Converter.ToString(img),
+               Title = item.GetString("FilepublishFileName"),
+               OnClick = "Gallery.openImage(this)",
+               DisableImageEngine = true
+           })
+        }
+        else
+        {
+            @Render(new Link { Href = item.GetString("FilepublishFileLink"), ButtonLayout = ButtonLayout.None, Icon = new Icon { Prefix = "fas", Name = "fa-arrow-left" } })
+        }
+    </td>
+    <td>
+        @Render(new Link { Href = item.GetString("FilepublishFileLink"), CssClass = "u-color-inherit u-break--break-word", Title = item.GetString("FilepublishFileName"), ButtonLayout = ButtonLayout.None })
+    </td>
+    <td class="u-ta-right u-color-gray">@item.GetString("FilepublishFileDatemodified")</td>
+    <td class="u-ta-right u-color-gray">@item.GetString("FilepublishFileSizeKB").Replace(" ", "&nbsp;")</td>
+}
+
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(fileListPage.BlocksRoot.BlocksList)
+
+<div class="u-margin-top--lg">
+    @GetValue("FilepublishUpload")
+</div>
+
+@* Include the Rendering helpers *@
+@Include("../Components/GridBuilder.cshtml")
+@Include("../Components/GeneralComponents.cshtml")

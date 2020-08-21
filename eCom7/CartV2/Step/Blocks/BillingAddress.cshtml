@@ -1,0 +1,226 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage billingAddressCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+
+    Block billingAddressBlock = new Block()
+    {
+        Id = "BillingAddress",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "BillingAddressHeader",
+                SortId = 10,
+                Component = new Heading { Level = 3, Title = Translate("Billing address"), Icon = new Icon { Prefix = "fas", Name = "fa-home" } },
+                Design = new Design {
+                    RenderType = RenderType.CardHeader,
+                    CssClass = "u-color-light--bg"
+                }
+            },
+            new Block {
+                Id = "BillingAddressBody",
+                SortId = 20,
+                Template = RenderCustomerAddress(),
+                Design = new Design {
+                    RenderType = RenderType.CardBody,
+                    CssClass = "u-color-light--bg"
+                }
+            }
+        }
+    };
+    billingAddressCheckoutPage.Add("AddressContainerRow", billingAddressBlock);
+}
+
+@helper RenderCustomerAddress() {
+    string editProfileLink = "/Default.aspx?ID=" + GetPageIdByNavigationTag("CustomerProfile").ToString();
+    string selectedCountry = !string.IsNullOrEmpty(GetString("Ecom:Order.Customer.Country.Code")) ? GetString("Ecom:Order.Customer.Country.Code") : GetString("Ecom:Order.Customer.Country");
+
+    if (!Dynamicweb.Core.Converter.ToBoolean(GetGlobalValue("Global:Extranet.UserName")) || GetLoop("ValidationErrors").Count > 0)
+    {
+        //When the user is not signed in, or there are form errors, give the possibility to either sign in or create address
+        if (!Dynamicweb.Core.Converter.ToBoolean(GetGlobalValue("Global:Extranet.UserName")))
+        {
+            @Render(new Button { Title = Translate("Already a customer?"), ButtonLayout = ButtonLayout.Secondary, CssClass = "btn--full more", OnClick = "document.getElementById('SignInModalTrigger').checked = !document.getElementById('SignInModalTrigger').checked" })
+        }
+
+        @Render(new TextField { Label = Translate("Company"), Name = "EcomOrderCustomerCompany", Id = "EcomOrderCustomerCompany", Value = GetString("Ecom:Order.Customer.Company"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerCompany.ErrorMessage") })
+        @Render(new TextField { Label = Translate("Name"), Name = "EcomOrderCustomerName", Id = "EcomOrderCustomerName", Value = GetString("Ecom:Order.Customer.Name"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerName.ErrorMessage") })
+
+        <div class="form__fields-collection form__fields-collection--2-3">
+            @Render(new TextField { Label = Translate("Phone"), Name = "EcomOrderCustomerPhone", Id = "EcomOrderCustomerPhone", Value = GetString("Ecom:Order.Customer.Phone"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerPhone.ErrorMessage") })
+            
+            @if (GetBoolean("Ecom:Cart.CreateUserInCheckout") && string.IsNullOrWhiteSpace(GetGlobalValue("Global:Extranet.UserName")))
+            {
+                @Render(new TextField { Label = Translate("Email"), Type = TextFieldType.Email, Name = "EcomOrderCustomerEmail", Id = "EcomOrderCustomerEmail", Value = GetString("Ecom:Order.Customer.Email"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerEmail.ErrorMessage"), OnClick = "document.getElementById('EcomUserCreateUserName').value = this.value" })
+            }
+            else
+            {
+                @Render(new TextField { Label = Translate("Email"), Type = TextFieldType.Email, Name = "EcomOrderCustomerEmail", Id = "EcomOrderCustomerEmail", Value = GetString("Ecom:Order.Customer.Email"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerEmail.ErrorMessage") })
+            }
+        </div>
+
+        if (GetBoolean("Ecom:Cart.CreateUserInCheckout") && string.IsNullOrWhiteSpace(GetGlobalValue("Global:Extranet.UserName")))
+        {
+            string generatedPassword = Guid.NewGuid().ToString();
+
+            @Render(new HiddenField { Name = "EcomUserCreateUserName", Id = "EcomUserCreateUserName", Value = GetString("Ecom:Order.Customer.Email") })
+            @Render(new HiddenField { Name = "EcomUserCreateNew", Value = "True" })
+            @Render(new HiddenField { Name = "EcomUserCreatePassword", Value = generatedPassword })
+            @Render(new HiddenField { Name = "EcomUserCreateConfirmPassword", Value = generatedPassword })
+        }
+
+        @Render(new TextField { Label = Translate("Address"), Name = "EcomOrderCustomerAddress", Id = "EcomOrderCustomerAddress", Value = GetString("Ecom:Order.Customer.Address"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerAddress.ErrorMessage") })
+
+        <div class="form__fields-collection form__fields-collection--2-3">
+            @Render(new TextField { Label = Translate("Zip code"), Name = "EcomOrderCustomerZip", Id = "EcomOrderCustomerZip", Value = GetString("Ecom:Order.Customer.Zip"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerZip.ErrorMessage") })
+            @Render(new TextField { Label = Translate("City"), Name = "EcomOrderCustomerCity", Id = "EcomOrderCustomerCity", Value = GetString("Ecom:Order.Customer.City"), ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerCity.ErrorMessage") })
+        </div>
+
+        if (GetLoop("CustomerRegions").Count > 0)
+        {
+            SelectField selectState = new SelectField
+            {
+                Id = "EcomOrderCustomerRegion",
+                Name = "EcomOrderCustomerRegion",
+                Label = Translate("State/Region"),
+                OnChange = "Cart.SubmitCart()",
+                ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerState.ErrorMessage"),
+                Value = GetString("Ecom:Order.Customer.Region")
+            };
+            foreach (LoopItem state in GetLoop("CustomerRegions"))
+            {
+                selectState.Options.Add(new SelectFieldOption { 
+                    Label = state.GetString("Ecom:CustomerRegion.Name"), 
+                    Value = state.GetString("Ecom:CustomerRegion.Name")
+                });
+            }
+            @Render(selectState)
+        }
+
+        SelectField selectCountry = new SelectField
+        {
+            Id = "EcomOrderCustomerCountry",
+            Name = "EcomOrderCustomerCountry",
+            Label = Translate("Country"),
+            OnChange = "Cart.SubmitCart()",
+            ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerCountry.ErrorMessage"),
+            Value = selectedCountry,
+            Default = new SelectFieldOption {
+                Label = Translate("Nothing selected")
+            }
+        };
+        foreach (LoopItem country2 in GetLoop("Countries"))
+        {
+            selectCountry.Options.Add(new SelectFieldOption { Label = country2.GetString("Ecom:Country.Name"), Value = country2.GetString("Ecom:Country.Code2") });
+        }
+
+        @Render(selectCountry)
+    }
+    else
+    {
+        //When the user is signed in, show static address fields
+
+        <table class="table table--clean table--condensed">
+            @if (!String.IsNullOrEmpty(GetString("Ecom:Order.Customer.Company")))
+            {
+                <tr>
+                    <td class="u-bold">@Translate("Company")</td>
+                    <td>
+                        @Render(new TextField { Name = "EcomOrderCustomerCompany", Id = "EcomOrderCustomerCompany", Value = GetString("Ecom:Order.Customer.Company"), ReadOnly = true })
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td class="u-bold">@Translate("Name")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerName", Id = "EcomOrderCustomerName", Value = GetString("Ecom:Order.Customer.Name"), ReadOnly = true })
+                </td>
+            </tr>
+            <tr>
+                <td class="u-bold">@Translate("Phone")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerPhone", Id = "EcomOrderCustomerPhone", Value = GetString("Ecom:Order.Customer.Phone"), ReadOnly = true })
+                </td>
+            </tr>
+            <tr>
+                <td class="u-bold">@Translate("Email")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerEmail", Id = "EcomOrderCustomerEmail", Value = GetString("Ecom:Order.Customer.Email"), ReadOnly = true })
+                </td>
+            </tr>
+            <tr>
+                <td class="u-bold">@Translate("Address")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerAddress", Id = "EcomOrderCustomerAddress", Value = GetString("Ecom:Order.Customer.Address"), ReadOnly = true })
+                </td>
+            </tr>
+            <tr>
+                <td class="u-bold">@Translate("Zip code")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerZip", Id = "EcomOrderCustomerZip", Value = GetString("Ecom:Order.Customer.Zip"), ReadOnly = true })
+                </td>
+            </tr>
+            <tr>
+                <td class="u-bold">@Translate("City")</td>
+                <td>
+                    @Render(new TextField { Name = "EcomOrderCustomerCity", Id = "EcomOrderCustomerCity", Value = GetString("Ecom:Order.Customer.City"), ReadOnly = true })
+                </td>
+            </tr>
+            @if (GetLoop("CustomerRegions").Count > 0)
+            {
+                string selectedStateName = "";
+                foreach (LoopItem state in GetLoop("CustomerRegions"))
+                {
+                    if (GetString("Ecom:Order.Customer.Region") == state.GetString("Ecom:CustomerRegion.Name"))
+                    {
+                        selectedStateName = state.GetString("Ecom:CustomerRegion.Name");
+                    }
+                }
+                <tr>
+                    <td class="u-bold">@Translate("State/Region")</td>
+                    <td>
+                        @Render(new TextField { Name = "EcomOrderCustomerRegion", Id = "EcomOrderCustomerRegion", Value = GetString("Ecom:Order.Customer.Region"), ReadOnly = true })
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td class="u-bold">@Translate("Country")</td>
+                <td>
+                    @{
+                        bool countryIsSelected = false;
+                    }
+                    @foreach (LoopItem country in GetLoop("Countries"))
+                    {
+                        if (country.GetString("Ecom:Country.Code2") == selectedCountry)
+                        {
+                            countryIsSelected = true;
+                            @Render(new HiddenField { Name = "EcomOrderCustomerCountry", Id = "EcomOrderCustomerCountry", Value = country.GetString("Ecom:Country.Code2") })
+                            @Render(new TextField { Value = country.GetString("Ecom:Country.Name"), ReadOnly = true })
+                        }
+                    }
+                    @if (!countryIsSelected)
+                    {
+                        @Render(new TextField { Value = "-", ReadOnly = true })
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
+            </tr>
+        </table>
+
+        @Render(new Link { Href = editProfileLink, ButtonLayout = ButtonLayout.Secondary, CssClass = "btn--full u-no-margin", Title = Translate("Edit profile") })
+    }
+}

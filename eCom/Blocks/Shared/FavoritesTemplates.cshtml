@@ -1,0 +1,111 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@helper RenderFavoritesTemplates()
+{
+    var selectedFavoriteIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue : "star";
+    string favoriteIcon = "fas fa-" + selectedFavoriteIcon;
+    string favoriteOutlineIcon = "far fa-" + selectedFavoriteIcon;
+    bool useFacebookPixel = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("FacebookPixelID"));
+
+    <script id="FavoriteTemplate" type="text/x-template">
+        <div class="favorites-list u-ta-left js-favorites-list">
+            @Render(new Button {
+                CssClass = "u-no-margin js-favorite-btn",
+                Icon = new Icon
+                {
+                    Name = "{{#if isInAnyFavoriteList}}" + favoriteIcon + "{{else}}" + favoriteOutlineIcon + "{{/if}}",
+                    CssClass = "fa-1_5x"
+                },
+                ButtonLayout = ButtonLayout.LinkClean,
+                ButtonType = ButtonType.Button,
+                OnClick = "document.getElementById('FavoriteTrigger_{{id}}').checked = true"
+            })
+            <input type="checkbox" id="FavoriteTrigger_{{id}}" class="dropdown-trigger" />
+            <div class="dropdown dropdown--absolute-position">
+                <div class="dropdown__content dropdown__content--show-left dropdown__content--padding u-w220px dw-mod">
+                    <ul class="list list--clean dw-mod">
+                        {{#FavoriteLists}}
+                            {{>FavoriteListItem}}
+                        {{/FavoriteLists}}
+                    </ul>
+                </div>
+                <label class="dropdown-trigger-off" for="FavoriteTrigger_{{id}}"></label>
+            </div>
+        </div>
+    </script>
+
+    <script id="FavoriteListItem" type="text/x-template">
+        <li>
+            @{
+                var button = new Button {
+                    CssClass = "list__link u-no-underline",
+                    OnClick = "toggleFavAction(this, event)",
+                    Icon = new Icon { Name = "{{#if isInFavoriteList}}" + favoriteIcon + "{{else}}" + favoriteOutlineIcon + "{{/if}}" },
+                    AltText = "{{#if isInFavoriteList}}" + Translate("Remove from") + " {{name}}{{else}}" + Translate("Add to") + " {{name}}{{/if}}",
+                    Title = "{{name}}",
+                    ButtonType = ButtonType.Button,
+                    ButtonLayout = ButtonLayout.LinkClean,
+                    ExtraAttributes = new Dictionary<string, string>
+                    {
+                        { "data-list-name", "{{name}}" },
+                        { "data-remove-link", "{{removeLink}}" },
+                        { "data-add-link", "{{addLink}}" },
+                        { "data-is-in-list", "{{isInFavoriteList}}" },
+
+                    }
+                };
+                if (useFacebookPixel)
+                {
+                    button.ExtraAttributes.Add("data-facebook-object", "{{facebookPixelAddAction}}");
+                }
+            }
+            @Render(button)
+        </li>
+    </script>
+
+    <script>
+        function toggleFavAction(button, event) {
+            if (button.getAttribute('data-add-link').indexOf('CCCreateNewList') > -1) {
+                Scroll.SavePosition(event);
+                @if (useFacebookPixel)
+                {
+                    <text>
+                        fbq('track', 'AddToWishlist', JSON.parse(button.getAttribute('data-facebook-object')));
+                    </text>
+                }
+                location.href = button.getAttribute('data-add-link');
+                return;
+            }
+            let isAdd = button.getAttribute('data-is-in-list') == "false";
+            Request.Fetch().get(
+                isAdd ? button.getAttribute('data-add-link') : button.getAttribute('data-remove-link'),
+                function (result) {
+                    button.querySelector('i').className = isAdd ? '@favoriteIcon' : '@favoriteOutlineIcon';
+                    button.setAttribute('data-is-in-list', isAdd);
+                    button.setAttribute('title', (!isAdd ? '@Translate("Add to") ' : '@Translate("Remove from") ') + button.getAttribute('data-list-name'))
+                    let favList = button.closest('.js-favorites-list');
+                    let favBtn = favList.querySelector('.js-favorite-btn i');
+                    let isInAnyFavoriteList = false;
+                    if (favList.querySelector('[data-is-in-list=true]') != null) {
+                        favBtn.className = '@favoriteIcon' + ' fa-1_5x';
+                    } else {
+                        favBtn.className = '@favoriteOutlineIcon' + ' fa-1_5x';
+                    }
+                    @if (useFacebookPixel)
+                    {
+                        <text>
+                            if (isAdd) {
+                                fbq('track', 'AddToWishlist', JSON.parse(button.getAttribute('data-facebook-object')));
+                            }
+                        </text>
+                    }
+                },
+                function () {
+                    console.error("FavoriteLists: Error in ToggleFavAction request");
+                },
+                false
+            );
+        }
+    </script>
+}

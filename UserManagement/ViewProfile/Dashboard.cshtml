@@ -1,0 +1,114 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using System
+@using System.Web
+@using System.IO
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage dashboardPage = BlocksPage.GetBlockPage("Dashboard");
+}
+
+@{ 
+    string cartPageId = GetPageIdByNavigationTag("CartPage").ToString();
+    string ordersPageId = GetPageIdByNavigationTag("CustomerOrders").ToString();
+    string quotesPageId = GetPageIdByNavigationTag("QuotesPage").ToString();
+    string rmaPageId = GetPageIdByNavigationTag("RMAPage").ToString();
+
+    string favoritesPageId = GetPageIdByNavigationTag("CustomerFavorites").ToString();
+    string profilePageId = GetPageIdByNavigationTag("CustomerProfile").ToString();
+    string savedCardsPageId = GetPageIdByNavigationTag("SavedCards").ToString();
+    string recurringOrdersPageId = GetPageIdByNavigationTag("RecurringOrders").ToString();
+
+    string favoriteIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon") != null ? "fas fa-" + Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue : "fas fa-star";
+    string cartIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon").SelectedValue : "fas fa-shopping-cart";
+    string userIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fas fa-user";
+
+    Design dashboardWidgetDesign = new Design
+    {
+        RenderType = RenderType.Column,
+        Size = "auto",
+        CssClass = "widget__container"
+    };
+
+    dashboardPage.Add(new Block {
+        Id = "Widgets",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--external-bleed-x"
+        },
+        BlocksList = new List<Block> {
+            new Block() { Id = "MyProfileWidget", Template = RenderDashboardWidget(profilePageId, userIcon, Translate("My profile")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyFavoritesWidget", Template = RenderDashboardWidget(favoritesPageId, favoriteIcon, Translate("My favorites")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyQuotesWidget", Template = RenderDashboardWidget(quotesPageId, "fas fa-quote-right", Translate("My quotes")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyRMAWidget", Template = RenderDashboardWidget(rmaPageId, "fas fa-undo", Translate("My RMA")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyCartWidget", Template = RenderDashboardWidget(cartPageId, cartIcon, Translate("Shopping cart")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyOrdersWidget", Template = RenderDashboardWidget(ordersPageId, "fas fa-list", Translate("My orders")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MySavedCardsWidget", Template = RenderDashboardWidget(savedCardsPageId, "fas fa-credit-card", Translate("My saved cards")), Design = dashboardWidgetDesign },
+            new Block() { Id = "MyRecurringOrdersWidget", Template = RenderDashboardWidget(recurringOrdersPageId, "fas fa-calendar", Translate("My recurring orders")), Design = dashboardWidgetDesign }
+        }
+    });
+
+    dashboardPage.Add(new Block
+    {
+        Id = "ColorScheme",
+        SortId = 20,
+        Template = RenderColorSchemeGenerator()
+    });
+
+}
+
+@Include("Blocks/Dashboard/Custom__Blocks.cshtml")
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+
+@RenderBlockList(dashboardPage.BlocksRoot.BlocksList)
+
+
+@helper RenderDashboardWidget(string pageId, string icon, string title)
+{
+    if (pageId != "0")
+    {
+        <a href="/Default.aspx?ID=@pageId" class="widget">
+            <div class="u-center-middle u-color-light">
+                <i class="@icon widget__icon"></i>
+                <div class="widget__title">@title</div>
+            </div>
+        </a>
+    }
+}
+
+@helper RenderColorSchemeGenerator()
+{
+    var brandColor = Dynamicweb.Services.Colors.GetHexColor(Dynamicweb.Core.Converter.ToInt32(Pageview.Area.ID), "BrandColor2");
+
+    <script>
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        document.addEventListener("DOMContentLoaded", function () {
+            let widgets = document.querySelectorAll(".widget");
+            let widgetsCount = widgets.length;
+            let rgb = hexToRgb("@brandColor");
+            let r = rgb.r, b = rgb.b, g = rgb.g;
+            let max = Math.max(r, Math.max(g, b));
+            let step = 255 / (max * widgetsCount);
+            let i = 0;
+            widgets.forEach(function (widget) {
+                i++;
+                let shade = "rgb(" + (r * step * i) + ", " + (g * step * i) + ", " + (b * step * i) + ")";
+                widget.style.backgroundColor = shade;
+            });
+        });
+    </script>
+}
+

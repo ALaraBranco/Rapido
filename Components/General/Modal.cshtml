@@ -1,0 +1,57 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderModal(Modal settings) {
+    if (settings != null)
+    {
+        string modalId = !string.IsNullOrEmpty(settings.Id) ? settings.Id : Guid.NewGuid().ToString("N");
+
+        <input type="checkbox" id="@(modalId)ModalTrigger" class="modal-trigger" />
+
+        <div class="modal-container">
+            @if (!settings.DisableDarkOverlay)
+            {
+                <label for="@(modalId)ModalTrigger" id="@(modalId)ModalOverlay" class="modal-overlay"></label>
+            }
+            <div class="modal modal--@settings.Width.ToString().ToLower()" id="@(modalId)Modal">
+                @if (settings.Heading != null)
+                {
+                    if (!string.IsNullOrEmpty(settings.Heading.Title))
+                    {
+                        <div class="modal__header">
+                            @Render(settings.Heading)
+                        </div>
+                    }
+                }
+                <div class="modal__body @(settings.Width.ToString().ToLower() == "full" ? "modal__body--full" : "")">
+                    @if (!string.IsNullOrEmpty(settings.BodyText))
+                    {
+                        @settings.BodyText
+                    }
+                    @if (settings.BodyTemplate != null)
+                    {
+                        @settings.BodyTemplate
+                    }
+                    @{
+                        var actions = settings.GetActions();
+                    }
+                </div>
+                @if (actions.Length > 0)
+                {
+                    <div class="modal__footer">
+                        @foreach (var action in actions)
+                        {
+                            action.CssClass += " u-no-margin";
+                            @Render(action)
+                        }
+                    </div>
+                }
+                <label class="modal__close-btn" for="@(modalId)ModalTrigger"></label>
+            </div>
+        </div>
+    } 
+}

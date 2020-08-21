@@ -1,0 +1,54 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage savedCardsPage = BlocksPage.GetBlockPage("SavedCardsList");
+
+}
+
+@{
+    Block savedCards = new Block
+    {
+        Id = "SavedCards",
+        SortId = 20
+    };
+    savedCardsPage.Add("PageContainer", savedCards);
+}
+
+@helper RenderSavedCards() {
+
+    if (!GetBoolean("Ecom:CustomerCenter.SavedCards.EmptyList"))
+    {
+        int i = 0;
+
+        foreach (LoopItem card in GetLoop("SavedCards"))
+        {
+            i++;
+
+            MediaListItem listItem = new MediaListItem
+            {
+                Title = card.GetString("Ecom:SavedCard.Name"),
+                Label = card.GetString("Ecom:SavedCard.CardType")
+            };
+
+            listItem.AddInfoRow(Translate("Payment method"), card.GetString("Ecom:SavedCard.Payment"));
+            listItem.AddInfoRow(Translate("Card no"), card.GetString("Ecom:SavedCard.Identifier"));
+            listItem.AddAction(new Button
+            {
+                ButtonType = ButtonType.Button,
+                Id = "DeleteWarning_" + i,
+                ConfirmTitle = Translate("Warning"),
+                Title = Translate("Delete"),
+                ConfirmText = Translate("Are you sure you wish to delete this saved card?"),
+                ButtonLayout = ButtonLayout.None,
+                CssClass = "media-list-item__action link",
+                OnClick = "window.location.href='" + card.GetString("Ecom:CustomerCenter.SavedCards.DeleteUrl") + "'"
+            });
+
+            @Render(listItem)
+        }
+    }    
+}

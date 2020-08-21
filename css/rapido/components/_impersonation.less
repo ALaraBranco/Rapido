@@ -1,0 +1,50 @@
+﻿.impersonation.dw-mod {
+    .background-color(@ecommerce-impersonation-background-color);
+    .color(@ecommerce-impersonation-font-color);
+}
+
+.impersonation__header.dw-mod {
+    .color(@ecommerce-impersonation-font-color);
+    .impersonation-header-mixin()
+}
+.impersonation-header-mixin() when not (@ecommerce-impersonation-background-color = none) {
+    background-color: darken(@ecommerce-impersonation-background-color, 20%);
+}
+
+.impersonation-text.dw-mod  {
+    .color(@ecommerce-impersonation-font-color);
+}
+
+.impersonation__link.dw-mod {
+    .color(@ecommerce-impersonation-font-color);
+
+    &:hover,
+    &:focus,
+    &:active {
+        .color(@ecommerce-impersonation-font-color);
+    }
+}
+
+.impersonation__search-field.dw-mod {
+    .border-color(@ecommerce-impersonation-font-color);
+
+    &:focus {
+        .border-color(@ecommerce-impersonation-font-color);
+    }
+}
+
+.impersonation__search-results-item.dw-mod {
+    .border-color(@ecommerce-impersonation-font-color);
+}
+
+.impersonation__search-icon.dw-mod {
+    color: @ecommerce-impersonation-background-color;
+}
+
+.impersonation__search-results.dw-mod .preloader {
+    color: @ecommerce-impersonation-font-color;
+}
+
+.impersonation__typeahead.dw-mod {
+    color: @layout-body-text-font-color;
+}

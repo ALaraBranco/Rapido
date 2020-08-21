@@ -1,0 +1,169 @@
+﻿@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    Block createUserButton;
+}
+
+@{
+    createUserButton = new Block
+    {
+        Id = "CreateUserBlock",
+        SortId = 20,
+        BlocksList = new List<Block>
+        {
+            new Block
+            {
+                Id = "CreateUserModal",
+                SortId = 10,
+                //variables from MaintainUser.cshtml
+                Template = RenderCreateUserModal(currentUser, governedGroup, addresses)
+            },
+            new Block {
+                Id = "CreateUserButton",
+                SortId = 30,
+                Component = new Button {
+                    Title = Translate("Create new user"),
+                    ButtonLayout = ButtonLayout.None,
+                    ButtonType = ButtonType.Button,
+                    OnClick = "document.getElementById('CreateUserModalTrigger').checked = true",
+                    CssClass = "media-list-item__add-new"
+                }
+            }
+        }
+    };
+
+    foreach (var error in GetLoop("FormValidationErrors"))
+    {
+        if (error.GetString("UserManagement:User.FormValidationError.Message") == "User with specified email exists.")
+        {
+            createUserButton.BlocksList.Add(new Block
+            {
+                Id = "CreateUserErrorMessage",
+                SortId = 20,
+                Component = new NotificationMessage { Message = Translate("Error in the input field") + ": " + error.GetString("UserManagement:User.FormValidationError.Message"), MessageType = NotificationMessageType.Error }
+            });
+        }
+    }
+}
+
+@helper RenderCreateUserModalBody(User user, Dynamicweb.Security.UserManagement.Group group, IEnumerable<UserAddress> addresses)
+{
+    var password = GeneratePassword();
+    @Render(new HiddenField { Name = "UserManagementForm", Value = "1" })
+    @Render(new HiddenField { Name = "UserManagement_Form_CustomerNumber", Value = user.CustomerNumber })
+    @Render(new HiddenField { Name = "UserManagement_Form_ExternalId", Value = user.CustomerNumber })
+    @Render(new HiddenField { Name = "UserManagement_Form_Address", Value = user.Address })
+    @Render(new HiddenField { Name = "UserManagement_Form_Address2", Value = user.Address2 })
+    @Render(new HiddenField { Name = "UserManagement_Form_House_Number", Value = user.HouseNumber })
+    @Render(new HiddenField { Name = "UserManagement_Form_Zip", Value = user.Zip })
+    @Render(new HiddenField { Name = "UserManagement_Form_City", Value = user.City })
+    @Render(new HiddenField { Name = "UserManagement_Form_State", Value = user.State })
+    @Render(new HiddenField { Name = "UserManagement_Form_Country", Value = user.Country })
+    @Render(new HiddenField { Name = "UserManagement_Form_NewPassword", Value = password })
+    @Render(new HiddenField { Name = "UserManagement_Form_NewPasswordConfirm", Value = password })
+    @Render(new HiddenField { Name = "adminGroup", Value = Converter.ToString(group.ID) })
+    @Render(new HiddenField { Name = "action", Value = "create" })
+    @Render(new TextField {
+        Id = "UserManagement_Form_Name",
+        Name = "UserManagement_Form_Name",
+        Required = true,
+        Label = Translate("Name")
+    })
+    @Render(new TextField {
+        Type = TextFieldType.Email,
+        Label = Translate("Email"),
+        Name = "UserManagement_Form_Email",
+        Id = "UserManagement_Form_Email",
+        Required = true 
+    })
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("AllowCustomAddress"))
+    {
+        @Render(new CheckboxField {
+            Label = Translate("Create own delivery address in check out"),
+            Name = "UserManagement_Form_AccessUser_CanWriteOwnAddress",
+            Id = "UserManagement_Form_AccessUser_CanWriteOwnAddress"
+        })
+    }
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("AllowAddressSelection"))
+    {
+        string userIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fas fa-user";
+        @Render(new Heading { Level = 3, Title = Translate("Select Address") })
+        foreach (var address in addresses)
+        {
+            <div class="media-list-item u-padding-top u-padding-bottom u-clearfix dw-mod">
+                <input name="address_id" id="address_@address.ID" type="checkbox" value="@address.ID" class="form__control media-list-item__checkbox" />
+                <label for="address_@address.ID" class="media-list-item__header dw-mod">
+                    <i class="fas fa-map-marker"></i>
+                    @if (!string.IsNullOrEmpty(address.Name))
+                    {
+                        <strong>@address.Name</strong>
+                    }
+                    else
+                    {
+                        <strong>@address.Address</strong>
+                    }
+                </label>
+                <div class="grid u-padding-left--lg">
+                    <div class="grid__col-md-7 grid__col--bleed-y dw-mod">
+                        <div>
+                            @if (!string.IsNullOrEmpty(address.Name))
+                            {
+                                <div>@address.Address</div>
+                            }
+                            <div>@address.Zip @address.City</div>
+                            <div>
+                                @if (!string.IsNullOrEmpty(address.State))
+                                {
+                                    <text>@address.State, </text>
+                                }
+                                @address.Country
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid__col-md-5 grid__col--bleed-y dw-mod">
+                        <div>
+                            @{
+                                var addressUserName = address.CustomFieldValues.FirstOrDefault(x => x.CustomField.SystemName == "AccessUserAddress_UserName");
+                            }
+                            @if (addressUserName != null && !string.IsNullOrEmpty(Converter.ToString(addressUserName.Value)))
+                            {
+                                <div>
+                                    <i class="@userIcon media-list-item__parameter-icon dw-mod"></i>@Converter.ToString(addressUserName.Value)
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(address.Email))
+                            {
+                                <div>
+                                    <i class="fas fa-envelope media-list-item__parameter-icon dw-mod"></i>@address.Email
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(address.Phone))
+                            {
+                                <div>
+                                    <i class="fas fa-mobile media-list-item__parameter-icon dw-mod"></i>@address.Phone
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
+
+@helper RenderCreateUserModal(User user, Dynamicweb.Security.UserManagement.Group group, IEnumerable<UserAddress> addresses)
+{
+    Modal createUserModal = new Modal {
+        Heading = new Heading { Title = Translate("Create user"), Level = 2 },
+        Width = ModalWidth.Md,
+        Id = "CreateUser",
+        BodyTemplate = RenderCreateUserModalBody(user, group, addresses)
+    };
+    createUserModal.AddAction(new Button { ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Secondary, Title = Translate("Cancel"), OnClick = "document.getElementById('CreateUserModalTrigger').checked = false" });
+    createUserModal.AddAction(new Button { ButtonType = ButtonType.Submit, ButtonLayout = ButtonLayout.Primary, Title = Translate("Save") });
+
+    <form class="u-no-margin" name="create-form" method="post" action="/Default.aspx?ID=@Pageview.Page.ID" onsubmit="createUser(this);">
+        @Render(createUserModal)
+    </form>
+}

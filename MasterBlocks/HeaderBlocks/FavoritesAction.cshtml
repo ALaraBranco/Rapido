@@ -1,0 +1,38 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    bool hideMyFavoritesLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideFavorites");
+
+    Block masterDesktopActionsMenuFavorites = new Block
+    {
+        Id = "MasterDesktopActionsMenuFavorites",
+        SortId = 30,
+        Template = RenderFavorites()
+    };
+
+    if (!hideMyFavoritesLink && Model.CurrentUser.ID > 0)
+    {
+        BlocksPage.GetBlockPage("Master").Add("MasterDesktopActionsMenu", masterDesktopActionsMenuFavorites);
+    }
+}
+
+@helper RenderFavorites()
+{
+    int myFavoritesPageId = GetPageIdByNavigationTag("CustomerFavorites");
+    string myFavoritesPageLink = "/Default.aspx?ID=" + myFavoritesPageId;
+
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string liClasses = topLayout != "normal" ? "menu__item--top-level u-hidden-xxs" : "menu--clean";
+    string menuLinkClass = topLayout != "normal" ? "menu__link menu__link--icon" : "header-menu__link header-menu__link--icon";
+
+    <li class="menu__item menu__item--horizontal @liClasses menu__item--icon dw-mod">
+        <a href="@myFavoritesPageLink" class="@menuLinkClass dw-mod" title="@Translate("Favorites")">
+            <i class="fas fa-@Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue fa-1_5x"></i>
+        </a>
+    </li>
+}

@@ -1,0 +1,45 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage expandableSearchPage = BlocksPage.GetBlockPage("OrderList");
+}
+
+@{
+    Block expandableSearch = new Block
+    {
+        Id = "ExpandableSearch",
+        SortId = 20,
+        Design = new Design
+        {
+            CssClass = "grid__col--bleed u-border-bottom"
+        },
+        Template = RenderExpandableSearch()
+    };
+
+    expandableSearchPage.Add("PageContainer", expandableSearch);
+}
+
+@helper RenderExpandableSearch()
+{
+    <input type="checkbox" id="SearchFormTrigger" class="expand-trigger" />
+
+    <div class="expand-container dw-mod">
+        <div class="expand-container__content dw-mod">
+            @GetString("Ecom:CustomerCenter.Search")
+        </div>
+
+        @Render(new Button
+        {
+            ButtonType = ButtonType.Button,
+            ButtonLayout = ButtonLayout.Secondary,
+            CssClass = "btn--full less",
+            Title = Translate("Close search"),
+            Icon = new Icon { Prefix = "fas", Name = "fa-caret-up" },
+            OnClick = "document.getElementById('SearchFormTrigger').checked = false"
+        })
+    </div>
+}

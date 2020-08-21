@@ -1,0 +1,293 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Collections.Generic
+@using System.Linq;
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido;
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@Include("../Components/GeneralComponents.cshtml")
+@Include("../Components/GridBuilder.cshtml")
+@{
+    int impersonationFeed = GetPageIdByNavigationTag("UsersFeed");
+    Pageview.Meta.Title = Translate("Manage Accounts");
+    var impersonationBlockPage = new BlocksPage();
+    impersonationBlockPage.BlocksRoot.Add(new Block()
+    {
+        Id = "SecondaryUsers",
+        SortId = 10,
+        Design = new Design()
+        {
+            Size = "12",
+            CssClass = "secondary-users",
+            RenderType = RenderType.Row
+        }
+    });
+    
+    if (!Dna.AutoImpersonate.Helpers.ImpersonateActive)
+    {
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "ImpersonationDisabled",
+            SortId = 10,
+            Design = new Design()
+            {
+                Size = "12",
+                RenderType = RenderType.Column
+            },
+            Template = RenderImpersonationDisabled()
+        });
+    }
+    else
+    {
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SecondaryUsersSearch",
+            SortId = 10,
+            Design = new Design()
+            {
+                RenderType = RenderType.Row
+            }
+        });
+
+        impersonationBlockPage.Add("SecondaryUsersSearch", new Block()
+        {
+            Id = "SearchHeading",
+            SortId = 10,
+            Design = new Design()
+            {
+                Size = "12",
+                RenderType = RenderType.Column
+            },
+            Template = RenderSearchHeading()
+        });
+
+        impersonationBlockPage.Add("SecondaryUsersSearch", new Block()
+        {
+            Id = "SearchForm",
+            SortId = 20,
+            Design = new Design()
+            {
+                Size = "3",
+                RenderType = RenderType.Column
+            },
+            Template = RenderTextField(new TextField
+            {
+                Id = "q",
+                Placeholder = Translate("Search user"),
+                ExtraAttributes = new Dictionary<string, string>()
+                {
+                    {"onkeyup", $"HandlebarsBolt.UpdateContent('searchUsersResultsHeader', '/Default.aspx?ID={impersonationFeed}&q=' + this.value);"}
+                }
+            })
+        });
+
+        if (Pageview.User.CurrentSecondaryUser != null)
+        {
+            impersonationBlockPage.Add("SecondaryUsersSearch", new Block()
+            {
+                Id = "StopImpersonation",
+                SortId = 30,
+                Design = new Design()
+                {
+                    Size = "3",
+                    CssClass = "u-margin-left--auto",
+                    RenderType = RenderType.Column
+                },
+                Component = new Button()
+                {
+                    Title = Translate("Stop managing"),
+                    ButtonLayout = ButtonLayout.Secondary,
+                    Href = string.Format("/Default.aspx?Id={0}&{1}=1", Pageview.Page.ID, Dna.AutoImpersonate.Constants.DynamicwebParameter.StopImpersonation)
+                }
+            });
+        }
+
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SearchResults",
+            SortId = 20,
+            Design = new Design()
+            {
+                Size = "12",
+                RenderType = RenderType.Column
+            },
+            Template = RenderSearchResults(impersonationFeed)
+        });
+        
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SearchResultsPaginationBtn",
+            SortId = 30,
+            Template = RenderSearchResultsPaginationBtn()
+        });
+    
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SearchResultsPaginationEllipsis",
+            SortId = 40,
+            Template = RenderSearchResultsPaginationEllipsis()
+        });
+    
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SearchResultsPaginationCurrentPage",
+            SortId = 50,
+            Template = RenderSearchResultsPaginationCurrentPage()
+        });
+    
+        impersonationBlockPage.Add("SecondaryUsers", new Block()
+        {
+            Id = "SearchResultsPaginationLink",
+            SortId = 60,
+            Template = RenderSearchResultsPaginationLink()
+        });
+    }
+    
+    @RenderBlockList(impersonationBlockPage.BlocksRoot.BlocksList)
+}
+
+@helper RenderSearchResults(int impersonationFeed)
+{
+    var stopImpersonation = string.Format("/Default.aspx?Id={0}&{1}=1", Pageview.Page.ID, Dna.AutoImpersonate.Constants.DynamicwebParameter.StopImpersonation);
+    var loginUser = Dna.Extensions.Users.GetRealUser();
+    var showStopBtn = loginUser.CustomFieldValues.First(cf => cf.CustomField.SystemName.Equals(Dna.AutoImpersonate.Constants.CustomFields.ForceImpersonationSetting)).Value.Equals(Dna.AutoImpersonate.Constants.CustomFields.Options.UserNeverImpersonate);
+    var showSetDefaultAccount = Converter.ToBoolean(Dynamicweb.Content.Items.ItemManager.Storage.GetById(Dna.Rizzo.Constants.Area.Items.Rizzo, Converter.ToString(Pageview.Area.Item[Dna.Rizzo.Constants.Area.Items.Rizzo]))[Dna.AutoImpersonate.Constants.AreaSettings.ShowDefaultAccount]);
+                                                                                              
+    <div id="searchUsersResultsHeader" class="js-handlebars-root" data-template="SearchUsersResult" data-json-feed="/Default.aspx?ID=@impersonationFeed" data-preloader="minimal" data-stop-impersonation="@stopImpersonation"></div>
+        
+    <script id="SearchUsersResult" type="text/x-template">
+    {{#.}}
+        <ul class="u-no-padding">
+            {{#Users}}
+                <li class="grid--align-center grid--justify-space-between u-flex u-border-bottom u-padding-top u-padding-bottom u-no-margin">
+                    <div class="grid__cell">
+                        <div><b>{{userName}}</b></div>
+                        <div>{{customerNumber}}</div>
+                        <div>{{userInfo}}</div>
+                    </div>
+                     @if (showSetDefaultAccount)
+                     {
+                         <text>
+                          {{#if isDefaultAccount}}
+                            @RenderButton(new Button
+                            {
+                                Title = Translate("Default Account"),
+                                ButtonLayout = ButtonLayout.Secondary,
+                                CssClass = "u-no-margin u-margin-right",
+                                Disabled = true
+                            })
+                          {{else}}
+                           @RenderButton(new Button
+                           {
+                               Title = Translate("Set Default Account"),
+                               CssClass = "setDefaultAccount u-no-margin u-margin-right",
+                               ButtonLayout = ButtonLayout.Secondary,
+                               Href = string.Format("/Default.aspx?Id={0}&DefaultAccount={1}", GetPageIdByNavigationTag(Dna.AutoImpersonate.Constants.PageProperties.NavigationTags.ImpersonationAjax), "{{id}}"),
+                               OnClick = "event.preventDefault();Impersonation.SetDefaultAccount(this);"
+                           })
+                          {{/if}}
+                         </text>
+                     }
+                     {{#if isCurrent}}
+                        @if (showStopBtn)
+                        {
+                            @RenderButton(new Button
+                            {
+                                Title = Translate("Stop managing"),
+                                CssClass = "u-no-margin",
+                                ButtonLayout = ButtonLayout.Tertiary,
+                                Href = stopImpersonation
+                            })
+                        }
+                        else
+                        {
+                            @RenderButton(new Button
+                            {
+                                Title = Translate("Managing Account"),
+                                CssClass = "u-no-margin",
+                                ButtonLayout = ButtonLayout.Primary,
+                                Disabled = true
+                            })
+                        }
+                     {{else}}
+                         @RenderButton(new Button
+                         {
+                            Title = Translate("Manage Account"),
+                            CssClass = "selectAccount u-no-margin",
+                            ButtonLayout = ButtonLayout.Primary,
+                            Href = string.Format("/Default.aspx?Id={0}&{1}={2}{3}", Pageview.Page.ID, Dna.AutoImpersonate.Constants.DynamicwebParameter.SetImpersonation, "{{id}}","{{#if currency}}&CurrencyCode={{currency}}{{/if}}"),
+                            OnClick = "event.preventDefault();Impersonation.SelectAccount(this);"
+                         })
+                     {{/if}}
+                </li>
+            {{/Users}}
+        </ul>
+        <div id="Paginations" data-template="Pagination"></div>
+        {{#Paginations}}
+           <div class="pager u-margin-top u-margin-bottom {{hidePagination}}">
+                <div class="pager__info">
+                    @Translate("Page") {{current}} @Translate("of") {{total}} 
+                </div>
+                <ul class="pager__list" id="Buttons">                                
+                    {{#Buttons}}
+                        {{> (lookup . 'template') }}
+                    {{/Buttons}}
+                </ul>
+            </div>
+        {{/Paginations}}
+    {{/.}}
+    </script>
+}
+
+@helper RenderSearchHeading()
+{
+    <p class="u-no-margin">@Translate("Click Manage Account to work with desired account.")<br/>@Translate("Return to manage account screen from the welcome menu.")</p>
+}
+
+@helper RenderSearchResultsPaginationBtn()
+{
+    <script id="PaginationBtn" type="text/x-template">
+        <li class="pager__btn" onclick="HandlebarsBolt.UpdateContent('searchUsersResultsHeader', '{{link}}' )">
+            <span class="pager__num dw-mod link">
+                @RenderIcon(new Icon()
+                {
+                    Prefix = "fas",
+                    Name = "fa-angle-{{text}}"
+                })
+            </span>
+        </li>
+    </script>
+}
+
+@helper RenderSearchResultsPaginationEllipsis()
+{
+    <script id="PaginationEllipsis" type="text/x-template">
+        <li class="pager__btn">
+            <span class="pager__num--ellipsis dw-mod">…</span>
+        </li>
+    </script>
+}
+
+@helper RenderSearchResultsPaginationCurrentPage(){
+    <script id="PaginationCurrentPage" type="text/x-template">
+        <li class="pager__btn">
+            <span class="pager__num pager__num--current dw-mod">{{text}}</span>
+        </li>
+    </script>
+}
+
+
+@helper RenderSearchResultsPaginationLink()
+{
+    <script id="PaginationLink" type="text/x-template">
+        <li class="pager__btn" onclick="HandlebarsBolt.UpdateContent('searchUsersResultsHeader', '{{link}}' )">
+            <span class="pager__num dw-mod link">{{text}}</span>
+        </li>
+    </script>
+}
+
+@helper RenderImpersonationDisabled()
+{
+    <p>@Translate("AutoImpersonation is disabled for this website")</p>
+}

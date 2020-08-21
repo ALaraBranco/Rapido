@@ -1,0 +1,148 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage referencesPage = BlocksPage.GetBlockPage("RMADetails");
+}
+
+@{
+    Block scripts = new Block
+    {
+        Id = "Scripts",
+        SortId = 200,
+        Template = RenderRmaDetailsScripts()
+    };
+
+    referencesPage.Add(scripts);
+}
+
+@helper RenderRmaDetailsScripts()
+{
+    bool hasCancelContent = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasCancelContent"));
+
+    <script type="text/javascript">
+        var isCancelRMA = '@hasCancelContent' == 'True';
+
+        function onValidateForm(e, paragraphID, orderLinesContainerId, isCreateRMA) {
+            var isFormValid = true;
+
+            if (isCreateRMA) {
+
+                if (document.getElementById(paragraphID + "RMATypeID") != null) {
+                    var typeEl = document.getElementById(paragraphID + "RMATypeID");
+
+                    if (typeEl.selectedIndex == -1 || (typeEl.selectedIndex >= 0 && typeEl.options[typeEl.selectedIndex].value == "")) {
+                        document.getElementById("RequestTypeModalTrigger").checked = true;
+                        isFormValid = false;
+                        typeEl.focus();
+                    }
+                }
+
+                if (isFormValid && orderLinesContainerId != null && orderLinesContainerId != "" && !validateSerialNumbers(paragraphID, orderLinesContainerId)) {
+                    document.getElementById("SelectRmaProductsMessageModalTrigger").checked = true;
+                    isFormValid = false;
+                }
+            }
+
+            if (isFormValid && document.getElementById(paragraphID + "RMAComment") != null && document.getElementById(paragraphID + "RMAComment").value.length < 1) {
+                if (isCreateRMA) {
+                    document.getElementById("AddInfoMessageModalTrigger").checked = true;
+                } else if (!isCreateRMA && !isCancelRMA) {
+                    document.getElementById("AddCustomerCommentModalTrigger").checked = true;
+                }
+
+                document.getElementById(paragraphID + "RMAComment").focus();
+                isFormValid = false;
+            }
+
+            if (isFormValid && !isCreateRMA && isCancelRMA) {
+                e.preventDefault();
+                document.getElementById("CancelRMARequestModalTrigger").checked = true;
+            }
+
+            if (isFormValid && document.getElementById(paragraphID + "HasSubmit") != null) {
+                document.getElementById(paragraphID + "HasSubmit").value = "1";
+            }
+
+            return isFormValid;
+        }
+
+        function setRmaItem(active, pnCtrlId, commentCtrlId) {
+            if (pnCtrlId && pnCtrlId != "" && commentCtrlId && commentCtrlId != "") {
+                var ctrl = document.getElementById(pnCtrlId);
+
+                if (ctrl && ctrl != null) {
+                    ctrl.value = "";
+                    ctrl.disabled = !active;
+                }
+
+                var ctrl = document.getElementById(commentCtrlId);
+
+                if (ctrl && ctrl != null) {
+                    ctrl.value = "";
+                    ctrl.style.display = !active ? "none" : "";
+                }
+            }
+        }
+
+        function validateSerialNumbers(paragraphID, orderLinesContainerId) {
+            var result = true;
+
+            var container = document.querySelector(orderLinesContainerId);
+            if (container) {
+                result = false;
+
+                var checkBoxes = new Array();
+
+                for (var i = 0; i < container.childNodes.length; i++) {
+                    var childArrays = getCheckBoxes(container.childNodes[i]);
+
+                    if (childArrays && childArrays.length > 0) {
+                        for (var j = 0; j < childArrays.length; j++) {
+                            checkBoxes.push(childArrays[j]);
+                        }
+                    }
+                }
+
+                if (checkBoxes && checkBoxes.length > 0) {
+                    var preffixId = paragraphID + "OrderLineID";
+                    for (var i = 0; i < checkBoxes.length; i++) {
+                        if (checkBoxes[i].id.indexOf(preffixId) >= 0 && checkBoxes[i].checked) {
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        function getCheckBoxes(el) {
+            var result = new Array();
+
+            if (el) {
+                var child = null, serNumberEl = null;
+
+                for (var i = 0; i < el.childNodes.length; i++) {
+                    child = el.childNodes[i];
+                    if (child && typeof child.type != "undefined" && child.type == "checkbox")
+                        result.push(child);
+
+                    var childArrays = getCheckBoxes(child);
+
+                    if (childArrays && childArrays.length > 0) {
+                        for (var j = 0; j < childArrays.length; j++) {
+                            result.push(childArrays[j]);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+    </script>
+}

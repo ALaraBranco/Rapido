@@ -1,0 +1,77 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage recurringOrdersPage = BlocksPage.GetBlockPage("RecurringOrderList");
+
+    public MediaListItem GetRecurringOrder(LoopItem order)
+    {
+        string orderId = order.GetString("Ecom:Recurringorder.Id");
+
+        MediaListItem listItem = new MediaListItem
+        {
+            Title = Translate("No.") + orderId,
+            Label = order.GetString("Ecom:RecurringOrder.Interval") + " " + order.GetString("Ecom:RecurringOrder.IntervalUnit.Name"),
+            Status = !string.IsNullOrWhiteSpace(order.GetString("Ecom:CustomerCenter.RecurringOrders.DeleteUrl")) ? "Active" : "Ended",
+            OnClick = "orderModal.ShowOrderModal('" + orderId + "')"
+        };
+
+        listItem.AddActions(new Button
+        {
+            Title = Translate("View order"),
+            OnClick = "orderModal.ShowOrderModal('" + orderId + "')"
+        },
+        new Link
+        {
+            Href = order.GetString("Ecom:CustomerCenter.RecurringOrders.RecurringOrderDetailsURL"),
+            Title = Translate("Deliveries"),
+            AltText = Translate("Deliveries")
+        });
+
+        if (!string.IsNullOrWhiteSpace(order.GetString("Ecom:CustomerCenter.RecurringOrders.DeleteUrl")))
+        {
+            listItem.AddAction(new Link
+            {
+                Href = order.GetString("Ecom:CustomerCenter.RecurringOrders.DeleteUrl"),
+                Title = Translate("Cancel"),
+                AltText = Translate("Cancel")
+            });
+        }
+
+        listItem.AddInfoRow(Translate("Frequency"), Translate("Every") + " " + order.GetString("Ecom:RecurringOrder.Interval") + " " + order.GetString("Ecom:RecurringOrder.IntervalUnit.Name"));
+        listItem.AddInfoRow(Translate("Start date"), order.GetDate("Ecom:RecurringOrder.StartDate").ToString("dd/MM/yyyy"));
+        listItem.AddInfoRow(Translate("End date"), !string.IsNullOrWhiteSpace(order.GetString("Ecom:RecurringOrder.EndDate")) ? order.GetDate("Ecom:RecurringOrder.EndDate").ToString("dd/MM/yyyy") : Translate("Never"));
+
+        if (!string.IsNullOrWhiteSpace(order.GetString("Ecom:RecurringOrder.NextDelivery")))
+        {
+            listItem.AddInfoRow(Translate("Next delivery"), order.GetDate("Ecom:RecurringOrder.NextDelivery").ToString("dd/MM/yyyy"));
+        }
+
+        return listItem;
+    }
+}
+
+@{
+    Block recurringOrders = new Block
+    {
+        Id = "RecurringOrders",
+        SortId = 20,
+        Template = RenderRucurringOrders()
+    };
+    recurringOrdersPage.Add("PageContainer", recurringOrders);
+}
+
+@helper RenderRucurringOrders() {
+    if (!GetBoolean("Ecom:CustomerCenter.RecurringOrders.EmptyList"))
+    {
+        foreach (LoopItem order in GetLoop("RecurringOrders"))
+        {
+            @Render(GetRecurringOrder(order))
+        }
+    } else {
+        <div>@Translate("You have no recurring orders")</div>
+    }
+}

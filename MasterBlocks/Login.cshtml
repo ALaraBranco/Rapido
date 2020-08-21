@@ -1,0 +1,115 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Security.UserManagement
+@using Dynamicweb.Security.UserManagement.ExternalAuthentication
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{
+    BlocksPage loginBlocksPage = BlocksPage.GetBlockPage("Master");
+        Block loginModal = new Block()
+        {
+            Id = "LoginModal",
+            SortId = 10,
+            Component = new Modal
+            {
+                Id = "SignIn",
+                Heading = new Heading
+                {
+                    Level = 2,
+                    Title = Translate("Sign in")
+                },
+                Width = ModalWidth.Xs,
+                BodyTemplate = RenderLoginForm()
+            }
+        };
+    
+    if (!Dynamicweb.Security.UserManagement.User.IsExtranetUserLoggedIn())
+    {
+        loginBlocksPage.Add(MasterBlockId.MasterTopSnippets, loginModal);
+    }
+    
+}
+
+@helper RenderLoginForm()
+{
+    int pageId = Model.TopPage.ID;
+    string userSignedInErrorText = "";
+    int signInProfilePageId = GetPageIdByNavigationTag("SignInPage");
+    string forgotPasswordPageLink = "/Default.aspx?ID=" + signInProfilePageId + "&LoginAction=Recovery";
+    int createAccountPageId = GetPageIdByNavigationTag("CreateAccount");
+    bool showModalOnStart = pageId != GetPageIdByNavigationTag("CustomerCenter") && Model.LogOnFailed;
+    bool hideCreateAccountLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideCreateAccount");
+    bool hideForgotPasswordLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideForgotPasswordLink");
+            
+    ProviderCollection providers = Provider.GetActiveProviders();
+
+    if (Model.LogOnFailed)
+    {
+        switch (Model.LogOnFailedReason)
+        {
+            case LogOnFailedReason.PasswordLengthInvalid:
+                userSignedInErrorText = Translate("Password length is invalid");
+                break;
+            case LogOnFailedReason.IncorrectLogin:
+                userSignedInErrorText = Translate("Invalid email or password");
+                break;
+            case LogOnFailedReason.ExceededFailedLogOnLimit:
+                userSignedInErrorText = Translate("You have exceeded the limit of allowed login attempts. The user account is temporarily locked");
+                break;
+            case LogOnFailedReason.LoginLocked:
+                userSignedInErrorText = Translate("The user account is temporarily locked");
+                break;
+            case LogOnFailedReason.PasswordExpired:
+                userSignedInErrorText = Translate("The password has expired and needs to be renewed");
+                break;
+            default:
+                userSignedInErrorText = Translate("An unknown error occured");
+                break;
+        }
+    }
+
+    Form form = new Form { Method = FormMethod.Post, Name = "LoginModalForm" };
+
+    form.Add(new HiddenField { Name = "ID", Value = Converter.ToString(pageId) });
+    form.Add(new HiddenField { Name = "DWExtranetUsernameRemember", Value = "True" });
+    form.Add(new HiddenField { Name = "DWExtranetPasswordRemember", Value = "True" });
+    form.Add(new HiddenField { Name = "LoginAction", Value = "Login" });
+    form.Add(new TextField { Id = "LoginUsername", Name = "username", Label = Translate("Email"), CssClass = "u-full-width" });
+    form.Add(new TextField { Id = "LoginPassword", Name = "password", Type = TextFieldType.Password, Label = Translate("Password"), CssClass = "u-full-width" });
+    form.Add(new NotificationMessage { Message = userSignedInErrorText, MessageType = NotificationMessageType.Error });
+    form.Add(new CheckboxField { Id = "LoginRememberMe", Value = "True", Name = "Autologin", Label = Translate("Remember me") });
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Sign in"), CssClass = "btn--full", OnClick = "Buttons.LockButton(event)" });
+
+    foreach (Provider LoginProvider in providers)
+    {
+        var ProviderName = LoginProvider.Name.ToLower();
+        form.Add(new Link {
+            Href = "/Admin/Public/Social/ExternalLogin.aspx?action=login&providerID=" + LoginProvider.ID,
+            Icon = new Icon { Prefix = "fab", Name = "fa-" + ProviderName, CssClass = "fa-1_5x" },
+            ButtonLayout = ButtonLayout.LinkClean,
+            CssClass = "btn--condensed u-margin-bottom u-margin-right u-inline-block u-color-" + ProviderName,
+            AltText = ProviderName
+        });
+    }
+
+    if (!hideCreateAccountLink) {
+        form.Add(new Link { Href = "/default.aspx?ID=" + createAccountPageId, Title = Translate("Create account?"), ButtonLayout = ButtonLayout.None, CssClass = "u-block u-padding-bottom" });
+    }
+
+    if (!hideForgotPasswordLink) {
+        form.Add(new Link { Href = forgotPasswordPageLink, Title = Translate("Forgot your password?"), ButtonLayout = ButtonLayout.None, CssClass = "u-block u-padding-bottom" });
+    }
+    
+    @Render(form)
+    if (showModalOnStart)
+    {
+        <script>
+            document.getElementById("SignInModalTrigger").checked = true;
+        </script>
+    }
+}

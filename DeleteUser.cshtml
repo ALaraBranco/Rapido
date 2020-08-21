@@ -1,0 +1,51 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using Dynamicweb.Security.UserManagement;
+@using Dynamicweb.Security.UserManagement.Common.CustomFields;
+@using Dynamicweb.Core;
+
+@functions
+{
+    public bool IsAdmin(User user)
+    {
+        if (user != null)
+        {
+            var userIsAdmin = user.CustomFieldValues.Find(x => x.CustomField.SystemName == "AccessUser_UserIsAdmin");
+            if (userIsAdmin != null)
+            {
+                return userIsAdmin.Value.ToString() == "True";
+            }
+        }
+
+        return false;
+    }
+}
+
+@{
+    Dynamicweb.Context.Current.Response.ContentType = "application/json";
+
+    string command = Dynamicweb.Context.Current.Request["cmd"];
+    int userId = Converter.ToInt32(Dynamicweb.Context.Current.Request["userId"]);
+
+    User currentUser = User.GetCurrentExtranetUser();
+    if (IsAdmin(currentUser) && command == "delete" && userId > 0)
+    {
+        User userToDelete = User.GetUserByID(userId);
+        if (userToDelete != null)
+        {
+            try
+            {
+                userToDelete.Delete();
+                <text>{"result": true}</text>
+            }
+            catch (Exception ex)
+            {
+                <text>{"error": '@ex.Message'}</text>
+            }
+        }
+    }
+    else
+    {
+        <text>{"result": false}</text>
+    }
+    @Model.Placeholder("dwcontent", "content", "default:true;sort:1")
+}

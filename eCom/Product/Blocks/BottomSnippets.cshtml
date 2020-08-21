@@ -1,0 +1,31 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage snippetsTemplatesPage = BlocksPage.GetBlockPage("Product");
+}
+
+@{
+    snippetsTemplatesPage.Add(new Block {
+        Id = "FavoritesTemplates",
+        SortId = 100,
+        Template = RenderFavoritesTemplates()
+    });
+    
+    snippetsTemplatesPage.Add(new Block
+    {
+        Id = "UnitsTemplates",
+        SortId = 110,
+        Template = RenderUnitsTemplates()
+    });
+}
+
+@Include("../../Blocks/Shared/FavoritesTemplates.cshtml")
+
+@helper RenderUnitsTemplates()
+{
+    <script id="UnitOption" type="text/x-template">
+        <div class="dropdown__item dw-mod" onclick="HandlebarsBolt.UpdateContent('PriceAndActions', '{{link}}&feed=true&UnitID={{value}}&rid={{id}}')">{{name}}</div>
+    </script>
+}

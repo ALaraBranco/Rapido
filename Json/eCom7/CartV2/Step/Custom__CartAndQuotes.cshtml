@@ -1,0 +1,276 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System
+@using System.Text.RegularExpressions
+@using Dynamicweb.Ecommerce.Orders
+@using Dynamicweb.Core
+@using System.Linq
+@using System.Collections.Generic
+@using System.Web
+@Include("../../../../GetProductImage.cshtml")
+@{
+    int productCatalog = GetPageIdByNavigationTag("ProductsPage");
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+}
+
+@functions {
+    public class ShippingMethod
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public string selected { get; set; }
+        public string hasShippingProvider { get; set; }
+        public object shippingProviderContent { get; set; }
+    }
+
+    public class BomItem
+    {
+        public string id { get; set; }
+        public string productnumber { get; set; }
+        public string name { get; set; }
+        public string variantname { get; set; }
+        public string unitname { get; set; }
+        public string image { get; set; }
+        public string link { get; set; }
+        public string quantity { get; set; }
+    }
+
+    public class OrderLine
+    {
+        public string template { get; set; }
+        public string id { get; set; }
+        public string productnumber { get; set; }
+        public string name { get; set; }
+        public string variantname { get; set; }
+        public string variantId { get; set; }
+        public string quantity { get; set; }
+        public string totalprice { get; set; }
+        public string link { get; set; }
+        public double pointPrice { get; set; }
+        public string priceWithDiscount { get; set; }
+        public double pointsTotal { get; set; }
+        public bool canBePurchasedWithPoints { get; set; }
+        public string image { get; set; }
+        public bool isEmpty { get; set; }
+        public string orderLineId { get; set; }
+        public string OrderContextId { get; set; }
+        public string unitname { get; set; }
+        public string unitprice { get; set; }
+        public string hideimage { get; set; }
+        public string hideBomItems { get; set; }
+        public GoogleImpression googleImpression { get; set; }
+        public string removeFromCartGoogleImpression { get; set; }
+        public List<BomItem> BomItems { get; set; }
+        public List<ShippingMethod> ShippingMethods { get; set; }
+        public double unitpricevalue { get; set; }
+        public string currency { get; set; }
+        public double productCost { get; set; }
+        public double productPrice { get; set; }
+        public bool isSalesRep { get; set; }
+        public int productStock { get; set; }
+    }
+
+    public class Root
+    {
+        public int numberofproducts { get; set; }
+        public string subtotalprice { get; set; }
+        public string subtotalpricewithouttaxes { get; set; }
+        public string paymentmethod { get; set; }
+        public string paymentfee { get; set; }
+        public string hidePaymentfee { get; set; }
+        public string shippingmethod { get; set; }
+        public string shippingfee { get; set; }
+        public string hideShippingfee { get; set; }
+        public string hideSubTotal { get; set; }
+        public string hideComment { get; set; }
+        public string hideCheckoutDisclaimer { get; set; }
+        public string checkoutDisclaimer { get; set; }
+        public string totalprice { get; set; }
+        public double earnings { get; set; }
+        public string totalvat { get; set; }
+        public string totaltaxes { get; set; }
+        public bool isEmpty { get; set; }
+        public string vouchercode { get; set; }
+        public string giftcardcode { get; set; }
+        public string comment { get; set; }
+        public double userPoints { get; set; }
+        public double pointsUsedInCart { get; set; }
+        public string termsAccepted { get; set; }
+        public string disabledNextStep { get; set; }
+        public List<OrderLine> OrderLines { get; set; }
+        public List<OrderLine> OrderLinesOutOfStock { get; set; }
+    }
+
+    public class GoogleImpression
+    {
+        public string name { get; set; }
+        public string id { get; set; }
+        public double price { get; set; }
+        public string brand { get; set; }
+        public string category { get; set; }
+        public string variant { get; set; }
+        public int quantity { get; set; }
+    }
+}
+
+@{
+    string jsonFeed = "";
+
+    List<Root> feedObject = new List<Root>();
+    Root feedRoot = new Root();
+
+    feedRoot.numberofproducts = GetInteger("Ecom:Order.OrderLines.TotalProductQuantity");
+    feedRoot.subtotalprice = GetString("Ecom:Order.PriceWithoutFees.PriceFormatted");
+    feedRoot.subtotalpricewithouttaxes = Dynamicweb.Ecommerce.Services.Currencies.Format(Dynamicweb.Ecommerce.Common.Context.Currency, (GetDouble("Ecom:Order.PriceWithoutFees.PriceWithoutVAT") - GetDouble("Ecom:Order.Taxes.Total.PriceWithoutVAT")), true);
+    feedRoot.paymentmethod = !string.IsNullOrEmpty(GetString("Ecom:Order.PaymentMethod")) ? GetString("Ecom:Order.PaymentMethod") : Translate("Payment");
+    feedRoot.paymentfee = GetInteger("Ecom:Order.PaymentFee.Price") != 0 ? GetString("Ecom:Order.PaymentFee.PriceFormatted") : Translate("Free");
+    feedRoot.hidePaymentfee = GetInteger("Ecom:Order.PaymentFee.Price") == 0 && Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideFreeServices") ? "u-hidden" : "";
+    feedRoot.shippingmethod = !string.IsNullOrEmpty(GetString("Ecom:Order.ShippingMethod")) ? GetString("Ecom:Order.ShippingMethod") : Translate("Shipping");
+    feedRoot.shippingfee = GetDouble("Ecom:Order.ShippingFee.Price") != 0 ? GetString("Ecom:Order.ShippingFee.PriceFormatted") : Translate("Free");
+    feedRoot.hideShippingfee = GetInteger("Ecom:Order.ShippingFee.Price") == 0 && Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideFreeServices") ? "u-hidden" : "";
+    feedRoot.totalprice = GetString("Ecom:Order.OrderLines.Total.Price");
+    feedRoot.earnings = GetInteger("Ecom:Order.RewardTotalPoints");
+    feedRoot.totalvat = GetString("Ecom:Order.OrderLines.Total.PriceVAT");
+    feedRoot.totaltaxes = GetString("Ecom:Order.Taxes.Total");
+    feedRoot.isEmpty = GetBoolean("Ecom:Order.IsEmpty");
+    feedRoot.vouchercode = GetString("Ecom:Order.Customer.VoucherCode");
+    feedRoot.giftcardcode = GetString("Ecom:Order.GiftCardCode");
+    feedRoot.hideSubTotal = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideSubtotal") ? "u-hidden" : "";
+    feedRoot.hideComment = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideComment") ? "u-hidden" : "";
+    feedRoot.comment = GetString("Ecom:Order.Customer.Comment");
+    feedRoot.hideCheckoutDisclaimer = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideCheckoutDisclaimer") || (GetString("Ecom:Order.Taxes.Total.Price") == "0.00" && !string.IsNullOrEmpty(GetString("Ecom:Order.ShippingMethodID"))) ? "u-hidden" : "";
+    feedRoot.checkoutDisclaimer = string.Format("{0}", string.IsNullOrEmpty(GetString("Ecom:Order.ShippingMethodID")) ? Translate("*Taxes and Shipping calculated at Checkout") : Translate("*Taxes Calculated at Checkout"));
+    feedRoot.termsAccepted = GetBoolean("Ecom:Order.Customer.Accepted") ? "checked" : "";
+    feedRoot.disabledNextStep = GetBoolean("Ecom:Order.Customer.Accepted") ? "" : "disabled";
+
+    var user = Dynamicweb.Security.UserManagement.User.GetCurrentUser(Dynamicweb.Security.UserManagement.PagePermissionLevels.Frontend);
+    feedRoot.userPoints = user != null ? Converter.ToInt32(user.PointBalance) : 0;
+
+    var cart = Dynamicweb.Ecommerce.Common.Context.Cart;
+    feedRoot.pointsUsedInCart = cart != null && cart.TotalPoints.HasValue ? cart.TotalPoints.Value : 0;
+    
+    var salesRepGroup = Pageview.AreaSettings.GetItem("Rizzo").GetInt32("SalesRepsGroupId");
+
+    feedRoot.OrderLines = new List<OrderLine>();
+    feedRoot.OrderLinesOutOfStock = new List<OrderLine>();
+    foreach (LoopItem orderline in GetLoop("OrderLines").Where(o => o.GetInteger("Ecom:Order:OrderLine.Type") != (int)OrderLineType.Tax).ToList())
+    {
+        OrderLine cartOrderLine = new OrderLine();
+        string productLink = "/" + Regex.Replace(orderline.GetString("Ecom:Product.LinkGroup.Clean"), @"\?ID=\d*\&", "?ID=" + productCatalog + "&");
+        var isOutOffStock = false;
+        productLink += !string.IsNullOrEmpty(orderline.GetString("Ecom:Order:OrderLine.ProductVariantID")) ? "&VariantID=" + orderline.GetString("Ecom:Order:OrderLine.ProductVariantID") : "";
+
+        cartOrderLine.template = Pageview.Device.ToString() != "Mobile" ? "CartOrderline" : "CartOrderlineMobile";
+        cartOrderLine.template = orderline.GetBoolean("Ecom:Order:OrderLine.IsProduct") ? cartOrderLine.template : "CartOrderlineDiscount";
+        cartOrderLine.id = orderline.GetString("Ecom:Product.ID");
+        cartOrderLine.productnumber = orderline.GetString("Ecom:Order:OrderLine.ProductNumber");
+        cartOrderLine.name = orderline.GetString("Ecom:Order:OrderLine.ProductName") + GetString("Ecom:Order:OrderLine.ProductVariantText");
+        cartOrderLine.variantname = orderline.GetString("Ecom:Order:OrderLine.ProductVariantText");
+        cartOrderLine.variantId = orderline.GetString("Ecom:Order:OrderLine.ProductVariantID");
+        cartOrderLine.quantity = orderline.GetString("Ecom:Order:OrderLine.Quantity");
+        cartOrderLine.totalprice = orderline.GetString("Ecom:Order:OrderLine.Price");
+        cartOrderLine.link = productLink;
+        cartOrderLine.image = GetProductImage(orderline);
+        cartOrderLine.pointsTotal = orderline.GetInteger("Ecom:Order:OrderLine.Points");
+        cartOrderLine.pointPrice = orderline.GetInteger("Ecom:Product.PointPrice");
+        cartOrderLine.canBePurchasedWithPoints = cartOrderLine.pointsTotal == 0 && cartOrderLine.pointPrice > 0 && feedRoot.userPoints - feedRoot.pointsUsedInCart >= cartOrderLine.pointPrice;
+        cartOrderLine.isEmpty = GetBoolean("Ecom:Order.IsEmpty");
+        cartOrderLine.orderLineId = orderline.GetString("Ecom:Order:OrderLine.Id");
+        var cartOrderContext = HttpContext.Current.Request.QueryString.Get("OrderContext");
+        cartOrderLine.OrderContextId = !String.IsNullOrEmpty(cartOrderContext) ? cartOrderContext : String.Empty;
+        cartOrderLine.unitname = orderline.GetString("Ecom:Order:OrderLine.UnitName");
+        cartOrderLine.unitprice = orderline.GetString("Ecom:Order:OrderLine.UnitPrice");
+        cartOrderLine.hideimage = !orderline.GetBoolean("Ecom:Order:OrderLine.IsProduct") ? "u-hidden" : "";
+        cartOrderLine.hideBomItems = orderline.GetLoop("BOMItems").Count > 0 ? "" : "u-hidden";
+        cartOrderLine.unitpricevalue = orderline.GetDouble("Ecom:Order:OrderLine.UnitPrice.Price");
+        cartOrderLine.currency = orderline.GetString("Ecom:Order:OrderLine.UnitPrice.Currency.Symbol");
+        cartOrderLine.productCost = double.Parse(orderline.GetString("Ecom:Product.Cost").Replace(cartOrderLine.currency,"").Replace(",","."));     
+        cartOrderLine.productPrice = orderline.GetDouble("Ecom:Product.Price.Price");
+        cartOrderLine.isSalesRep = salesRepGroup != null && user != null && user.HasGroup(salesRepGroup);
+        cartOrderLine.productStock = orderline.GetInteger("Ecom:Product.AvailableAmount");
+        
+        if (orderline.GetBoolean("Ecom:Order:OrderLine.IsProduct"))
+        {
+            isOutOffStock = Dna.SplitCart.Stock.IsProductOutOfStock(orderline);
+        }
+
+        if (useGoogleTagManager)
+        {
+            var groupObject = Dynamicweb.Ecommerce.Services.ProductGroups.GetGroup(orderline.GetString("Ecom:Product.PrimaryOrFirstGroupID"));
+            cartOrderLine.googleImpression = new GoogleImpression()
+            {
+                name = cartOrderLine.name,
+                brand = orderline.GetString("Ecom:Product:Field.brand.Value"),
+                category = (groupObject != null ? groupObject.Name : ""),
+                id = cartOrderLine.id,
+                quantity = Converter.ToInt32(cartOrderLine.quantity),
+                price = orderline.GetDouble("Ecom:Order:OrderLine.UnitPrice.Price"),
+                variant = cartOrderLine.variantId
+            };
+            cartOrderLine.removeFromCartGoogleImpression = "dataLayer.push({'event': 'removeFromCart', 'ecommerce': { 'remove': { 'products': [ " + Newtonsoft.Json.JsonConvert.SerializeObject(cartOrderLine.googleImpression) + "]}}})";
+        }
+
+        cartOrderLine.BomItems = new List<BomItem>();
+
+        foreach (LoopItem bomitem in orderline.GetLoop("BOMItems"))
+        {
+            BomItem bomItem = new BomItem();
+            string bomItemLink = "/" + Regex.Replace(bomitem.GetString("Ecom:Product.LinkGroup.Clean"), @"\?ID=\d*\&", "?ID=" + productCatalog + "&");
+
+            bomItem.id = bomitem.GetString("Ecom:Order:OrderLine.Id");
+            bomItem.name = bomitem.GetString("Ecom:Order:OrderLine.ProductName");
+            bomItem.productnumber = bomitem.GetString("Ecom:Order:OrderLine.ProductNumber");
+            bomItem.variantname = bomitem.GetString("Ecom:Order:OrderLine.ProductVariantText");
+            bomItem.unitname = bomitem.GetString("Ecom:Order:OrderLine.UnitName");
+            bomItem.image = GetProductImage(bomitem);
+            bomItem.link = bomItemLink;
+            bomItem.quantity = bomitem.GetString("Ecom:Order:OrderLine.Quantity");
+            cartOrderLine.BomItems.Add(bomItem);
+        }
+
+        cartOrderLine.ShippingMethods = new List<ShippingMethod>();
+        List<LoopItem> shippingMethods = GetLoop("Shippingmethods");
+        if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideShippingWarningsAndErrors"))
+        {
+            // Remove Shipping methods that returned Error or Warning messages and 0 price from provider
+            shippingMethods = shippingMethods.Where(s => !(string.Concat(s.GetString("Ecom:Cart.Shippingmethod.Error"), s.GetString("Ecom:Cart.Shippingmethod.Warning")).IsNotNullOrEmpty() && s.GetDouble("Ecom:Cart.ShippingMethod.Price.Price").Equals(0))).ToList();
+        }
+        foreach (LoopItem shipping in shippingMethods)
+        {
+            ShippingMethod shippingMethod = new ShippingMethod();
+            shippingMethod.id = shipping.GetString("Ecom:Cart.Shippingmethod.ID");
+            shippingMethod.name = shipping.GetString("Ecom:Cart.Shippingmethod.Name");
+            shippingMethod.selected = shipping.GetString("Ecom:Cart.Shippingmethod.Name") == GetString("Ecom:Order.ShippingMethod") ? "checked" : "";
+            if (shipping.GetString("Ecom:Cart.Shippingmethod.Name") == GetString("Ecom:Order.ShippingMethod"))
+            {
+                shippingMethod.hasShippingProvider = string.IsNullOrWhiteSpace(shipping.GetString("Ecom:ShippingProvider.Content")) ? "u-hidden" : "";
+                shippingMethod.shippingProviderContent = Newtonsoft.Json.JsonConvert.DeserializeObject(shipping.GetString("Ecom:ShippingProvider.Content"));
+            }
+            else
+            {
+                shippingMethod.shippingProviderContent = null;
+                shippingMethod.hasShippingProvider = "u-hidden";
+            }
+            cartOrderLine.ShippingMethods.Add(shippingMethod);
+        }
+
+        if (isOutOffStock)
+        {
+            feedRoot.OrderLinesOutOfStock.Add(cartOrderLine);
+        }
+        else
+        {
+            feedRoot.OrderLines.Add(cartOrderLine);
+        }
+    }
+
+    feedObject.Add(feedRoot);
+    jsonFeed = Newtonsoft.Json.JsonConvert.SerializeObject(feedObject);
+
+}
+
+@jsonFeed
+
+@*
+COPY FROM: Cart.cshtml
+ADDED: public string "OrderContextId"
+*@

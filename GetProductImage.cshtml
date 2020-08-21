@@ -1,0 +1,35 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+
+@* 
+   This is a temporary fallback for the DefaultImage. The image pattern MUST be set up like this:
+   
+   ImageSmall = /{ProductNumber}.jpg
+   ImageMedium = /{ProductNumber}{VariantOptionLevel1}.jpg
+   ImageLarge = /{ProductNumber}{VariantComboName}.jpg
+
+   In addition to the ImageDefault setting
+*@
+
+@functions {
+    public string GetProductImage(LoopItem productObject = null)
+    {
+        string theImage = "";
+
+        if (productObject == null) {
+            theImage = GetString("Ecom:Product.ImageDefault.Default.Clean");
+            theImage = String.IsNullOrEmpty(theImage) ? GetString("Ecom:Product.ImageLarge.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? GetString("Ecom:Product.ImageMedium.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? GetString("Ecom:Product.ImageSmall.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? GetString("Ecom:Product.ImageLarge.Default.Clean") : theImage;
+        } else {
+            theImage = productObject.GetString("Ecom:Product.ImageDefault.Default.Clean");
+            theImage = String.IsNullOrEmpty(theImage) ? productObject.GetString("Ecom:Product.ImageLarge.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? productObject.GetString("Ecom:Product.ImageMedium.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? productObject.GetString("Ecom:Product.ImageSmall.Clean") : theImage;
+            theImage = String.IsNullOrEmpty(theImage) ? productObject.GetString("Ecom:Product.ImageLarge.Default.Clean") : theImage;
+        }
+
+        return theImage;
+    }
+}

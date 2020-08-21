@@ -1,0 +1,109 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@MasterPageFile("Master.cshtml")
+
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage page = BlocksPage.GetBlockPage("Page");
+}
+
+@{
+    bool isProductPage = HttpContext.Current.Request.QueryString.Get("ProductID") != null;
+    string backgroundColorClass = Model.PropertyItem.GetList("BackgroundColor") != null && !isProductPage ? "u-" + Model.PropertyItem.GetList("BackgroundColor").SelectedValue + "--bg" : "";
+    string navigationMarkup = "";
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "PageRow",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    page.Add(pageContainer);
+
+    if (Model.PropertyItem.GetList("ShowBreadcrumb") != null && Model.PropertyItem.GetList("ShowBreadcrumb").SelectedValue == "True")
+    {
+        Block breadcrumbNavigation = new Block
+        {
+            Id = "PageBreadcrumbNavigation",
+            SortId = 10,
+            Component = new BreadcrumbNavigation { Id = "breadcrumb", Template = "Breadcrumb.xslt" }
+        };
+        page.Add("PageContainer", breadcrumbNavigation);
+    }
+
+    if (Model.PropertyItem.GetList("LeftMenu") != null && Model.PropertyItem.GetList("LeftMenu").SelectedValue == "True" && (Pageview.Page.NavigationSettings == null || !Pageview.Page.NavigationSettings.UseEcomGroups))
+    {
+        navigationMarkup = RenderNavigation(new
+        {
+            id = "leftnav",
+            cssclass = "dwnavigation",
+            startLevel = 2,
+            expandmode = "all",
+            endlevel = 5,
+            template = "LeftNavigation.xslt"
+        });
+
+        if (!string.IsNullOrEmpty(navigationMarkup))
+        {
+            Block leftNavigation = new Block
+            {
+                Id = "PageLeftNavigation",
+                SortId = 10,
+                Component = new LeftNavigation { Id = "leftnav", CssClass = "dwnavigation", StartLevel = 2, EndLevel = 5, Expandmode = "all", Template = "LeftNavigation.xslt" },
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "3"
+                }
+            };
+            page.Add("PageRow", leftNavigation);
+        }
+    }
+
+    string contentColumnSize = !string.IsNullOrEmpty(navigationMarkup) ? "9" : "12";
+
+    Block pageContent = new Block
+    {
+        Id = "PageContent",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = contentColumnSize,
+            CssClass = "grid__col--bleed"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "PageContentRow",
+                SortId = 10,
+                Component = new Text { Content = @Model.Placeholder("dwcontent", "content", "default:true;sort:1") },
+                Design = new Design {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    page.Add("PageRow", pageContent);
+}
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(page.BlocksRoot.BlocksList)
+
+
+@* Very small hack to make it cleanly, and easily possible to change the background color on a single page *@
+@if (backgroundColorClass != "")
+    {
+    <script>
+        document.getElementById("Page").classList.add("@backgroundColorClass");
+    </script>
+} 

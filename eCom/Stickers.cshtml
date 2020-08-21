@@ -1,0 +1,153 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Linq;
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Collections.Generic
+
+@functions{
+    Dictionary<string, StickersListPosition> stickerPositions = new Dictionary<string, StickersListPosition>
+    {
+        { "top-left", StickersListPosition.TopLeft },
+        { "top-right", StickersListPosition.TopRight },
+        { "bottom-left", StickersListPosition.BottomLeft },
+        { "bottom-right", StickersListPosition.BottomRight }
+    };
+
+    public void AddSticker(List<StickersCollection> list, Sticker sticker, StickersListPosition stickerPosition)
+    {
+        StickersCollection stickersContainerTemp = list.FirstOrDefault(stickersContainer => stickersContainer.Position == stickerPosition);
+        if (stickersContainerTemp == null)
+        {
+            stickersContainerTemp = new StickersCollection()
+            {
+                Position = stickerPosition,
+                Stickers = new List<Sticker>()
+            };
+            list.Add(stickersContainerTemp);
+        }
+        stickersContainerTemp.Stickers.Add(sticker);
+    }
+
+    public List<StickersCollection> GetStickersContainersList(List<LoopItem> discountsLoop, double discountPrice, double price, DateTime createdDate, string customStickerValue)
+    {
+        bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+        bool isSaleStickersEnabled = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("SaleSticker").GetBoolean("Enable");
+        bool isNewsStickersEnabled = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("NewSticker").GetBoolean("Enable");
+        bool isCustomStickersEnabled = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("CustomSticker").GetBoolean("Enable");
+
+        List<StickersCollection> resultList = new List<StickersCollection>();
+
+        if (!pointShopOnly && isSaleStickersEnabled)
+        {
+            string contentType = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("SaleSticker").GetString("ContentType");
+            contentType = !string.IsNullOrEmpty(contentType) ? contentType : "Name";
+            var currency = Dynamicweb.Ecommerce.Services.Currencies.GetDefaultCurrency();
+            Sticker saleSticker = new Sticker();
+            saleSticker.CssClass = "stickers-container__tag--sale";
+
+            switch (contentType)
+            {
+                case "Name":
+                    foreach (LoopItem discount in discountsLoop)
+                    {
+                        saleSticker.Title = discount.GetString("Ecom:Product.Discount.Name");
+                    }
+                    break;
+                case "Amount":
+                    if (discountsLoop.Count > 0)
+                    {
+                        saleSticker.Title = Dynamicweb.Ecommerce.Services.Currencies.Format(currency, discountPrice - price);
+                    }
+                    break;
+                case "Percents":
+                    double percents = 0;
+                    foreach (LoopItem discount in discountsLoop)
+                    {
+                        percents += discount.GetDouble("Ecom:Product.Discount.PercentWithoutVAT");
+                    }
+                    if (percents > 0)
+                    {
+                        saleSticker.Title = Math.Round(percents, 0) + "%";
+                    }
+                    break;
+                case "Amount+and+percents":
+                    double amount = 0;
+                    double percent = 0;
+                    foreach (LoopItem discount in discountsLoop)
+                    {
+                        if (discount.GetString("Ecom:Product.Discount.Type") == "PERCENT")
+                        {
+                            percent += discount.GetDouble("Ecom:Product.Discount.PercentWithoutVAT");
+                        }
+                        else if (discount.GetString("Ecom:Product.Discount.Type") == "AMOUNT")
+                        {
+                            amount += discount.GetDouble("Ecom:Product.Discount.AmountWithVAT");
+                        }
+                    }
+
+                    if (percent > 0)
+                    {
+                        saleSticker.Title = percent + "%";
+                    }
+                    else if (amount > 0)
+                    {
+                        saleSticker.Title = "-" + Dynamicweb.Ecommerce.Services.Currencies.Format(currency, amount);
+                    }
+                    break;
+                default:
+                    if (discountsLoop.Count > 0)
+                    {
+                        saleSticker.Title = Translate("Sale!");
+                    }
+                    break;
+            }
+            StickersListPosition saleStickerPosition = StickersListPosition.TopLeft;
+            if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("SaleSticker").GetList("Position") != null)
+            {
+                string value = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("SaleSticker").GetList("Position").SelectedValue;
+                saleStickerPosition = stickerPositions.ContainsKey(value) ? stickerPositions[value] : stickerPositions["top-left"];
+            }
+            if (!string.IsNullOrEmpty(saleSticker.Title))
+            {
+                AddSticker(resultList, saleSticker, saleStickerPosition);
+            }
+        }
+
+        if (!pointShopOnly && isNewsStickersEnabled && createdDate.AddDays(Converter.ToDouble(Pageview.AreaSettings.GetItem("Ecommerce").GetItem("NewSticker").GetString("Expiration"))) > DateTime.Now)
+        {
+            Sticker newSticker = new Sticker();
+            newSticker.CssClass = "stickers-container__tag--new";
+            newSticker.Title = Translate("New!");
+
+            StickersListPosition newStickerPosition = StickersListPosition.TopLeft;
+            if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("NewSticker").GetList("Position") != null)
+            {
+                string value = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("NewSticker").GetList("Position").SelectedValue;
+                newStickerPosition = stickerPositions.ContainsKey(value) ? stickerPositions[value] : stickerPositions["top-left"];
+            }
+            if (!string.IsNullOrEmpty(newSticker.Title))
+            {
+                AddSticker(resultList, newSticker, newStickerPosition);
+            }
+        }
+
+        if (!pointShopOnly && isCustomStickersEnabled && !string.IsNullOrEmpty(customStickerValue))
+        {
+            Sticker customSticker = new Sticker();
+            customSticker.CssClass = "stickers-container__tag--custom";
+            customSticker.Title = customStickerValue;
+
+            StickersListPosition customStickerPosition = StickersListPosition.TopLeft;
+            if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("CustomSticker").GetList("Position") != null)
+            {
+                string value = Pageview.AreaSettings.GetItem("Ecommerce").GetItem("CustomSticker").GetList("Position").SelectedValue;
+                customStickerPosition = stickerPositions.ContainsKey(value) ? stickerPositions[value] : stickerPositions["top-left"];
+            }
+            if (!string.IsNullOrEmpty(customSticker.Title))
+            {
+                AddSticker(resultList, customSticker, customStickerPosition);
+            }
+        }
+
+        return resultList;
+    }
+}

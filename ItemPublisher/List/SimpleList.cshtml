@@ -1,0 +1,99 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("SimpleList");
+
+    public string Truncate(string value, int maxChars)
+    {
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
+    }
+}
+
+@{ 
+    if (GetLoop("ItemPublisher:Items.List").Count > 0)
+    {
+        Block listContainer = new Block
+        {
+            Id = "ArticleListContainer",
+            SortId = 10,
+            Design = new Design
+            {
+                RenderType = RenderType.Row
+            },
+            BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleListBody",
+                SortId = 30,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    HidePadding = true
+                }
+            }
+        }
+        };
+        articlePage.Add(listContainer);
+
+        Block articleList = new Block
+        {
+            Id = "ArticleList",
+            SortId = 10,
+            SkipRenderBlocksList = true,
+            Template = RenderPopularList()
+        };
+        articlePage.Add("ArticleListBody", articleList);
+
+        int count = 0;
+        foreach (LoopItem listItem in GetLoop("ItemPublisher:Items.List"))
+        {
+            ArticleListItem articleListItemComponent = new ArticleListItem
+            {
+                Title = listItem.GetString("ItemPublisher:Item.Title"),
+                Link = "/Default.aspx?ID=" + listItem.GetString("ItemPublisher:Item.Field.PageId"),
+                Type = ArticleListItemType.Simple
+            };
+
+            Block articleListItem = new Block
+            {
+                Id = "ArticleListItem" + count,
+                SortId = (count * 10),
+                Component = articleListItemComponent
+            };
+            articlePage.Add("ArticleList", articleListItem);
+        }
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/ArticleComponents.cshtml")
+
+
+@* Include the Blocks for the page *@
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)
+
+
+@helper RenderPopularList() {
+    List<Block> subBlocks = this.articlePage.GetBlockListById("ArticleList").OrderBy(item => item.SortId).ToList();
+    string title = Pageview.Item["PopularArticlesHeader"] != null ? Pageview.Item["PopularArticlesHeader"].ToString() : null;
+    title = title == null && Pageview.Item["Title"] != null ? Pageview.Item["Title"].ToString() : title;
+
+    <div class="card-header u-color-light--bg dw-mod">
+        <h3>@title</h3>
+    </div>
+
+    <div class="card u-color-light--bg article-simple-list dw-mod">
+        @RenderBlockList(subBlocks)
+    </div>
+}

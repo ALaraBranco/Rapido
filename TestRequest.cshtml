@@ -1,0 +1,90 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using Dynamicweb.Core
+@using Dynamicweb
+
+@{
+    var GET = Context.Current.Request.QueryString;
+    var POST = Context.Current.Request.Form;
+    int i = GET.Count;
+}
+
+@* JSON MODE *@
+@if (GET["jsonMode"] == "True")
+{
+    Dynamicweb.Context.Current.Response.ContentType = "application/json";
+
+    <text>{"GET":{</text>
+    foreach (string key in GET)
+    {
+        i--;
+        <text>"@key":"@GET[key]"</text>
+        if (i != 0)
+        {
+            <text>,</text>
+        }
+    }
+    <text>},</text>
+    <text>"POST":{</text>
+
+    i = POST.Count;
+    foreach (string key in POST)
+    {
+        i--;
+        <text>"@key":"@POST[key]"</text>
+        if (i != 0)
+        {
+            <text>,</text>
+        }
+    }
+    <text>}}</text>
+}
+else
+{
+    @* HTML MODE *@
+    <input id="key1" placeholder="key1" /> <input id="value1" placeholder="value1" /><br /><br />
+    <input id="key2" placeholder="key2" /> <input id="value2" placeholder="value2" /><br /><br />
+    <input id="key3" placeholder="key3" /> <input id="value3" placeholder="value3" /><br /><br />
+
+    <button type="button" onclick="TestAjax('GET')">Test GET</button>
+    <button type="button" onclick="TestAjax('POST')">Test POST</button>
+    <br /><br />
+    <div id="result"></div>
+    <script src="/Files/Templates/Designs/Rapido/js/source/Request.js"></script>
+    <script>
+        function TestAjax(type) {
+            let data = {};
+            let getString = "";
+            if (document.getElementById("key1").value != "") {
+                data[document.getElementById("key1").value] = document.getElementById("value1").value;
+                getString += "&" + document.getElementById("key1").value + "=" + document.getElementById("value1").value;
+            }
+            if (document.getElementById("key2").value != "") {
+                data[document.getElementById("key2").value] = document.getElementById("value2").value;
+                getString += "&" + document.getElementById("key2").value + "=" + document.getElementById("value2").value;
+            }
+            if (document.getElementById("key3").value != "") {
+                data[document.getElementById("key3").value] = document.getElementById("value3").value;
+                getString += "&" + document.getElementById("key3").value + "=" + document.getElementById("value3").value;
+            }
+
+            if (type == 'GET') {
+                Request.Fetch().get(
+                    "/Default.aspx?ID=@Model.ID&jsonMode=True" + getString,
+                    function (result) {
+                        document.getElementById("result").innerHTML = JSON.stringify(result);
+                    }
+                );
+            }
+
+            if (type == 'POST') {
+                Request.Fetch().post(
+                    "/Default.aspx?ID=@Model.ID&jsonMode=True",
+                    data,
+                    function (result) {
+                        document.getElementById("result").innerHTML = JSON.stringify(result);
+                    }
+                );
+            }
+        }
+    </script>
+}

@@ -1,0 +1,76 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@functions {
+    BlocksPage recurringOrdersPage = BlocksPage.GetBlockPage("RecurringOrderDetails");
+
+    public MediaListItem GetFutureRecurringOrder(LoopItem delivery)
+    {
+        bool isCanceled = !string.IsNullOrEmpty(delivery.GetString("Ecom:FutureRecurringOrder.Canceled"));
+
+        MediaListItem listItem = new MediaListItem {};
+
+        listItem.AddInfoRow(Translate("Delivery date"), delivery.GetDate("Ecom:FutureRecurringOrder.Date").ToString("dd/MM/yyyy"));
+        listItem.AddInfoRow(Translate("Status"), isCanceled ? Translate("Canceled") : Translate("Active"));
+        listItem.AddAction(new Link
+        {
+            Href = delivery.GetString("Ecom:CustomerCenter.FutureRecurringOrder.ToggleUrl"),
+            Title = isCanceled ? Translate("Restore delivery") : Translate("Cancel delivery"),
+            AltText = Translate("Toggle delivery this recurring order")
+        });
+
+        return listItem;
+    }
+
+    public MediaListItem GetPreviousRecurringOrder(LoopItem delivery)
+    {
+        MediaListItem listItem = new MediaListItem {};
+
+        listItem.AddInfoRow(Translate("Delivery date"), delivery.GetDate("Ecom:Order.Date").ToString("dd/MM/yyyy"));
+        listItem.AddInfoRow(Translate("Status"), Translate("Ended"));
+
+        return listItem;
+    }
+}
+
+@{
+    Block recurringOrders = new Block
+    {
+        Id = "RecurringOrders",
+        SortId = 30,
+        Template = RenderRecurringOrders()
+    };  
+
+    recurringOrdersPage.Add("PageContainer", recurringOrders);
+}
+
+@helper RenderRecurringOrders() {
+    string currentView = GetString("Ecom:CustomerCenter.RecurringOrderDetails.CurrentView");
+    bool isPrevious = currentView == "previous";
+
+    if (!(GetBoolean("Ecom:CustomerCenter.PreviousRecurringOrders.EmptyList") && isPrevious) && !(GetBoolean("Ecom:CustomerCenter.FutureRecurringOrders.EmptyList") && !isPrevious))
+    {
+            
+        if (!GetBoolean("Ecom:CustomerCenter.FutureRecurringOrders.EmptyList") && !isPrevious)
+        {
+
+            foreach (LoopItem delivery in GetLoop("FutureRecurringOrders"))
+            {
+                @Render(GetFutureRecurringOrder(delivery))
+            }
+
+        }
+        else
+        {
+
+            foreach (LoopItem delivery in GetLoop("PreviousRecurringOrders"))
+            {
+                @Render(GetPreviousRecurringOrder(delivery))
+            }
+        }
+    }    
+}

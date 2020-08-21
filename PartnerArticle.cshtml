@@ -1,0 +1,228 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("Master.cshtml")
+
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("NewsArticle");
+}
+
+@{ 
+    string articleBannerTextColor = !string.IsNullOrEmpty(Model.Item.GetString("TextColor")) ? "color:" + Model.Item.GetString("TextColor") : "#fff";
+    string caseListPageId = GetPageIdByNavigationTag("CasesListFeed").ToString();
+    string partnerLink = Model.ID.ToString();
+
+
+    ArticleHeader topBanner = new ArticleHeader
+    {
+        Layout = ArticleHeaderLayout.Banner,
+        Image = new Image { Path = Model.Item.GetFile("Image") },
+        Heading = Model.Item.GetString("BannerHeading"),
+        Subheading = Model.Item.GetString("BannerSubheading"),
+        TextColor = articleBannerTextColor,
+        ButtonLayout = ButtonLayout.Primary,
+        TextLayout = ArticleHeaderTextLayout.Full
+    };
+
+
+    //Basic structure
+
+    Block articleContainer = new Block
+    {
+        Id = "ArticleContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleBanner",
+                SortId = 10,
+                Component = topBanner,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    HidePadding = true
+                }
+            },
+            new Block {
+                Id = "ArticleBody",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "8"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleBodyRow",
+                        SortId = 10,
+                        Design = new Design {
+                            RenderType = RenderType.Row
+                        }
+                    }
+                }
+            },
+            new Block {
+                Id = "ArticleInfo",
+                SortId = 30,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "4"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleInfoRow",
+                        SortId = 10,
+                        Design = new Design {
+                            RenderType = RenderType.Row
+                        }
+                    }
+                }
+            },
+            new Block {
+                Id = "ArticleSnippets",
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                }
+            }
+        }
+    };
+    articlePage.Add(articleContainer);
+
+
+    //Added components for the article body
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("AboutUs")))
+    {
+        Block articleParagraphOneHeader = new Block
+        {
+            Id = "ArticleParagraphOneHeader",
+            SortId = 10,
+            Component = new Heading { Title = Translate("About us"), Level = 2 },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        articlePage.Add("ArticleBodyRow", articleParagraphOneHeader);
+
+        Block articleParagraphOneText = new Block
+        {
+            Id = "ArticleParagraphOneText",
+            SortId = 20,
+            Component = new ArticleText { Text = Model.Item.GetString("AboutUs") },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        articlePage.Add("ArticleBodyRow", articleParagraphOneText);
+    }
+
+
+    //Added components for the info area
+
+    if (Model.Item.GetFile("PartnerLogo") != null)
+    {
+        Block articleLogo = new Block
+        {
+            Id = "ArticleLogo",
+            SortId = 10,
+            Component = new ArticleImage
+            {
+                Image = new Image
+                {
+                    Path = Model.Item.GetFile("PartnerLogo"),
+                    Title = "Logo",
+                    ImageDefault = new ImageSettings
+                    {
+                        Height = 80,
+                        Width = 280,
+                        Crop = 5
+                    }
+                }
+            },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12",
+                CssClass = "u-border-bottom"
+            }
+        };
+        articlePage.Add("ArticleInfoRow", articleLogo);
+    }
+
+    Block articleInfoTableContainer = new Block
+    {
+        Id = "ArticleInfoTableContainer",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        }
+    };
+    articlePage.Add("ArticleInfoRow", articleInfoTableContainer);
+
+
+    List<ArticleInfoTableRow> infoTableContent = new List<ArticleInfoTableRow>();
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerStatus")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Partner status"), SubTitle = Model.Item.GetList("PartnerStatus").SelectedName, Icon = "fas fa-user" });
+    }
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerCertifiedDevelopers")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Number of certified developers"), SubTitle = Model.Item.GetString("PartnerCertifiedDevelopers"), Icon = "fas fa-user-plus" });
+    }
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerLocation")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Location"), SubTitle = Model.Item.GetString("PartnerLocation"), Icon = "fas fa-globe" });
+    }
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerWebsiteUrl")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Website"), SubTitle = Model.Item.GetString("PartnerWebsiteUrl"), Icon = "fas fa-desktop", Link = "http://" + Model.Item.GetString("PartnerWebsiteUrl") });
+    }
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerPhoneNumber")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Get in touch"), SubTitle = Model.Item.GetString("PartnerPhoneNumber"), Icon = "fas fa-phone" });
+    }
+
+    if (!String.IsNullOrEmpty(Model.Item.GetString("PartnerWebsiteUrl")))
+    {
+        infoTableContent.Add(new ArticleInfoTableRow { Title = Translate("Get in touch"), SubTitle = Model.Item.GetString("PartnerEmailAddress"), Icon = "fas fa-envelope", Link = "mailto: " + Model.Item.GetString("PartnerEmailAddress") });
+    }
+
+    Block articleInfoTable = new Block
+    {
+        Id = "ArticleInfoTable",
+        SortId = 10,
+        Component = new ArticleInfoTable { Rows = infoTableContent }
+    };
+    articlePage.Add("ArticleInfoRow", articleInfoTable);
+
+
+    //Related
+    Block articleRelated = new Block
+    {
+        Id = "ArticleRelated",
+        SortId = 30,
+        Component = new ArticleRelated { Title = Translate("Cases by") + " " + Model.Item.GetString("PartnerName"), FeedPageId = caseListPageId, Query = "PartnerLink=Default.aspx?Id=" + partnerLink, PageSize = 4 }
+    };
+    articlePage.Add("ArticleContainer", articleRelated);
+}
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)

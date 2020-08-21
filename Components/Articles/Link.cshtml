@@ -1,0 +1,32 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@* Component for the articles *@
+
+@helper RenderArticleLink(ArticleLink settings)
+{
+    if (!string.IsNullOrEmpty(settings.Title))
+    {
+        Button link = new Button {
+            ConfirmText = settings.ConfirmText,
+            ConfirmTitle = settings.ConfirmTitle,
+            ButtonType = settings.ButtonType,
+            Id = settings.Id,
+            Title = settings.Title,
+            AltText = settings.AltText,
+            OnClick = settings.OnClick,
+            CssClass = settings.CssClass,
+            Disabled = settings.Disabled,
+            Icon = settings.Icon,
+            Name = settings.Name,
+            Href = settings.Href,
+            ButtonLayout = settings.ButtonLayout,
+            ExtraAttributes = settings.ExtraAttributes
+        };
+        <div class="grid__cell">
+            @Render(link)
+        </div>
+    }
+}

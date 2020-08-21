@@ -1,0 +1,258 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.Collections.Generic
+@using System
+@using Dynamicweb.Core
+@using System.Linq
+@using System.Web
+@using System.IO
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions{ 
+    BlocksPage paragraphOverlay = BlocksPage.GetBlockPage("ParagraphOverlay");
+}
+
+@{
+    Block overlayContainer = new Block
+    {
+        Id = "ParagraphOverlayContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ParagraphOverlayModal",
+                SortId = 20,
+                Template = RenderOverlayModal()
+            }
+        }
+    };
+    paragraphOverlay.Add(overlayContainer);
+
+    Block overlayScripts = new Block
+    {
+        Id = "ParagraphOverlayScripts",
+        SortId = 30,
+        Template = RenderOverlayScripts()
+    };
+    paragraphOverlay.Add(overlayScripts);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+                              
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml")
+
+@* Include the custom blocks *@
+@Include("Blocks/Overlay/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(paragraphOverlay.BlocksRoot.BlocksList)
+
+
+
+@helper RenderOverlayModal() {
+    int paragraphId = Model.ID;
+    string imagePath = Model.Item.GetFile("Image") != null ? Model.Item.GetFile("Image").PathUrlEncoded : "";
+    string backgroundClass = !String.IsNullOrEmpty(imagePath) ? "background-image" : "";
+    string fontColor = !string.IsNullOrEmpty(Model.Item.GetList("FontColor").SelectedValue) ? "u-" + Model.Item.GetList("FontColor").SelectedValue : "";
+    string backgroundColor = !string.IsNullOrEmpty(Model.Item.GetList("BackgroundColor").SelectedValue) ? "u-" + Model.Item.GetList("BackgroundColor").SelectedValue + "--bg" : "";
+    string textAlignment = Model.Item.GetList("TextAlignment") != null ? Model.Item.GetList("TextAlignment").SelectedValue.ToLower() : "";
+    string buttonAlignment = Model.Item.GetList("ButtonAlignment") != null ? Model.Item.GetList("ButtonAlignment").SelectedValue.ToLower() : "";
+    string modalWidth = Model.Item.GetList("ModalWidth") != null ? Model.Item.GetList("ModalWidth").SelectedValue.ToLower() : "";
+    string modalHeight = Model.Item.GetList("ModalHeight") != null ? Model.Item.GetList("ModalHeight").SelectedValue.ToLower() : "";
+    string contentColumnClass = "grid__col-12";
+    string imagePosition = "";
+    string overlayPosition = Model.Item.GetList("OverlayPosition") != null ? Model.Item.GetList("OverlayPosition").SelectedValue.ToLower() : "";
+    bool showBlackOverlay = overlayPosition == "";
+    string overlayClass = "";
+    modalWidth = overlayPosition == "modal--top-bar" || overlayPosition == "modal--bottom-bar" ? "" : modalWidth;
+
+    if (!String.IsNullOrEmpty(imagePath))
+    {
+        imagePosition = Model.Item.GetList("ImagePosition") != null ? Model.Item.GetList("ImagePosition").SelectedValue.ToLower() : "left";
+        imagePosition = !string.IsNullOrEmpty(imagePosition) ? imagePosition : "left";
+        imagePosition = Pageview.Device.ToString() == "Mobile" ? "top" : imagePosition;
+
+        switch (imagePosition)
+        {
+            case "left":
+                contentColumnClass = "grid__col-6";
+                break;
+            case "right":
+                contentColumnClass = "grid__col-6";
+                break;
+        }
+    }
+    if (!showBlackOverlay)
+    {
+        overlayClass = "modal-overlay--transparent";
+    }
+
+    <input type="checkbox" id="overlay_@paragraphId" class="modal-trigger normal">
+
+    <div class="modal-container" id="overlayModalContainer_@paragraphId">
+        <label for="overlay_@paragraphId" class="modal-overlay @overlayClass"></label>
+        <div class="modal @overlayPosition @backgroundColor @fontColor @modalWidth @modalHeight dw-mod" id="overlayModal_@paragraphId">
+            <div class="modal__body modal__body--full u-full-height dw-mod">
+                <div class="grid u-full-height">
+                    @if (imagePosition == "bottom" || imagePosition == "right")
+                    {
+                        @RenderContent(contentColumnClass, textAlignment, buttonAlignment)
+                        <div class="@contentColumnClass u-no-padding @backgroundClass dw-mod">
+                            @Render(new Image { Path = imagePath, ImageDefault = new ImageSettings { Width = 1000, Height = 1000 } })
+                        </div>
+                    }
+                    else if (imagePosition == "top" || imagePosition == "left")
+                    {
+                        <div class="@contentColumnClass u-no-padding @backgroundClass dw-mod">
+                            @Render(new Image { Path = imagePath, ImageDefault = new ImageSettings { Width = 1000, Height = 1000 } })
+                        </div>
+                        @RenderContent(contentColumnClass, textAlignment, buttonAlignment)
+                    }
+                    else
+                    {
+                        @RenderContent(contentColumnClass, textAlignment, buttonAlignment, imagePath)
+                    }
+                </div>
+            </div>
+            <label class="modal__close-btn dw-mod" for="overlay_@paragraphId"></label>
+        </div>
+    </div>
+
+    <div id="overlayAnchor_@paragraphId"></div>
+}
+
+@helper RenderContent(string contentColumnClass, string textAlignment, string buttonAlignment, string backgroundImage = null)
+{
+    string verticalAlignment = Model.Item.GetList("VerticalAlignment") != null ? Model.Item.GetList("VerticalAlignment").SelectedValue.ToLower() : "Full";
+    string buttonPosition = verticalAlignment == "full" ? "grid__cell-footer" : "u-margin-top";
+    ButtonLayout linkButtonType = Model.Item.GetList("LinkButtonType") != null ? (ButtonLayout)System.Enum.Parse(typeof(ButtonLayout), char.ToUpper(Model.Item.GetList("LinkButtonType").SelectedValue[0]) + Model.Item.GetList("LinkButtonType").SelectedValue.Substring(1)) : ButtonLayout.Primary;
+
+    <div class="@contentColumnClass u-full-height dw-mod">
+        @if (backgroundImage != null) {
+            <div class="background-image dw-mod">
+                <div class="background-image__wrapper dw-mod">
+                    @Render(new Image { Path = backgroundImage, CssClass = "background-image__cover", ImageDefault = new ImageSettings { Width = 1000, Height = 1000 }, FilterPrimary = ImageFilter.Darken })
+                </div>
+            </div>
+        }
+        <div class="@verticalAlignment u-padding--lg u-zindex-1">
+            @Render(new Heading { Level = 2, Title = Model.Item.GetString("Header"), CssClass = textAlignment })
+            <div class="@textAlignment">
+                @Model.Item.GetString("Text")
+            </div>
+
+            @Model.GetModuleOutput()
+
+            @if (!string.IsNullOrEmpty(Model.Item.GetString("Link")))
+            {
+                <div class="@buttonPosition @buttonAlignment u-zindex-1 u-position-relative">
+                    @Render(new Link { Title = Model.Item.GetString("LinkText"), Href = Model.Item.GetString("Link"), ButtonLayout = linkButtonType })
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@helper RenderOverlayScripts() {
+    int paragraphId = Model.ID;
+    string showOnEvent = Model.Item.GetList("ShowOnEvent") != null ? Model.Item.GetList("ShowOnEvent").SelectedValue : "start";
+    int showOnceIn = Converter.ToInt32(Model.Item.GetList("ShowOnceIn") != null ? Model.Item.GetList("ShowOnceIn").SelectedValue : "");
+    int delay = Model.Item.GetInt32("Delay") > 0 ? Model.Item.GetInt32("Delay") : 5000;
+    string animationModalClass = Model.Item.GetList("Animation") != null ? Model.Item.GetList("Animation").SelectedValue : "";
+    string animationClass = animationModalClass != "" ? "animation--fadeIn" : "";
+    bool showOnceWhenCTAButtonIsClicked = Model.Item.GetBoolean("ShowOnlyOneTime");
+
+    <script>
+        let showOnEvent_@(paragraphId) = '@showOnEvent';
+        let showOnceIn_@(paragraphId) = +'@showOnceIn';
+        let showOnceWhenCTAButtonIsClicked_@(paragraphId) = '@showOnceWhenCTAButtonIsClicked'.toLowerCase() == 'true';
+
+        function showOverlay_@(paragraphId)() {
+            let overlayTrigger = document.getElementById('overlay_@paragraphId');
+            let overlayModalContainer = document.getElementById('overlayModalContainer_@paragraphId');
+            let overlayModal = document.getElementById('overlayModal_@paragraphId');
+
+            if ('@animationClass' != '' && overlayModalContainer) {
+                overlayModalContainer.classList.add('@animationClass');
+            }
+            if ('@animationModalClass' != '' && overlayModal) {
+                overlayModal.classList.add('@animationModalClass');
+            }
+
+            let ctaButton = overlayModal.querySelector('.btn');
+
+            if (ctaButton) {
+              ctaButton.addEventListener('click', function () {
+                    document.cookie = 'overlayCTAButtonIsClicked_@(paragraphId)=true';
+              });
+            }
+
+            overlayTrigger.checked = true;
+            overlayTrigger.addEventListener('change', closeOverlay_@(paragraphId));
+        }
+
+        function closeOverlay_@(paragraphId)() {
+            if (!this.checked) {
+                let date = new Date;
+                date.setDate(date.getDate() + showOnceIn_@(paragraphId));
+                document.cookie = "overlayWasShown_@(paragraphId)=" + showOnceIn_@(paragraphId) + "; path=/; expires=" + date.toUTCString();
+            }
+        }
+
+        function showOverlayWithSettings_@(paragraphId)() {
+
+            if ((showOnceIn_@(paragraphId) && RememberState.GetCookie("overlayWasShown_@(paragraphId)") == showOnceIn_@(paragraphId))
+                || (showOnceWhenCTAButtonIsClicked_@(paragraphId) && RememberState.GetCookie('overlayCTAButtonIsClicked_@(paragraphId)'))) {
+                return;
+            }
+
+            switch (showOnEvent_@(paragraphId)) {
+                case "afterDelay":
+                    setTimeout(showOverlay_@paragraphId, @delay);
+                    break;
+                case "onScroll":
+                    let modalPosition = document.getElementById('overlayAnchor_@paragraphId').getBoundingClientRect().bottom + window.pageYOffset;
+                    window.addEventListener('scroll', function showOnScroll() {
+                        if (window.pageYOffset > modalPosition) {
+                            showOverlay_@(paragraphId)();
+                            window.removeEventListener('scroll', showOnScroll, false)
+                        }
+                    }, false);
+                    break;
+                case "onMouseLeave":
+                    window.addEventListener("mouseout", function onMouseLeave(e) {
+                        e = e ? e : window.event;
+                        let from = e.relatedTarget || e.toElement;
+                        if (!from || from.nodeName == "HTML") {
+                            showOverlay_@(paragraphId)();
+                            window.removeEventListener('mouseout', onMouseLeave, false)
+                        }
+                    }, false);
+                    break;
+                default:
+                    showOverlay_@(paragraphId)();
+                    break;
+            }
+        }
+
+        @{
+            string showOverlayFor = Model.Item.GetList("ShowFor") != null ? Model.Item.GetList("ShowFor").SelectedValue : "all";
+            bool showForAnonymous = showOverlayFor == "anonymous" && Pageview.User == null;
+            bool showForLoggedIn = showOverlayFor == "loggedIn" && Pageview.User != null;
+            var usersInGroups = Model.Item.GetUsers("UsersIncludedInSelectedGroups");
+            var usersOutGroups = Model.Item.GetUsers("UsersExcludedFromSelectedGroups");
+            bool showForUserInGroups = showOverlayFor == "inSpecificGroups" && Pageview.User != null && usersInGroups.Count != 0 && usersInGroups.FirstOrDefault((user) => user.ID == Pageview.User.ID) != null;
+            bool showForUserOutGroups = showOverlayFor == "outOfSpecificGroups" && Pageview.User != null && usersOutGroups.Count != 0 && usersOutGroups.FirstOrDefault((user) => user.ID == Pageview.User.ID) == null;
+            if (showOverlayFor == "all" || showForAnonymous || showForLoggedIn || showForUserInGroups || showForUserOutGroups)
+            {
+                <text>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        showOverlayWithSettings_@(paragraphId)();
+                    });
+                </text>
+            }
+        }
+    </script>
+}

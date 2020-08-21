@@ -1,0 +1,354 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("cleanlayout.cshtml")
+
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Rapido.Blocks.Components.Documentation
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage componentsDocPage = BlocksPage.GetBlockPage("ComponentsDoc");
+
+    List<ComponentBase> GeneralComponentsList = new List<ComponentBase>();
+    List<ComponentBase> ArticleComponentsList = new List<ComponentBase>();
+
+    int count = 0;
+
+    public dynamic GetEnumSetting(dynamic enumSetting, string name = null)
+    {
+        string enumName = name == null ? enumSetting.GetType().Name : name;
+        enumSetting = HttpContext.Current.Request.QueryString.Get(enumName) != null ? System.Enum.Parse(enumSetting.GetType(), HttpContext.Current.Request.QueryString.Get(enumName)) : enumSetting;
+        return enumSetting;
+    }
+}
+
+@{
+    Dynamicweb.Frontend.FileViewModel DummyImage = new Dynamicweb.Frontend.FileViewModel();
+    DummyImage.Path = "/Files/Images/Demo/8026157750_b98560948c_b.jpg";
+
+    SelectField selectField = new SelectField
+    {
+        Id = "MySelectField",
+        Label = Translate("Select field"),
+        ErrorMessage = Translate("There is an error"),
+        ActionButton = new Button { OnClick = "#", Icon = new Icon { Prefix = "fas", Name = "fa-plus" } }
+    };
+    selectField.Options.Add(new SelectFieldOption { Label = Translate("One"), Value = "one" });
+    selectField.Options.Add(new SelectFieldOption { Label = Translate("Two"), Value = "two" });
+    selectField.Options.Add(new SelectFieldOption { Label = Translate("Three"), Value = "three", Disabled = true });
+
+    RadioButtonListField radioButtonListField = new RadioButtonListField
+    {
+        Id = "MyRadioButtons",
+        Name = "MyRadioButtons",
+        Label = Translate("Select option"),
+        ErrorMessage = Translate("There is an error"),
+        Options = new List<RadioButtonField> {
+            new RadioButtonField { Label = Translate("One"), Value = "one", Id = "RadioOne", Checked = true },
+            new RadioButtonField { Label = Translate("Two"), Value = "two", Id = "RadioTwo"},
+            new RadioButtonField { Label = Translate("Three"), Value = "three", Id = "RadioThree", Disabled = true }
+        }
+    };
+
+    CheckboxListField checkboxListField = new CheckboxListField
+    {
+        Id = "MyCheckboxes",
+        Label = Translate("Select multiple options"),
+        ErrorMessage = Translate("There is an error")
+    };
+    checkboxListField.Options.Add(new CheckboxField { Label = Translate("One"), Id = "CheckOne", Checked = true });
+    checkboxListField.Options.Add(new CheckboxField { Label = Translate("Two"), Id = "CheckTwo", Checked = true });
+    checkboxListField.Options.Add(new CheckboxField { Label = Translate("Three"), Id = "CheckThree", Disabled = true });
+
+    StickersCollection stickersCollection = new StickersCollection { CssClass = "u-block", Position = GetEnumSetting(StickersListPosition.TopLeft) };
+    stickersCollection.Stickers.Add(new Sticker { Title = "On sale", Style = StickerStyle.Sale });
+    stickersCollection.Stickers.Add(new Sticker { Title = "New", Style = StickerStyle.New });
+    stickersCollection.Stickers.Add(new Sticker { Title = "Black friday", Style = StickerStyle.Custom });
+
+    Form formComponent = new Form { Method = FormMethod.Get };
+    formComponent.Add(new CheckboxField { Checked = true, Label = Translate("My label") });
+    formComponent.Add(new TextField { Required = true, Label = Translate("My text") });
+    formComponent.Add(new NumberField { Required = true, Label = Translate("My number"), Min = 2 });
+    formComponent.Add(new NumberField { Required = true, Label = Translate("My number"), Min = 2 });
+
+    //here used custom styles from end of this page
+    var table = new Table { Id = "MyTable", CssClass = "test-table-class" };
+    var tableRowHeading = new TableRow { CssClass = "test-tr-class", Id = "tr1" };
+    var tableRow1 = new TableRow { };
+    var tableRow2 = new TableRow { };
+    var tableRow3 = new TableRow { };
+    var tableRow4 = new TableRow { };
+    var tableRow5 = new TableRow { IsHeaderRow = true };
+    var tableRowFooter = new TableRow { CssClass = "u-color-light-gray--bg" };
+
+    tableRowHeading.AddCells("Meat", "Proteins (g)", "Fats (g)", "Carbs (g)");
+    tableRow1.AddCells("Chicken", "20,8", "8,8", "0,6");
+    tableRow2.AddCells("Pork", "19,4", "7,1", "0");
+    tableRow3.AddCells("Beef", "18,9", "12,4", "0");
+    tableRow4.AddCells(
+        new TableCell { IsHeader = true, Content = "CustomCell", Colspan = 2 },
+        new TableCell { Content = "CustomCell2", Rowspan = 2, Colspan = 2, CssClass = "u-brand-color-one--bg-lighten-20 u-color-light" }
+    );
+    tableRow5.AddCells("string1", "string2");
+    tableRowFooter.AddCells("1", "2", "3", "4");
+
+    table.Header = tableRowHeading;
+    table.AddRows(tableRow1, tableRow2, tableRow3, tableRow4, tableRow5);
+    table.Footer = tableRowFooter;
+
+    GeneralComponentsList.Add(new Button { Id = "MyButton", ButtonLayout = GetEnumSetting(ButtonLayout.Primary), Title = Translate("Read more"), Icon = new Icon { Prefix = "fas", Name = "fa-plus" }, OnClick = "document.getElementById('MyButtonModalTrigger').checked = false" });
+    GeneralComponentsList.Add(new Link { Id = "MyButton", ButtonLayout = GetEnumSetting(ButtonLayout.Primary), Target = GetEnumSetting(LinkTargetType.Blank), Href = "#", Title = "Read more", Icon = new Icon { Prefix="fas", Name="fa-plus" }, OnClick="document.getElementById('MyButtonModalTrigger').checked = false" });
+    GeneralComponentsList.Add(new Heading { Title= Translate("My new heading"), Level = 1, Icon = new Icon { Prefix = "fas", Name = "fa-plus" } });
+    GeneralComponentsList.Add(new Image { Path = DummyImage, Caption = Translate("Image caption"), ImageDefault = new ImageSettings { Width = 1000, Height = 600, Crop = 1, Compression = 75 }, ImageSmall = new ImageSettings { Width = 500, Height = 300, Crop = 1, Compression = 75 }, Style = GetEnumSetting(ImageStyle.None), FilterPrimary = GetEnumSetting(ImageFilter.None), FilterSecondary = GetEnumSetting(ImageFilter.None) });
+    GeneralComponentsList.Add(new Icon { Prefix="fas", Name="fa-plus", Label = Translate("Icon label"), LabelPosition = GetEnumSetting(IconLabelPosition.After) });
+    GeneralComponentsList.Add(new FileField { Id = "MyFileField", ChooseFileText = Translate("Choose file"), NoFilesChosenText = Translate("No files chosen") });
+    GeneralComponentsList.Add(new TextField { Id="MyTextField", Label=Translate("Text field"), Placeholder="Text", MaxLength=160, ErrorMessage= Translate("There is an error"), ExtraAttributes = new Dictionary<string, string> {{ "data-extend", "true" }} });
+    GeneralComponentsList.Add(selectField);
+    GeneralComponentsList.Add(new NumberField { Label = Translate("My number"), Max = 10, Min = 0, Step = 1, Value = "1", Id = "MyNumber" });
+    GeneralComponentsList.Add(new HiddenField { Id="HiddenField", Value="HiddenValue" });
+    GeneralComponentsList.Add(new CheckboxField { Checked = true, Id="MyCheckbox", Label= "Check this", ErrorMessage= Translate("There is an error") });
+    GeneralComponentsList.Add(checkboxListField);
+    GeneralComponentsList.Add(new TextareaField { Id = "MyTextareaField", Label = Translate("Comment"), Rows = 4, Placeholder = Translate("Comment"), ErrorMessage = Translate("There is an error") });
+    GeneralComponentsList.Add(table);
+    GeneralComponentsList.Add(new NotificationMessage { Message = Translate("There is an error"), MessageType = GetEnumSetting(NotificationMessageType.Error) });
+    GeneralComponentsList.Add(new Rating { Score = 4, OutOf = 5, Type = GetEnumSetting(RatingType.Stars) });
+    GeneralComponentsList.Add(new Sticker { Title = "On sale", Style = GetEnumSetting(StickerStyle.Sale), Size = GetEnumSetting(StickerSize.Medium) });
+    GeneralComponentsList.Add(new Text { Content = Translate("My text") });
+    GeneralComponentsList.Add(new ContentModule { Content = Translate("Add the module as a text string") });
+    GeneralComponentsList.Add(stickersCollection);
+    GeneralComponentsList.Add(formComponent);
+
+    ArticleComponentsList.Add(new ArticleHeader { Heading = "Header clean layout", Author = "Me", ButtonLayout = GetEnumSetting(ButtonLayout.Primary), Category = "Guides", CategoryColor = "#c21212", Date = "01-01-2020", Image = new Image { Path = DummyImage, ImageDefault = new ImageSettings { Width = 1000, Height = 600, Crop = 1, Compression = 75 } }, Link = "#", LinkText = "Read more", Subheading = "This is new", TextLayout = GetEnumSetting(ArticleHeaderTextLayout.Center), Layout = GetEnumSetting(ArticleHeaderLayout.Clean) });
+    ArticleComponentsList.Add(new ArticleImage { Image = new Image { Path = DummyImage, ImageDefault = new ImageSettings { Height = 650, Width = 1300 }, Style = GetEnumSetting(ImageStyle.None), Title = "ComponentImage", Caption = "This is the caption for the image" } });
+    ArticleComponentsList.Add(new ArticleBanner { Image = new Image { Path = DummyImage, ImageDefault = new ImageSettings { Width = 1000, Height = 600, Crop = 1, Compression = 75 } }, Heading = "A perfect banner" });
+    ArticleComponentsList.Add(new ArticleQuote { Author = "The user", Image = new Image { Path = DummyImage }, Text = "I would like to quote that this is so." });
+    ArticleComponentsList.Add(new ArticleSubHeader { Title = "My sub header" });
+    ArticleComponentsList.Add(new ArticleText { Text = "Normal body text..." });
+    ArticleComponentsList.Add(new ArticleMenu { Items = new List<ArticleMenuItem>() { new ArticleMenuItem { Title = "Menu item" } } });
+    ArticleComponentsList.Add(new ArticleMenuItem { Title = "Menu item" });
+    ArticleComponentsList.Add(new ArticleBodyRow { TextLayout = "left", TopLayout = "center" });
+    ArticleComponentsList.Add(new ArticleLink { Title = Translate("More"), OnClick = "#", ButtonLayout = ButtonLayout.Primary });
+    ArticleComponentsList.Add(new ArticleSummary { Text = Translate("This is a summary") });
+    ArticleComponentsList.Add(new ArticleAuthorAndDate { Author = "Me", Date = "27-03-1984" });
+    ArticleComponentsList.Add(new ArticleListSearch { });
+    ArticleComponentsList.Add(new ArticleListFilter { Label = Translate("Filter") });
+
+    GeneralComponentsList = GeneralComponentsList.OrderBy(x => x.HelperName).ToList();
+    ArticleComponentsList = ArticleComponentsList.OrderBy(x => x.HelperName).ToList();
+
+    int itemCount = 0;
+
+    ArticleMenu generalMenu = new ArticleMenu();
+    generalMenu.Title = Translate("General components");
+    foreach (ComponentBase component in GeneralComponentsList)
+    {
+        ArticleMenuItem item = new ArticleMenuItem();
+        item.Title = component.HelperName.Replace("Render", "");
+        item.OnClick = "event.preventDefault(); document.getElementById('Block__Component" + itemCount + "').scrollIntoView();";
+        generalMenu.Items.Add(item);
+
+        itemCount++;
+    }
+
+    ArticleMenu articleMenu = new ArticleMenu();
+    articleMenu.Title = Translate("Article components");
+    foreach (ComponentBase component in ArticleComponentsList)
+    {
+        ArticleMenuItem item = new ArticleMenuItem();
+        item.Title = component.HelperName.Replace("Render", "");
+        item.OnClick = "event.preventDefault(); document.getElementById('Block__Component" + itemCount + "').scrollIntoView();";
+        articleMenu.Items.Add(item);
+
+        itemCount++;
+    }
+}
+
+@{ 
+    Block site = new Block
+    {
+        Id = "SiteContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "Navigation",
+                SortId = 10,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "3"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "GeneralComponents",
+                        SortId = 10,
+                        Component = generalMenu
+                    },
+                    new Block {
+                        Id = "GeneralComponents",
+                        SortId = 20,
+                        Component = articleMenu
+                    }
+                }
+            },
+            new Block {
+                Id = "Main",
+                SortId = 20,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "9"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "MainRow",
+                        SortId = 10,
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Row
+                        }
+                    }
+                }
+            }
+        }
+    };
+    componentsDocPage.Add(site);
+
+    BuildComponents(GeneralComponentsList);
+    BuildComponents(ArticleComponentsList);
+}
+
+@functions {
+    public void BuildComponents (List<ComponentBase> componentsList) {
+        foreach (ComponentBase component in componentsList)
+        {
+            Block componentNameBlock = new Block
+            {
+                Id = "Component" + count,
+                SortId = 10 * count,
+                Component = new ArticleSubHeader { Title = "Helper method: " + component.HelperName },
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    CssClass = "u-border"
+                }
+            };
+            componentsDocPage.Add("MainRow", componentNameBlock);
+
+            Block componentBlock = new Block
+            {
+                Id = "ComponentContainer" + count,
+                SortId = (10 * count) + 1,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    CssClass = "u-border"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "Component" + count,
+                        SortId = 10,
+                        Component = component,
+                        Design = new Design { CssClass= "grid__cell" }
+                    }
+                }
+            };
+            componentsDocPage.Add("MainRow", componentBlock);
+
+            Block componentInfoBlock = new Block
+            {
+                Id = "ComponentInfo" + count,
+                SortId = (10 * count) + 2,
+                Component = new ComponentInfo { Content = component },
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "4",
+                    CssClass = "js-component-info"
+                }
+            };
+            componentsDocPage.Add("MainRow", componentInfoBlock);
+
+            if (component.HelperName != "RenderTextareaField") {
+                Block componentCodeBlock = new Block
+                {
+                    Id = "ComponentCode" + count,
+                    SortId = (10 * count) + 3,
+                    Component = new ComponentCode { Content = component },
+                    Design = new Design
+                    {
+                        RenderType = RenderType.Column,
+                        Size = "8"
+                    }
+                };
+                componentsDocPage.Add("MainRow", componentCodeBlock);
+            } else {
+                Block componentCodeBlock = new Block
+                {
+                    Id = "ComponentCode" + count,
+                    SortId = (10 * count) + 3,
+                    Component = new NotificationMessage { Message = Translate("Code preview is not available for this component") },
+                    Design = new Design
+                    {
+                        RenderType = RenderType.Column,
+                        Size = "8"
+                    }
+                };
+                componentsDocPage.Add("MainRow", componentCodeBlock);
+            }
+
+            Block componentSpacingBlock = new Block
+            {
+                Id = "ComponentSpacing" + count,
+                SortId = (10 * count) + 4,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    CssClass = "u-padding-bottom--lg"
+                }
+            };
+            componentsDocPage.Add("MainRow", componentSpacingBlock);
+
+            count++;
+        }
+    }
+}
+
+<link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/codemirror/codemirror.css">
+<link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/codemirror/cobalt.css">
+<script src="/Files/Templates/Designs/Rapido/js/codemirror/codemirror.js"></script>
+<script src="/Files/Templates/Designs/Rapido/js/codemirror/xml.js"></script>
+<style>
+    .test-table-class td, .test-table-class th { 
+        border: 1px solid #d3d3d3;
+    }
+</style>
+
+<div class="grid">
+    <div class="grid__col-12"> 
+        @Render(new Heading { Level = 1, Title = Translate("Components documentation") } )
+    </div>
+</div>
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(componentsDocPage.BlocksRoot.BlocksList)
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+        if (QueryArray.getParameterFromCurrentURL("scrollToId")) {
+            document.getElementById(QueryArray.getParameterFromCurrentURL("scrollToId")).scrollIntoView();
+            window.scrollBy(0, -200);
+        }
+    });
+</script>

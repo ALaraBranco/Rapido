@@ -1,0 +1,63 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions{
+   BlocksPage shipDatePickerCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+}
+
+@{
+   var shipDate = new Block()
+   {
+      Id = "ShipDate",
+      SortId = checkoutPageType == "onestep" ? 40 : 50,
+      Template = RenderShipDate(),
+      Design = new Design
+      {
+         RenderType = RenderType.Column,
+         Size = "12"
+      }
+   };
+   
+   var currentCartStep = GetLoop("StepButtons").FirstOrDefault(step => step.GetBoolean("Step.Current"));
+   if ((currentCartStep != null && currentCartStep.GetInteger("Step.Number") == 3) || checkoutPageType == "onestep")
+   {
+      if (shipDatePickerCheckoutPage.GetBlockById("OrderContainerRow") != null)
+      {
+         shipDatePickerCheckoutPage.Add("OrderContainerRow", shipDate);
+      }
+   }
+}
+
+@helper RenderShipDate()
+{
+   var shipDateMinimumLeadTime = Pageview.AreaSettings.GetItem("RizzoPackages").GetInt32("RequestedShipDateMinimumLeadTime");
+   var shipDateMaximumLeadTime = Pageview.AreaSettings.GetItem("RizzoPackages").GetInt32("RequestedShipDateMaximumLeadTime");
+   var shipDateIncludeWeekends = Pageview.AreaSettings.GetItem("RizzoPackages").GetBoolean("RequestedShipDateIncludeWeekends");
+   var defaultDate = GetDate("ShipDate.Date").ToString("yyyy") != "1970" ? GetDate("ShipDate.Date").ToString("MM/dd/yyyy") : DateTime.Today.ToString("MM/dd/yyyy");
+   
+   <div class="card-header u-color-light--bg dw-mod">
+      @Render(new Heading()
+      {
+         Title = Translate("Requested Ship Date"), 
+         Level = 3, 
+         Icon = new Icon { Prefix = "fas", Name = "fa-calendar" }
+      })
+   </div>
+   <div class="card u-color-light--bg u-full-height dw-mod">
+      @Render(new DateTimeField()
+      {
+         Required = true,
+         Placeholder = Translate("Insert date (MM/dd/yyyy)"),
+         Id = "shipDate",
+         Name = "ShipDate",
+         DateFormat = "m/d/Y",
+         MaxDate = DateTime.Today.AddDays(shipDateMaximumLeadTime).ToString("MM/dd/yyyy"),
+         MinDate = DateTime.Today.AddDays(-shipDateMinimumLeadTime).ToString("MM/dd/yyyy"),
+         Value = defaultDate,
+         ErrorMessage = Translate("Weekends can't be selected."),
+         ExtraAttributes = {{"includeWeekends", shipDateIncludeWeekends.ToString()},{"maximumDays", shipDateMaximumLeadTime.ToString()},{"minimumDate", DateTime.Today.AddDays(-shipDateMinimumLeadTime).ToString("MM/dd/yyyy")}}
+      })
+   </div>
+}

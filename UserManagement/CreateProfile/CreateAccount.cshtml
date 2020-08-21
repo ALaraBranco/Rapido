@@ -1,0 +1,69 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO;
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks;
+
+@functions {
+    BlocksPage createAccountPage = BlocksPage.GetBlockPage("CreateAccount");
+}
+
+@{
+    Block createAccountContainer = new Block
+    {
+        Id = "CreateAccountContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--justify-center"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+            Id = "CreateAccountForm",
+            Template = RenderCreateAccountForm(),
+            SortId = 20,
+                Design = new Design {
+                RenderType = RenderType.Column,
+                Size = "6",
+                CssClass = "grid__col--bleed"
+                }
+            }
+        }
+    };
+
+    createAccountPage.Add(createAccountContainer);
+}
+
+@helper RenderCreateAccountForm()
+{
+    int createProfilePageId = GetPageIdByNavigationTag("CreateAccount");
+    string forgotPasswordPageId = GetPageIdByNavigationTag("SignInPage").ToString() + "&LoginAction=Recovery";
+    bool isEmailExist = GetString("UserManagement:User.Email.Input.Error") == "User with specified email exists.";
+    Form form = new Form { Name="UserManagementEditForm", Action = "/Default.aspx?ID=" + createProfilePageId, Method = FormMethod.Post };
+
+    @RenderHeading(new Heading { Title = Translate("Create user account"), Level = 2 });
+
+
+    form.Add(new HiddenField { Name = "UserManagementForm", Value = "1" });
+    form.Add(new TextField { Id = "UserManagement_Form_Name", Name = "UserManagement_Form_Name", Type = TextFieldType.Text, Label = Translate("Name"), Value = GetString("UserManagement:User.Name"), Required = true, ErrorMessage = GetString("UserManagement:User.Name.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_Email", Name = "UserManagement_Form_Email", Type = TextFieldType.Email, Label = Translate("Email"), Value = GetString("UserManagement:User.Email"), Required = true, ErrorMessage = isEmailExist ? "You already exist in our system click below to reset your password" : GetString("UserManagement:User.Email.Input.Error") });
+        
+    if (isEmailExist)
+    {
+        form.Add(new Link { Href = "/default.aspx?ID=" + forgotPasswordPageId, Title = Translate("Reset password"), ButtonLayout = ButtonLayout.Secondary });
+    }
+        
+    form.Add(new TextField { Id = "UserManagement_Form_NewPassword", Name = "UserManagement_Form_NewPassword", Type = TextFieldType.Password, Label = Translate("Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPassword.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_NewPasswordConfirm", Name = "UserManagement_Form_NewPasswordConfirm", Type = TextFieldType.Password, Label = Translate("Confirm Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPasswordConfirm.Input.Error") });
+    form.Add(new Button { Id = "submitter", ButtonType = ButtonType.Submit, Title = Translate("Create your new account"), OnClick = "Buttons.LockButton(event)" });
+
+    @Render(form)
+}
+
+@Include("Blocks/CreateAccount/Custom__Blocks.cshtml")
+
+@RenderBlockList(createAccountPage.BlocksRoot.BlocksList)
+
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

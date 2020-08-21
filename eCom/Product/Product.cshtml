@@ -1,0 +1,223 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using System.Web
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using System
+@using System.Collections.Generic
+@using System.IO
+@using Dynamicweb.Core
+@using System.Web
+@using System.Globalization
+@using System.Web.UI.HtmlControls
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Ecommerce
+
+@Include("../../GetProductImage.cshtml")
+
+@functions {
+    List<LoopItem> downloadDocuments = new List<LoopItem>();
+    //downloadDocuments variable, will be defined in Fields.cshtml and used in ProductAssets.cshtml
+
+    BlocksPage productsPage = BlocksPage.GetBlockPage("Product");
+
+    public static string ToPascalCase(string str)
+    {
+        return CultureInfo.InvariantCulture.TextInfo
+        .ToTitleCase(str.ToLowerInvariant())
+        .Replace("-", "")
+        .Replace("_", "")
+        .Replace(" ", "");
+    }
+}
+
+@{
+    string productBlocksPosition = Pageview.AreaSettings.GetItem("ProductPage").GetList("ImageSectionPosition") != null ? Pageview.AreaSettings.GetItem("ProductPage").GetList("ImageSectionPosition").SelectedValue : "thumbs-image-info";
+    bool productInfoOnTheRight = productBlocksPosition.LastIndexOf("info") == productBlocksPosition.Length - 4;
+
+    Block productTop = new Block()
+    {
+        Id = "Top",
+        SortId = 10,
+        SkipRenderBlocksList = true,
+        Template = RenderProductTop()
+    };
+    productsPage.Add(productTop);
+
+    Block productMainInfo = new Block()
+    {
+        Id = "MainInformation",
+        SortId = productInfoOnTheRight ? 20 : 10,
+        Design = new Design
+        {
+            Size = "auto",
+            RenderType = RenderType.Column
+        }
+    };
+    productsPage.Add("Top", productMainInfo);
+
+    //Optional mini tabs block
+    Block miniTabsBlock = new Block()
+    {
+        Id = "MiniTabs",
+        SortId = 40,
+        Template = RenderProductMiniTabs(),
+        SkipRenderBlocksList = true
+    };
+    productsPage.Add("MainInformation", miniTabsBlock);
+    //-----
+
+    Block productTabsBlock = new Block()
+    {
+        Id = "Tabs",
+        SortId = 30,
+        Template = RenderProductTabs(),
+        SkipRenderBlocksList = true
+    };
+    productsPage.Add(productTabsBlock);
+
+    Block productDetailsBlock = new Block()
+    {
+        Id = "Section",
+        SortId = 30
+    };
+    productsPage.Add(productDetailsBlock);
+
+    Block productSnippetsBlock = new Block()
+    {
+        Id = "Snippets",
+        SortId = 40
+    };
+    productsPage.Add(productSnippetsBlock);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/EcommerceComponents.cshtml")
+
+@* Include the Blocks for the page *@
+@Include("Blocks/MainImage.cshtml")
+@Include("Blocks/MainInformation.cshtml")
+@Include("Blocks/ProductAssets.cshtml")
+@Include("Blocks/GeneratePDF.cshtml")
+@Include("Blocks/Description.cshtml")
+@Include("Blocks/Fields.cshtml")
+@Include("Blocks/Video.cshtml")
+@Include("Blocks/Related.cshtml")
+@Include("Blocks/VariantsList.cshtml")
+@Include("Blocks/VariantsMatrix.cshtml")
+@Include("Blocks/BottomSnippets.cshtml")
+@Include("../Blocks/Shared/PriceInfo.cshtml")
+@Include("../Blocks/Shared/BuyActions.cshtml")
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+<div class="product__info dw-mod u-margin-bottom--lg js-product">
+    <div class="grid grid--align-content-start">
+        @* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+        @RenderBlockList(productsPage.BlocksRoot.BlocksList)
+    </div>
+</div>
+
+@helper RenderProductTop()
+{
+    List<Block> subBlocks = productsPage.GetBlockListById("Top").OrderBy(item => item.SortId).ToList();
+
+    <div class="product__top paragraph-container paragraph-container--full-width dw-mod">
+        <div class="center-container u-padding dw-mod">
+            <div class="grid">
+                @RenderBlockList(subBlocks)
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderProductMiniTabs()
+{
+    List<Block> subBlocks = productsPage.GetBlockListById("MiniTabs").OrderBy(item => item.SortId).ToList();
+
+    if (subBlocks.Count > 0)
+    {
+        <div class="grid__col-12 product__info tabs u-no-padding u-margin-bottom--lg dw-mod">
+            @{
+                bool firstTab = true;
+                foreach (Block item in subBlocks)
+                {
+                    string isChecked = firstTab ? "checked" : "";
+                    firstTab = false;
+
+                    <input type="radio" class="tabs__trigger" name="productMiniTabs" id="@item.Id" onchange="bLazy.revalidate()" @isChecked />
+                }
+            }
+
+            <div class="tabs__list dw-mod">
+                @foreach (Block item in subBlocks)
+                {
+                    <label for="@item.Id" class="tabs__label dw-mod">@item.Name</label>
+                }
+            </div>
+
+            <div class="tabs__blocks dw-mod">
+                @foreach (Block item in subBlocks)
+                {
+                    string hidePadding = item.Design.HidePadding ? "u-no-padding" : "";
+
+                    if (item.Design.RenderType != RenderType.Hide)
+                    {
+                        <div class="tabs__block u-border dw-mod" id="Block__@item.Id">
+                            <block class="product__block paragraph-container product__block--bordered dw-mod">
+                                <div class="center-container u-padding--lg dw-mod">
+                                    @RenderBlock(item)
+                                </div>
+                            </block>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+}
+
+@helper RenderProductTabs()
+{
+    List<Block> subBlocks = productsPage.GetBlockListById("Tabs").OrderBy(item => item.SortId).ToList();
+
+    <div class="grid__col-12 product__info product__info--tabs tabs dw-mod">
+        @{
+            bool firstTab = true;
+            foreach (Block item in subBlocks)
+            {
+                string isChecked = firstTab ? "checked" : "";
+                firstTab = false;
+
+                <input type="radio" class="tabs__trigger" name="productTabs" id="@item.Id" onchange="bLazy.revalidate()" @isChecked />
+            }
+        }
+
+        <div class="tabs__list dw-mod">
+            @foreach (Block item in subBlocks)
+            {
+                <label for="@item.Id" class="tabs__label dw-mod">@item.Name</label>
+            }
+        </div>
+
+        <div class="tabs__blocks dw-mod">
+            @foreach (Block item in subBlocks)
+            {
+                string hidePadding = item.Design.HidePadding ? "u-no-padding" : "";
+
+                if (item.Design.RenderType != RenderType.Hide)
+                {
+                    <div class="tabs__block dw-mod" id="Block__@item.Id">
+                        <section class="product__section paragraph-container paragraph-container--full-width product__section--bordered dw-mod">
+                            <div class="center-container u-padding--lg dw-mod">
+                                @RenderBlock(item)
+                            </div>
+                        </section>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}

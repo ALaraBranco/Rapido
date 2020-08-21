@@ -1,0 +1,89 @@
+﻿@using Dynamicweb.Frontend
+@using System.Reflection
+@using Dynamicweb.Content.Items
+@using System.Web.UI.HtmlControls
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+
+@* Components for the articles *@
+@Include("Articles/Banner.cshtml")
+@Include("Articles/Header.cshtml")
+@Include("Articles/BodyRow.cshtml")
+@Include("Articles/Image.cshtml")
+@Include("Articles/SubHeader.cshtml")
+@Include("Articles/Text.cshtml")
+@Include("Articles/Quote.cshtml")
+@Include("Articles/InfoTable.cshtml")
+@Include("Articles/GalleryModal.cshtml")
+@Include("Articles/Related.cshtml")
+@Include("Articles/Menu.cshtml")
+@Include("Articles/List.cshtml")
+@Include("Articles/Summary.cshtml")
+@Include("Articles/ListCategoryFilter.cshtml")
+@Include("Articles/ListFilter.cshtml")
+@Include("Articles/ListSearch.cshtml")
+@Include("Articles/ListNoResultsInfo.cshtml")
+@Include("Articles/ListItem.cshtml")
+@Include("Articles/AuthorAndDate.cshtml")
+@Include("Articles/Link.cshtml")
+@Include("Articles/Carousel.cshtml")
+@Include("Articles/Video.cshtml")
+
+
+
+@* Simple helpers *@
+
+@*Requires the Gallery ItemType that comes with Rapido*@
+@helper RenderArticleItemGallery(IList<ItemViewModel> gallery) {
+    if (gallery != null && gallery.Count > 0)
+    {
+        int count = 1;
+
+        foreach (var item in gallery)
+        {
+            if (item.GetFile("ImagePath") != null)
+            {
+                string image = item.GetFile("ImagePath").PathUrlEncoded;
+                string imagePrefix = "/Admin/Public/GetImage.ashx?width=1200&amp;height=820&amp;crop=5&amp;Compression=75&amp;DoNotUpscale=1&amp;image=";
+                int imagesCount = gallery.Count;
+
+                if (count == 1)
+                {
+                    <label class="gallery" for="ParagraphGalleryModalTrigger" onclick="Gallery.openImage(this.querySelector('.js-gallery'))">
+                        <span class="gallery__main-image">
+                            <img src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=992&amp;height=760&amp;crop=0&amp;Compression=75&amp;DoNotUpscale=1&amp;image=@image" class="b-lazy flex-img js-gallery" alt="" data-for="ParagraphGallery" data-image="@imagePrefix@image" />
+                        </span>
+                        <span class="gallery__image-counter">
+                            <i class="fas fa-camera fa-2x"></i> <span class="gallery__image-counter__number">@imagesCount</span>
+                            <span class="gallery__image-counter__text">@Translate("See all") <i class="fas fa-angle-right"></i></span>
+                        </span>
+                    </label>
+                }
+                else
+                {
+                    <div class="u-hidden js-gallery" data-for="ParagraphGallery" data-image="@imagePrefix@image"></div>
+                }
+
+                count++;
+            }
+        }
+
+        @Render(new ArticleGalleryModal())
+    }
+}
+
+@helper RenderMobileFilters(List<Block> subBlocks)
+{
+    if (subBlocks.Count > 0)
+    {
+        <div class="grid__col-12">
+            <input type="checkbox" id="CheckFilters" class="js-remember-state u-hidden" data-expand="CheckFilters" />
+            <div class="grid u-margin-bottom dw-mod" data-trigger="CheckFilters">
+                @RenderBlockList(subBlocks)  
+            </div>
+            <label for="CheckFilters" class="btn btn--secondary btn--full dw-mod js-expand-hide" data-trigger="CheckFilters">@Translate("Select filters")</label>
+            <label for="CheckFilters" class="btn btn--secondary btn--full dw-mod expandable--collapsed" data-trigger="CheckFilters">@Translate("Close filters")</label>
+        </div>
+    }
+} 

@@ -1,0 +1,140 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage headerBlocksPage = BlocksPage.GetBlockPage("Master");
+}
+
+@{
+    Block masterTools = new Block()
+    {
+        Id = "MasterDesktopTools",
+        SortId = 10,
+        Template = RenderDesktopTools(),
+        SkipRenderBlocksList = true,
+        BlocksList = new List<Block>
+        {
+            new Block {
+                Id = "MasterDesktopToolsText",
+                SortId = 10,
+                Template = RenderDesktopToolsText(),
+                Design = new Design
+                {
+                    Size = "auto",
+                    HidePadding = true,
+                    RenderType = RenderType.Column
+                }
+            },
+            new Block {
+                Id = "MasterDesktopToolsNavigation",
+                SortId = 20,
+                Template = RenderDesktopToolsNavigation(),
+                Design = new Design
+                {
+                    Size = "auto-width",
+                    HidePadding = true,
+                    RenderType = RenderType.Column
+                }
+            }
+        }
+    };
+    headerBlocksPage.Add("MasterHeader", masterTools);
+
+    Block masterDesktopExtra = new Block()
+    {
+        Id = "MasterDesktopExtra",
+        SortId = 10,
+        Template = RenderDesktopExtra(),
+        SkipRenderBlocksList = true
+    };
+    headerBlocksPage.Add("MasterHeader", masterDesktopExtra);
+
+    Block masterDesktopNavigation = new Block()
+    {
+        Id = "MasterDesktopNavigation",
+        SortId = 20,
+        Template = RenderDesktopNavigation(),
+        SkipRenderBlocksList = true
+    };
+    headerBlocksPage.Add("MasterHeader", masterDesktopNavigation);
+}
+
+@* Include the Blocks for the page *@
+@Include("HeaderBlocks/Logo.cshtml")
+@Include("HeaderBlocks/Menu.cshtml")
+@Include("HeaderBlocks/ActionsMenu.cshtml")
+@Include("HeaderBlocks/LanguageSelectorAction.cshtml")
+@Include("HeaderBlocks/SignInAction.cshtml")
+@Include("HeaderBlocks/FavoritesAction.cshtml")
+@Include("HeaderBlocks/MiniCartAction.cshtml")
+@Include("HeaderBlocks/DownloadCartAction.cshtml")
+@Include("HeaderBlocks/SearchBar.cshtml")
+@Include("HeaderBlocks/Configuration.cshtml")
+@Include("HeaderBlocks/Custom__Blocks.cshtml")
+
+
+@helper RenderDesktopTools()
+{
+    List<Block> subBlocks = headerBlocksPage.GetBlockListById("MasterDesktopTools").OrderBy(item => item.SortId).ToList();
+
+    <div class="tools-navigation dw-mod">
+        <div class="center-container grid top-container__center-container dw-mod">
+            @RenderBlockList(subBlocks)
+        </div>
+    </div>
+}
+
+@helper RenderDesktopToolsText()
+{
+    string toolsText = Model.Area.Item.GetItem("Layout").GetItem("Header").GetString("ToolsText");
+    if (!string.IsNullOrEmpty(toolsText))
+    {
+        <div class="u-margin-top u-margin-bottom">@toolsText</div>
+    }
+}
+
+@helper RenderDesktopToolsNavigation()
+{
+    bool renderPagesInToolBar = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("RenderPagesInToolBar");
+
+    if (renderPagesInToolBar)
+    {
+       @RenderNavigation(new
+       {
+           id = "topToolsNavigation",
+           cssclass = "menu menu-tools dw-mod dwnavigation",
+           template = "TopMenu.xslt"
+       })
+    } 
+}
+
+@helper RenderDesktopNavigation()
+{
+    List<Block> subBlocks = headerBlocksPage.GetBlockListById("MasterDesktopNavigation").OrderBy(item => item.SortId).ToList();
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";    
+    string alignClass = topLayout == "two-lines-centered" ? "grid--justify-center" : "";
+    <nav class="main-navigation dw-mod">
+        <div class="center-container top-container__center-container grid  @alignClass dw-mod">
+            @RenderBlockList(subBlocks)
+        </div>
+    </nav>
+}
+
+@helper RenderDesktopExtra()
+{
+    List<Block> subBlocks = headerBlocksPage.GetBlockListById("MasterDesktopExtra").OrderBy(item => item.SortId).ToList();
+
+    if (subBlocks.Count > 0)
+    {
+        <div class="header header-top dw-mod">
+            <div class="center-container top-container__center-container grid--justify-space-between grid grid--align-center dw-mod">
+                @RenderBlockList(subBlocks)
+            </div>
+        </div>
+    }
+}

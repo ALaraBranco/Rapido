@@ -1,0 +1,83 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+
+@* Component *@
+
+@helper RenderMediaListItem(MediaListItem settings)
+{
+    <div class="media-list-item @settings.CssClass dw-mod" @(!string.IsNullOrEmpty(settings.Id) ? "id=\"" + settings.Id + "\"" : "")>
+        @if (!string.IsNullOrEmpty(settings.Label))
+        {
+            if (!string.IsNullOrEmpty(settings.Link))
+            {
+                @Render(new Link
+                {
+                    Href = settings.Link,
+                    CssClass = "media-list-item__sticker dw-mod",
+                    ButtonLayout = ButtonLayout.None,
+                    Title = settings.Label,
+                    OnClick = !string.IsNullOrEmpty(settings.OnClick) ? settings.OnClick : ""
+                })
+            }
+            else if (!string.IsNullOrEmpty(settings.OnClick))
+            {
+                <span class="media-list-item__sticker dw-mod" onclick="@(settings.OnClick)">
+                    <span class="u-uppercase">@settings.Label</span>
+                </span>
+            }
+            else
+            {
+                <span class="media-list-item__sticker media-list-item__sticker--no-link dw-mod">
+                    <span class="u-uppercase">@settings.Label</span>
+                </span>
+            }
+        }
+        <div class="media-list-item__info dw-mod">
+            <div class="media-list-item__header dw-mod">
+                @if (!string.IsNullOrEmpty(settings.Title))
+                {
+                    if (!string.IsNullOrEmpty(settings.Link))
+                    {
+                        @Render(new Link
+                        {
+                            Href = settings.Link,
+                            CssClass = "media-list-item__name dw-mod",
+                            ButtonLayout = ButtonLayout.None,
+                            Title = settings.Title,
+                            OnClick = !string.IsNullOrEmpty(settings.OnClick) ? settings.OnClick : ""
+                        })
+                    }
+                    else if (!string.IsNullOrEmpty(settings.OnClick))
+                    {
+                        <span class="media-list-item__name dw-mod" onclick="@(settings.OnClick)">@settings.Title</span>
+                    }
+                    else
+                    {
+                        <span class="media-list-item__name media-list-item__name--no-link dw-mod">@settings.Title</span>
+                    }
+                }
+
+                @if (!string.IsNullOrEmpty(settings.Status))
+                {
+                    <div class="media-list-item__state dw-mod">@settings.Status</div>
+                }
+            </div>
+            @{
+                settings.InfoTable.CssClass += " media-list-item__parameters-table";
+            }
+            @Render(settings.InfoTable)
+        </div>
+        <div class="media-list-item__actions dw-mod">
+            @{
+                var actions = settings.GetActions();
+
+                foreach (ButtonBase action in actions)
+                {
+                    action.ButtonLayout = ButtonLayout.None;
+                    action.CssClass += " media-list-item__action link";
+
+                    @Render(action)
+                }
+            }
+        </div>
+    </div>
+}

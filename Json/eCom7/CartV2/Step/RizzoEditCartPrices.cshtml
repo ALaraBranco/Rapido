@@ -1,0 +1,23 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System
+@using System.Linq
+@using System.Web
+@{
+    var price = !String.IsNullOrEmpty(HttpContext.Current.Request["price"]) ? HttpContext.Current.Request.QueryString.Get("price") : "";
+    var productId = !String.IsNullOrEmpty(HttpContext.Current.Request["productId"]) ? HttpContext.Current.Request.QueryString.Get("productId") : "";
+    var variantId = !String.IsNullOrEmpty(HttpContext.Current.Request["variantId"]) ? HttpContext.Current.Request.QueryString.Get("variantId") : "";
+    var cart = Dynamicweb.Ecommerce.Common.Context.Cart;
+    var product = Dynamicweb.Ecommerce.Services.Products.GetProductById(productId, variantId, true);
+    var lowestPrice = product.Cost;
+    var unitPrice = product.Price.PriceWithoutVAT;
+    var orderLine = cart.OrderLines.FirstOrDefault(x => x.ProductId == productId);
+
+    if (orderLine != null)
+    {
+        var newPrice = double.Parse(price.Replace(',', '.'));
+        orderLine.AllowOverridePrices = false;
+        orderLine.SetUnitPrice(lowestPrice <= newPrice ? (unitPrice >= newPrice ? newPrice : unitPrice) : lowestPrice);
+        orderLine.Save();
+        cart.Save();
+    }
+}

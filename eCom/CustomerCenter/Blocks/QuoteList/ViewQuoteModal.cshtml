@@ -1,0 +1,81 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage viewOrderModalPage = BlocksPage.GetBlockPage("QuoteList");
+}
+
+@{
+    Modal modal = new Modal
+    {
+        Id = "Quote",
+        Width = ModalWidth.Iframe,
+        Heading = new Heading { Level = 2, Title = Translate("Quote details") },
+        BodyTemplate = RenderQuoteModal()
+    };
+
+    modal.AddAction(new Link {
+        Href = "#",
+        Title = Translate("Download"),
+        ButtonLayout = ButtonLayout.Secondary,
+        Id = "QuoteDownloadBtn",
+        Download = true,
+        Disabled = true,
+        Icon = new Icon { Prefix = "fas", Name = "fa-download" }
+    });
+
+    Block viewQuoteModal = new Block
+    {
+        Id = "QuoteModal",
+        SortId = 30,
+        Component = modal
+    };
+    viewOrderModalPage.Add(viewQuoteModal);
+
+    Block quoteModalScript = new Block
+    {
+        Id = "QuoteModalScript",
+        SortId = 20,
+        Template = RenderQuoteModalScript()
+    };
+    viewOrderModalPage.Add(quoteModalScript);
+}
+
+
+@helper RenderQuoteModal()
+{
+    <iframe src="about:blank" class="modal__iframe"></iframe>
+}
+
+@helper RenderQuoteModalScript()
+{
+    string pageId = GetGlobalValue("Global:Page.ID");
+    int detailsPageID = GetPageIdByNavigationTag("QuoteDetails");
+    var detailsParagraph = Services.Paragraphs.GetParagraphsByPageId(detailsPageID).FirstOrDefault(paragraph => paragraph.ShowParagraph);
+    string paragraphID = Converter.ToInt32(detailsParagraph == null ? 0 : detailsParagraph.ID).ToString();
+
+    <script>
+        function acceptQuote(quoteLink, cartLink) {
+            Request.Fetch().get(quoteLink, updateSuccess, updateFailed, false);
+
+            function updateSuccess() {
+                window.location.assign(cartLink);
+            }
+
+            function updateFailed() {
+
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            window.orderModal = new IframeModal({
+                modalId: "QuoteModal",
+                downloadBtnId: "QuoteDownloadBtn",
+                linkPrefix: "/Default.aspx?ID=@detailsPageID" + "&CC" + "@paragraphID=Quote&QuoteID="
+            });
+        });
+    </script>
+}

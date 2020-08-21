@@ -1,0 +1,52 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System
+@using System.Linq
+@using System.Web
+@{
+ var orderId = !string.IsNullOrEmpty(HttpContext.Current.Request["orderId"]) ? HttpContext.Current.Request.QueryString.Get("orderId") : "";
+ var order = GetLoop("Orders").FirstOrDefault(x => x.GetString("Ecom:Order.ID").Equals(orderId, StringComparison.InvariantCultureIgnoreCase));
+ var canReorder = true;
+
+ if (order != null)
+ {
+     var orderLines = order.GetLoop("OrderLines");
+     var message = string.Empty;
+     foreach (var orderLine in orderLines)
+     {
+         if (orderLine.GetBoolean("Ecom:Order:OrderLine.IsProduct"))
+         {
+             var isActive = orderLine.GetBoolean("Ecom:Order:OrderLine.ProductIsActive");
+             var orderLineQuantity = orderLine.GetDouble("Ecom:Order:OrderLine.Quantity");
+             var productId = orderLine.GetString("Ecom:Product.ID");
+             var unitId = orderLine.GetString("Ecom:Order:OrderLine.UnitID");
+             var variantId = orderLine.GetString("Ecom:Product.VariantID");
+             var productNumber = orderLine.GetString("Ecom:Product.Number");
+
+             var product = Dynamicweb.Ecommerce.Products.Product.GetProductById(productId, variantId);
+             var productStock = product.Stock;
+             if (unitId != null)
+             {
+                 var productUnit = product.Units.FirstOrDefault(x => x.UnitId == unitId);
+                 productStock = productUnit?.StockQuantity ?? productStock;
+             }
+
+             canReorder = canReorder && (isActive && productStock >= orderLineQuantity);
+
+             if (!isActive)
+             {
+                 message += string.Format(Translate("Product {0} is not available."), productNumber) + "<br/>";
+             }
+             else if (productStock < orderLineQuantity && productStock == 1)
+             {
+                 message += string.Format(Translate("There is {0} item instead of the {1} you requested for Product {2}."), productStock, orderLineQuantity, productNumber) + "<br/>";
+             }
+             else if (productStock < orderLineQuantity)
+             {
+                 message += string.Format(Translate("There are {0} items instead of the {1} you requested for Product {2}."), productStock < 0 ? 0 : productStock, orderLineQuantity, productNumber) + "<br/>";
+             }
+         }
+     }
+     
+     @("{\"reorder\" : \""+canReorder+"\",\"message\" : \""+message+"\"}")
+ }
+}

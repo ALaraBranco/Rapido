@@ -1,0 +1,111 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage galleryPage = BlocksPage.GetBlockPage("Gallery");
+}
+
+@{
+    Block galleryModal = new Block
+    {
+        Id = "GalleryModalBlock",
+        SortId = 10,
+        Component = new Modal
+        {
+            Id = "Gallery",
+            Width = ModalWidth.Full,
+            BodyTemplate = RenderGalleryModalBody()
+        }
+    };
+
+    galleryPage.Add(galleryModal);
+
+    Block gallery = new Block
+    {
+        Id = "GalleryList",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        Template = RenderGalleryList()
+    };
+
+    galleryPage.Add(gallery);
+}
+
+@helper RenderGalleryList()
+{
+    foreach (LoopItem imagebox in GetLoop("Images"))
+    {
+        string imagePath = imagebox.GetString("Gallery.Image.Path");
+        string imageName = imagebox.GetString("Gallery.Image.Name");
+
+        <div class="grid__col-lg-3 grid__col-md-3 grid__col-sm-12 grid__col-xs-12">
+            <label for="GalleryModalTrigger" class="u-border">
+                @Render(new Image {
+                    Path = imagePath,
+                    Title = imageName,
+                    CssClass = "js-gallery",
+                    OnClick = "Gallery.openImage(this)",
+                    ImageDefault = new ImageSettings {
+                        Width = 300,
+                        Height = 250,
+                        Crop = 5,
+                        Compression = 85,
+                        FillCanvas = true
+                    },
+                    ExtraAttributes = new Dictionary<string, string>() {
+                        { "data-image", "/Admin/Public/GetImage.ashx?image=" + imagePath + "&width=1000&height=850&compression=85&crop=5" },
+                        { "data-for", "Gallery" }
+                    }
+                })
+            </label>
+        </div>
+    }  
+}
+
+@helper RenderGalleryModalBody()
+{
+    <div class="modal__image-min-size-wrapper">
+        @Render(new Image {
+            Id = "Gallery",
+            Path = "#",
+            CssClass = "modal--full__img",
+            DisableLazyLoad = true,
+            DisableImageEngine = true
+        })
+    </div>
+
+    <div class="modal__images-counter" id="Gallery_counter"></div>
+
+    @Render(new Button {
+        Id = "Gallery_prev",
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.None,
+        CssClass = "modal__prev-btn",
+        Icon = new Icon { Prefix = "far", Name = "fa-angle-left" },
+        OnClick = "Gallery.prevImage('Gallery')"
+    })
+
+    @Render(new Button {
+        Id = "Gallery_next",
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.None,
+        CssClass = "modal__next-btn",
+        Icon = new Icon { Prefix = "far", Name = "fa-angle-right" },
+        OnClick = "Gallery.nextImage('Gallery')"
+    })
+}
+
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(galleryPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

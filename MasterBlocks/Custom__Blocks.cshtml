@@ -1,0 +1,64 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Net.Mime
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@Include("Rizzo/Rizzo__Blocks.cshtml")
+@Include("RizzoPackages/RizzoPackages__Blocks.cshtml")
+@{ 
+    BlocksPage masterCustomBlocksPage = BlocksPage.GetBlockPage("Master");
+    BlocksPage pageCustomBlocksPage = BlocksPage.GetBlockPage("Page");
+    
+    Block masterDesktopActionsMenuMiniCartCustom = new Block
+    {
+        Id = "MasterDesktopActionsMenuMiniCartForQuotesWrapper",
+        SortId = 50,
+        Template = RenderMiniCartForQuotes(),
+        SkipRenderBlocksList = true
+    };
+    masterCustomBlocksPage.GetBlockListById("MasterDesktopActionsMenu").Add(masterDesktopActionsMenuMiniCartCustom);
+    
+    
+    if (Model.Area.Item.GetItem("Layout").GetBoolean("FooterNewsletterSignUp"))
+    {
+        Block Custom__RenderFooterNewsletterSignUp = new Block
+        {
+            Id = "MasterFooterNewsletterSignUp",
+            SortId = 40,
+            Template = CustomRenderFooterNewsletterSignUp(),
+            Design = new Design
+            {
+                Size = "auto",
+                RenderType = RenderType.Column
+            }
+        };
+        masterCustomBlocksPage.ReplaceBlock(Custom__RenderFooterNewsletterSignUp);
+    }
+}
+
+
+@helper RenderMiniCartForQuotes()
+{
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string liClasses = topLayout != "normal" ? "menu__item--top-level" : "menu--clean";
+    string mouseEvent = "";
+    //var redirectPage = !Dynamicweb.Security.UserManagement.User.IsExtranetUserLoggedIn() ? GetPageIdByNavigationTag("CreateAccount") : GetPageIdByNavigationTag("QuotesCartPage");
+    var redirectPage = GetPageIdByNavigationTag("QuotesCartPage");
+
+    string id = "MiniCart";
+    <li class="menu__item menu__item--horizontal menu__item--icon @liClasses dw-mod" id="@id">
+        @Render(new Link{Href = "/Default.aspx?ID=" + redirectPage ,ButtonLayout = ButtonLayout.None,CssClass = "menu__link menu__link--icon dw-mod",
+            Icon = new Icon { Prefix = "fa", Name = "fa-1_5x fa-shopping-bag" }})
+    </li>
+}
+
+@helper CustomRenderFooterNewsletterSignUp()
+{
+    int detailsPageID = GetPageIdByNavigationTag("NewsletterSignUpFooter");
+    if (detailsPageID > 0)
+    {
+        var detailsParagraph = Dynamicweb.Services.Paragraphs.GetParagraphsByPageId(detailsPageID).FirstOrDefault(paragraph => paragraph.ShowParagraph).ID;
+        @RenderParagraphContent(detailsParagraph);
+    }
+  
+}
+

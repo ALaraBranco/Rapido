@@ -1,0 +1,36 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage cancelRequestPage = BlocksPage.GetBlockPage("RMADetails");
+}
+
+@{
+    Block cancelRequest = new Block
+    {
+        Id = "CancelRequest",
+        SortId = 50,
+        Design = new Design
+        {
+            CssClass = "u-margin-top--lg"
+        },
+        Component = new Button
+        {
+            ButtonType = ButtonType.Submit,
+            Id = "CancelRMARequest",
+            ConfirmTitle = "Warning",
+            Title = "Cancel Request",
+            ConfirmText = Translate("Are you sure you wish to cancel the request?"),
+            OnClick = "document.forms['" + GetString("ParagraphID") + "CancelRmaForm'].submit()"
+        }
+    };
+
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent")) && string.IsNullOrEmpty(HttpContext.Current.Request[GetString("ParagraphID") + "RMAOrderID"])
+        && !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasCancelContent")))
+    {
+        cancelRequestPage.Add("RmaDetailsForm", cancelRequest);
+    }
+}

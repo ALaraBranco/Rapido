@@ -1,0 +1,315 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Content.Items
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("FocusList");
+
+    public string Truncate(string value, int maxChars)
+    {
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
+    }
+
+    public string GetArticleCategory(int pageId)
+    {
+        string categoryName = null;
+
+        //Secure that the article is not in the root folder = Actual has a category
+        if (Dynamicweb.Services.Pages.GetPage(pageId).Parent != null) {
+            if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent != null) {
+                if (!String.IsNullOrEmpty(Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent.ItemType))
+                {
+                    categoryName = Dynamicweb.Services.Pages.GetPage(pageId).Parent.GetDisplayName();
+                }
+            }
+        }
+
+        return categoryName;
+    }
+
+    public string GetArticleCategoryColor(int pageId)
+    {
+        string categoryColor = "";
+
+        //Secure that the article is not in the root folder = Actual has a category
+        if (Dynamicweb.Services.Pages.GetPage(pageId).Parent != null) {
+            if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent != null) {
+                if (!String.IsNullOrEmpty(Dynamicweb.Services.Pages.GetPage(pageId).Parent.Parent.ItemType))
+                {
+                    if (Dynamicweb.Services.Pages.GetPage(pageId).Parent.Item["CategoryColor"] != null)
+                    {
+                        var service = new ColorSwatchService();
+                        categoryColor = Dynamicweb.Services.Pages.GetPage(pageId).Parent.Item["CategoryColor"].ToString();
+
+                        if (!categoryColor.Contains("#")) {
+                            categoryColor = service.GetHexColor(Converter.ToInt32(GetGlobalValue("Global:Area.ID")), categoryColor);
+                        }
+                    }
+                }
+            }
+        }
+
+        return categoryColor;
+    }
+
+
+    public string GetParentSettingsItem(string systemName)
+    {
+        string item = null;
+
+        Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Convert.ToInt32(GetGlobalValue("Global:Page.ID")));
+        while (current != null && current.Parent != current)
+        {
+            var temp = current.Item != null ? current.Item[systemName] : "";
+
+            if (temp != null)
+            {
+                item = temp.ToString();
+
+                if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+            }
+
+            current = current.Parent;
+        }
+
+        return item;
+    }
+}
+
+@{
+    string listLayout = Pageview.Item["FocusListLayout"] != null && !string.IsNullOrEmpty(Pageview.Item["FocusListLayout"].ToString()) ? Pageview.Item["FocusListLayout"].ToString() : "4";
+    listLayout = listLayout == "default" && GetParentSettingsItem("FocusListLayout") != null ? GetParentSettingsItem("FocusListLayout").ToString().ToLower() : listLayout;
+
+    string stickerPosition = !String.IsNullOrEmpty(GetParentSettingsItem("FocusListStickerPosition")) ? GetParentSettingsItem("FocusListStickerPosition") : "TopLeft";
+
+
+    Block listContainer = new Block
+    {
+        Id = "ArticleListContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+    new Block {
+        Id = "ArticleListBody",
+        SortId = 30,
+        Design = new Design {
+            RenderType = RenderType.Column,
+            Size = "12",
+            HidePadding = true
+        }
+    }
+}
+    };
+    articlePage.Add(listContainer);
+
+    Block articleListBodyRow = new Block
+    {
+        Id = "ArticleListBodyRow",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    articlePage.Add("ArticleListBody", articleListBodyRow);
+
+    int count = 0;
+    foreach (LoopItem listItem in GetLoop("ItemPublisher:Items.List"))
+    {
+        Block articleListItem = new Block
+        {
+            Id = "ArticleListItem" + count,
+            SortId = (count * 10),
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                CssClass = "image-hover--zoom"
+            }
+        };
+
+        ArticleListItem articleListItemComponent = new ArticleListItem
+        {
+            Title = listItem.GetString("ItemPublisher:Item.Title"),
+            Summary = Truncate(listItem.GetString("ItemPublisher:Item.Summary"), 120),
+            Stickers = new StickersCollection
+            {
+                Position = (StickersListPosition)System.Enum.Parse(typeof(StickersListPosition), stickerPosition),
+                Stickers = new List<Sticker>
+                {
+                    new Sticker {
+                        Title = GetArticleCategory(listItem.GetInteger("ItemPublisher:Item.Field.PageId")),
+                        Color = "#fff",
+                        BackgroundColor = GetArticleCategoryColor(listItem.GetInteger("ItemPublisher:Item.Field.PageId"))
+                    }
+                }
+            },
+            Link = "/Default.aspx?ID=" + listItem.GetString("ItemPublisher:Item.Field.PageId"),
+            Image = new Image
+            {
+                Title = listItem.GetString("ItemPublisher:Item.Title"),
+                Path = listItem.GetString("ItemPublisher:Item.Image"),
+                ImageSmall = new ImageSettings
+                {
+                    Width = 1024,
+                    Height = 473,
+                    Crop = 0,
+                    DoNotUpscale = true
+                },
+                ImageMedium = new ImageSettings
+                {
+                    Width = 1150,
+                    Height = 531,
+                    Crop = 0,
+                    DoNotUpscale = true
+                }
+            }
+        };
+
+        if (!String.IsNullOrEmpty(listItem.GetString("ItemPublisher:Item.Logo")))
+        {
+            articleListItemComponent.Logo = new Image
+            {
+                Path = listItem.GetString("ItemPublisher:Item.Logo")
+            };
+        }
+
+        switch (listLayout)
+        {
+            case "list":
+                articleListItemComponent.Type = ArticleListItemType.List;
+                articleListItem.Component = articleListItemComponent;
+                articleListItem.Design.Size = "12";
+                articleListItemComponent.Image.ImageDefault = new ImageSettings
+                {
+                    Width = 350,
+                    Height = 162,
+                    Crop = 0,
+                    DoNotUpscale = true
+                };
+                break;
+            case "simple-list":
+                articleListItemComponent.Type = ArticleListItemType.Simple;
+                articleListItem.Component = articleListItemComponent;
+                articleListItem.Design.Size = "12";
+                break;
+            case "carousel":
+                articleListItem.Component = new ArticleCarouselSlide
+                {
+                    Image = listItem.GetString("ItemPublisher:Item.Image"),
+                    ImageSettings = new ImageSettings
+                    {
+                        Width = 900,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    },
+                    Title = listItem.GetString("ItemPublisher:Item.Title"),
+                    Link = "/Default.aspx?ID=" + listItem.GetString("ItemPublisher:Item.Field.PageId"),
+                    Author = listItem.GetString("ItemPublisher:Item.Author"),
+                    Date = !string.IsNullOrWhiteSpace(listItem.GetString("ItemPublisher:Item.Date")) ? listItem.GetDate("ItemPublisher:Item.Date").ToString("dd.MM.yyyy, HH:mm") : "",
+                    Stickers = new StickersCollection
+                    {
+                        Position = StickersListPosition.Custom,
+                        Stickers = new List<Sticker>
+                        {
+                            new Sticker {
+                                Title = GetArticleCategory(listItem.GetInteger("ItemPublisher:Item.Field.PageId")),
+                                Color = "#fff",
+                                BackgroundColor = GetArticleCategoryColor(listItem.GetInteger("ItemPublisher:Item.Field.PageId"))
+                            }
+                        }
+                    },
+                    Summary = Truncate(listItem.GetString("ItemPublisher:Item.Summary"), 120),
+                    UseFilters = true
+                };
+                articleListItem.Design = null;
+                articleListBodyRow.Component = new ArticleCarousel
+                {
+                    Id = "General",
+                    SubBlocks = articlePage.GetBlockListById("ArticleListBodyRow").OrderBy(item => item.SortId).ToList()
+                };
+                articleListBodyRow.Design = null;
+                articleListBodyRow.SkipRenderBlocksList = true;
+                break;
+            case "default":
+                articleListItemComponent.Type = ArticleListItemType.List;
+                articleListItem.Component = articleListItemComponent;
+                articleListItem.Design.Size = "12";
+                break;
+        }
+
+        int value = 0;
+        if (int.TryParse(listLayout, out value))
+        {
+            articleListItemComponent.Type = ArticleListItemType.Card;
+            articleListItem.Component = articleListItemComponent;
+            articleListItem.Design.Size = listLayout;
+
+            switch (listLayout)
+            {
+                case "3":
+                    articleListItemComponent.Image.ImageDefault = new ImageSettings
+                    {
+                        Width = 350,
+                        Height = 162,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    };
+                    break;
+                case "4":
+                    articleListItemComponent.Image.ImageDefault = new ImageSettings
+                    {
+                        Width = 450,
+                        Height = 208,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    };
+                    break;
+                case "6":
+                    articleListItemComponent.Image.ImageDefault = new ImageSettings
+                    {
+                        Width = 680,
+                        Height = 314,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    };
+                    break;
+                case "12":
+                    articleListItemComponent.Image.ImageDefault = new ImageSettings
+                    {
+                        Width = 1300,
+                        Height = 600,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    };
+                    break;
+            }
+        }
+
+        articlePage.Add("ArticleListBodyRow", articleListItem);
+
+        count++;
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/ArticleComponents.cshtml")
+
+
+@* Include the Blocks for the page *@
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)

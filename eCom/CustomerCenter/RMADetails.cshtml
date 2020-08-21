@@ -1,0 +1,91 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@functions {
+    BlocksPage rmaDetailsPage = BlocksPage.GetBlockPage("RMADetails");
+}
+
+@{
+    Block rmaDetailsContainer = new Block
+    {
+        Id = "RmaDetailsContainer",
+        SortId = 10
+    };
+
+    rmaDetailsPage.Add(rmaDetailsContainer);
+
+    Block rmaDetailsForm = new Block
+    {
+        Id = "RmaDetailsForm",
+        SortId = 30,
+        Template = RenderRmaForm(),
+        SkipRenderBlocksList = true,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "RmaDetailsHiddenField_1",
+                SortId = 60,
+                Component = new HiddenField { Id = GetString("ParagraphID") + "RMAID", Name = GetString("ParagraphID") + "RMAID", Value = GetString("Ecom:RMA.ID") }
+            },
+            new Block {
+                Id = "RmaDetailsHiddenField_2",
+                SortId = 70,
+                Component = new HiddenField { Id = GetString("ParagraphID") + "HasSubmit", Name = GetString("ParagraphID") + "HasSubmit", Value = "0" }
+            }
+        }
+    };
+
+    rmaDetailsPage.Add("RmaDetailsContainer", rmaDetailsForm);
+}
+
+@helper RenderRmaForm()
+{
+    bool hasAddContent = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasAddContent"));
+    bool hasCancelContent = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.HasCancelContent"));
+
+    string formText = GetString("ParagraphID");
+    string formAction = GetString("Ecom:CustomerCenter.RMA.AddURL");
+
+    if (!hasAddContent)
+    {
+        formText += hasCancelContent ? "CancelRmaForm" : "AddRmaCommentForm";
+        formAction = hasCancelContent ? GetString("Ecom:RMA.CancelURL") : GetString("Ecom:CustomerCenter.RMA.AddCommentURL");
+    }
+    else
+    {
+        formText += "AddRmaForm";
+    }
+    
+    <form id="@formText" name="@formText" action="@formAction" onsubmit="return onValidateForm(event, @GetString("ParagraphID"), '.js-order-lines-container', '@hasAddContent');" method="post">
+        @{
+
+            List<Block> subBlocks = this.rmaDetailsPage.GetBlockListById("rmaDetailsForm").OrderBy(item => item.SortId).ToList();
+
+            // Render Content
+            @RenderBlockList(subBlocks)
+        }
+    </form>
+}
+
+@Include("Blocks/RMADetails/Title.cshtml")
+@Include("Blocks/RMADetails/orderlines.cshtml")
+@Include("Blocks/RMADetails/EmptyList.cshtml")
+@Include("Blocks/RMADetails/FormComment.cshtml")
+@Include("Blocks/RMADetails/CreateRequest.cshtml")
+@Include("Blocks/RMADetails/CancelRequest.cshtml")
+@Include("Blocks/RMADetails/AddComment.cshtml")
+@Include("Blocks/RMADetails/Comments.cshtml")
+@Include("Blocks/RMADetails/References.cshtml")
+@Include("Blocks/RMADetails/Information.cshtml")
+@Include("Blocks/RMADetails/SelectOrder.cshtml")
+@Include("Blocks/RMADetails/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(rmaDetailsPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

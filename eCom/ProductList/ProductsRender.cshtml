@@ -1,0 +1,176 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Frontend.Devices
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Core
+@using System
+@using System.IO
+@using System.Web
+@using System.Collections.Generic;
+@using System.Linq
+@using System.Text.RegularExpressions
+@using Dynamicweb.Rapido.Blocks
+  
+@functions { 
+    BlocksPage productListPage = BlocksPage.GetBlockPage("ProductList");
+    bool isLiveProductInfoActive = false; // to be replaced with Dynamicweb LiveIntegration assembly property
+}
+
+@{
+    Block pageContainer = new Block()
+    {
+        Id = "PageContainer",
+        Template = RenderPageContainer(),
+        SkipRenderBlocksList = true
+    };
+    productListPage.Add(pageContainer);
+
+    Block productListNavigation = new Block()
+    {
+        Id = "Navigation",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "3"
+        }
+    };
+    productListPage.Add("PageContainer", productListNavigation);
+
+    Block productListContainer = new Block()
+    {
+        Id = "ProductList",
+        SortId = 30,
+        Template = RenderProductList(),
+        SkipRenderBlocksList = true
+    };
+    productListPage.Add("PageContainer", productListContainer);
+
+    Block productListSnippets = new Block()
+    {
+        Id = "BottomSnippets",
+        SortId = 40
+    };
+    productListPage.Add(productListSnippets);
+}
+
+@* This is required for the product list feed to work *@
+@GetValue("DoNotRenderProductListTemplate")
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+
+@* Include the Blocks for the page *@
+@Include("Blocks/Products.cshtml")
+
+@Include("../../Components/EcommerceComponents.cshtml")
+@Include("../Blocks/Shared/PriceInfo.cshtml")
+@Include("../Blocks/Shared/BuyActions.cshtml")
+
+@Include("Blocks/ViewList.cshtml")
+@Include("Blocks/ViewGrid.cshtml")
+@Include("Blocks/ViewDetails.cshtml")
+@Include("Blocks/Promotions.cshtml")
+@Include("Blocks/Menu.cshtml")
+@Include("Blocks/Facets.cshtml")
+@Include("Blocks/ListMore.cshtml")
+@Include("Blocks/BottomSnippets.cshtml")
+@Include("Blocks/ListActions.cshtml")
+
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+@if (productListNavigation.BlocksList.Count < 1) {
+    productListNavigation.Design.RenderType = RenderType.Hide;
+}
+
+<form name="multiForm" id="multiForm" method="post" onkeypress="return event.keyCode != 13;">
+    @* onkeypress is the fix for disabling submit form on Enter key from any field in product list *@
+    <input type="hidden" name="CartCmd" id="CartCmd" value="addMulti" />
+    @* load getproductinfo input if lazy load price is active and website is not selling with points only *@
+    @if (!Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly") && isLiveProductInfoActive)
+    {
+        @Render(new HiddenField { Name = "getproductinfo", Value = "true" })
+    }
+    @* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+    @RenderBlockList(productListPage.BlocksRoot.BlocksList)
+</form>
+
+@helper RenderPageContainer() {
+    bool showPrice = !Pageview.AreaSettings.GetItem("ProductList").GetBoolean("HidePrice");
+    List<Block> subBlocks = this.productListPage.GetBlockListById("PageContainer").OrderBy(item => item.SortId).ToList();
+
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    string pageUrl = GetGlobalValue("Global:Pageview.Url.Raw");
+    string listId = HttpContext.Current.Request.QueryString.Get("ListID");
+    bool isFavoriteList = !string.IsNullOrEmpty(listId);
+    string feedFullUrl = pageUrl + "&feed=true";
+    feedFullUrl += !isFavoriteList ? "&DoNotShowVariantsAsSingleProducts=True" : "";
+    string smallDeviceCss = Pageview.Device.ToString() == "Mobile" ? "" : "u-padding"; 
+
+    <div class="grid grid--align-content-start @smallDeviceCss js-handlebars-root" id="productList" data-template="ProductContainer" data-pre-render-template="ProductPreRenderContainer" data-json-feed="@feedFullUrl" data-preloader="overlay" data-live-price="@((showPrice && !pointShopOnly && isLiveProductInfoActive).ToString().ToLowerInvariant())"></div>
+
+    <script id="ProductContainer" type="text/x-template">
+        {{#each .}}
+            @RenderBlockList(subBlocks)
+            {{#if isLiveProductInfoActive}}
+            {{#unless isLiveProductInfoRequested}}
+            {{getLiveProductInfo 'productList'}}
+            {{/unless}}
+            {{/if}}
+        {{else}}
+            <div class="grid__col-12">
+                <h2 class="u-ta-center">@Translate("Your search gave 0 results")</h2>
+            </div>
+        {{/each}}
+    </script>
+}
+
+@helper RenderProductList() {
+    @*This is part of a script template *@
+
+    bool showPrice = !Pageview.AreaSettings.GetItem("ProductList").GetBoolean("HidePrice");
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    List<Block> subBlocks = productListPage.GetBlockListById("ProductList").OrderBy(item => item.SortId).ToList();
+
+    string pageId = GetGlobalValue("Global:Page.ID");
+    string pageUrl = GetGlobalValue("Global:Pageview.Url.Raw");
+    string listId = HttpContext.Current.Request.QueryString.Get("ListID");
+    bool isFavoriteList = !string.IsNullOrEmpty(listId);
+    string feedFullUrl = pageUrl + "&feed=true";
+    feedFullUrl += !isFavoriteList ? "&DoNotShowVariantsAsSingleProducts=True" : "";
+    string smallDeviceCss = Pageview.Device.ToString() == "Mobile" ? "u-no-padding" : ""; 
+    var selectedFavoriteIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue : "star";
+    string favoriteIcon = "fas fa-" + selectedFavoriteIcon;
+
+    <div class="grid__col-auto @smallDeviceCss">
+        @if (isFavoriteList)
+        {
+            string searchPlaceholder = Translate("Search favorite products", "Search favorite products");
+            string searchValue = HttpContext.Current.Request.QueryString.Get("Search") ?? "";
+
+            <div class="grid__cell u-flex-grow--0">
+                <div class="u-pull--left">
+                    <h2 class="u-no-margin"><i class="@favoriteIcon u-margin-right"></i>{{header}}</h2>
+                </div>
+                <div class="grid__col--bleed grid__col-6 u-pull--right">
+                    <div class="u-margin-bottom">
+                        <div class="typeahead u-color-inherit js-typeahead" data-page-size="10" id="FavoritesSearch" data-list-id="@listId" data-search-feed-id="@pageId&feed=true" data-result-page-id="@pageId" data-live-price="@((isLiveProductInfoActive && showPrice && !pointShopOnly).ToString().ToLowerInvariant())">
+                            <input type="text" class="typeahead-search-field u-no-margin u-full-width js-typeahead-search-field" placeholder="@searchPlaceholder" value="@searchValue">
+                            <ul class="dropdown dropdown--absolute-position u-full-width js-handlebars-root js-typeahead-search-content u-min-w220px u-full-width dw-mod" id="FavoritesSearchContent" data-template="SearchProductsTemplate" data-json-feed="@feedFullUrl&ListID=@listId" data-init-onload="false" data-preloader="minimal"></ul>
+                            <button type="button" class="btn btn--condensed btn--primary u-no-margin dw-mod js-typeahead-enter-btn"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="grid__cell">
+           @RenderBlockList(subBlocks) 
+        </div>
+    </div>
+} 
+<script>
+        var miniCartFix = document.getElementById("miniCart");
+        
+ </script>                                                                       

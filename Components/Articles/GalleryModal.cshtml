@@ -1,0 +1,51 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleGalleryModal(ArticleGalleryModal settings)
+{
+    Modal galleryModal = new Modal
+    {
+        Id = "ParagraphGallery",
+        Width = ModalWidth.Full,
+        BodyTemplate = RenderArticleGalleryModalContent()
+    };
+
+    @Render(galleryModal)
+}
+
+@helper RenderArticleGalleryModalContent() {
+    <div class="modal__image-min-size-wrapper">
+        @Render(new Image {
+            Id = "ParagraphGallery",
+            Path = "#",
+            CssClass = "modal--full__img",
+            DisableLazyLoad = true,
+            DisableImageEngine = true
+        })
+    </div>
+
+    <div class="modal__images-counter" id="ParagraphGallery_counter"></div>
+
+    @Render(new Button {
+        Id = "ParagraphGallery_prev",
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.None,
+        CssClass = "modal__prev-btn",
+        Icon = new Icon { Prefix = "far", Name = "fa-angle-left" },
+        OnClick = "Gallery.prevImage('ParagraphGallery')"
+    })
+
+    @Render(new Button {
+        Id = "ParagraphGallery_next",
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.None,
+        CssClass = "modal__next-btn",
+        Icon = new Icon { Prefix = "far", Name = "fa-angle-right" },
+        OnClick = "Gallery.nextImage('ParagraphGallery')"
+    })
+}

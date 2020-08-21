@@ -1,0 +1,66 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using System.Text.RegularExpressions;
+@using Dynamicweb.Frontend
+@using System.Reflection
+@using Dynamicweb.Content.Items
+@using System.Web.UI.HtmlControls
+@using Dynamicweb.Content.Items
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Documentation
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderComponentInfo(dynamic settings)
+{
+    <div class="u-color-light-gray--bg">
+        <div class="u-bold u-margin u-margin-bottom--lg">@Translate("Settings")</div>
+        <table>
+            @{
+                PropertyInfo[] properties = settings.Content.GetType().GetProperties();
+                foreach (PropertyInfo property in properties)
+                {
+                <tr>
+                    <td>
+                        @property.Name  
+                    </td>
+                    <td style="word-break: break-all" class="u-italic">
+                        @if (property.PropertyType.BaseType != null) {
+                            if (property.PropertyType.BaseType.ToString() == "System.Enum") {
+                                string parameterId = property.PropertyType.Name;
+                                string selection = HttpContext.Current.Request.QueryString.Get(parameterId) != null ? HttpContext.Current.Request.QueryString.Get(parameterId) : "";
+                                SelectField enumSelector = new SelectField { OnChange = "QueryArray.setParametersInCurrentURL({ " + parameterId + ": this.value, scrollToId: this.closest('.js-component-info').id });" };
+
+                                foreach (var en in property.PropertyType.GetEnumNames())
+                                {
+                                    if (selection.ToLower() == en.ToLower()) {
+                                        enumSelector.Options.Add(new SelectFieldOption { Label = en.ToString(), Value = en.ToString(), Checked = true });
+                                    } else {
+                                        enumSelector.Options.Add(new SelectFieldOption { Label = en.ToString(), Value = en.ToString() });
+                                    }
+                                }
+                                @Render(enumSelector);
+                            }
+                            else if (property.PropertyType.ToString().Contains("Dynamicweb.Rapido.Blocks.Components"))
+                            {
+                                <div class="u-bold">Component {</div>
+
+                                PropertyInfo[] subProperties = property.PropertyType.GetProperties();
+                                foreach (PropertyInfo subProperty in subProperties)
+                                {
+                                    <div>@subProperty.Name</div>
+                                }
+
+                                <div class="u-bold">}</div>
+                            } else {
+                                @property.PropertyType
+                            }
+                        }
+                    </td>
+                </tr>
+                }
+            }
+        </table>
+    </div>
+}

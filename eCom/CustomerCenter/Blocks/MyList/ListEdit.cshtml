@@ -1,0 +1,58 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+
+
+@{
+    BlocksPage myListEditPage = BlocksPage.GetBlockPage("MyList");
+
+    Block myListEditBlock = new Block
+    {
+        Id = "ListEditBlock",
+        SortId = 10,
+        Template = RenderListEdit()
+    };
+
+    myListEditPage.Add("PageContainer", myListEditBlock);
+}
+
+@helper RenderListEdit()
+{
+    string mode = GetString("Ecom:CustomerCenter.ProductList.Mode");
+    bool isEditMode = mode.Contains("edit");
+    bool isCreateMode = mode.Contains("create");
+
+    if (isEditMode || isCreateMode)
+    {
+        string actionType = isEditMode ? "EditListForm" : "AddListForm";
+        string action = isEditMode ? GetString("Ecom:CustomerCenter.List.EditList") : GetString("Ecom:CustomerCenter.List.CreateList");
+        string title = Translate(isEditMode ? "Edit list" : "Create new list");
+        Regex regex = new Regex(@"(?<=\bvalue="")[^""]*");
+        Match match = regex.Match(GetString("Ecom:CustomerCenter.List.Name.Input"));
+        string inputNameValue = match.Value;
+
+        @Render(new Heading { Title = title, Icon = new Icon { Prefix = "fas", Name = isEditMode ? "fa-pencil" : "fa-plus-square" } })
+
+        <form class="form dw-mod" id="@GetString("ParagraphID")@actionType" name="@GetString("ParagraphID")@actionType" action="@action" method="post">
+            @Render(new TextField { Id = "CC_Name", Name = "CC_Name", Type = TextFieldType.Text, Label = Translate("Name"), Value = inputNameValue, Required = true })
+            @Render(new HiddenField { Id = "CC_Type", Name = "CC_Type", Value = "0" })
+            @Render(new TextareaField { Id = "CC_Description", Name = "CC_Description", Rows = 3, Label = Translate("Description"), Value = Regex.Replace(GetString("Ecom:CustomerCenter.List.Description.Input"), "<.*?>", string.Empty) })
+            <label>@Translate("Published to")</label>
+            <select name="CC_PublishedToDay">
+                @GetString("Ecom:CustomerCenter.List.PublishToDate.Days")
+            </select>
+            <select name="CC_PublishedToMonth">
+                @GetString("Ecom:CustomerCenter.List.PublishToDate.MonthNames")
+            </select>
+            <select name="CC_PublishedToYear">
+                @GetString("Ecom:CustomerCenter.List.PublishToDate.Years")
+            </select>
+            @Render(new CheckboxField { Id = "CC_IsDefault", Name = "CC_IsDefault", Label = Translate("Is this the default list?"), Checked = GetBoolean("Ecom:CustomerCenter.DefaultList.IsDefault") })
+            @Render(new HiddenField { Name = "CC_IsPublished", Value = "True" })
+            @Render(new Button { Id = "Submit", ButtonType = ButtonType.Submit, Title = Translate(isEditMode ? "Save" : "Create list"), CssClass = "u-pull--right" })
+        </form>
+    }
+}

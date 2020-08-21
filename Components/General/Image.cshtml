@@ -1,0 +1,190 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component *@
+
+@helper RenderImage(Image settings)
+{
+    if (settings.FilterPrimary != ImageFilter.None || settings.FilterSecondary != ImageFilter.None)
+    {
+        Dictionary<String, String> optionalAttributes = new Dictionary<string, string>();
+        if (!String.IsNullOrEmpty(settings.FilterColor)) { optionalAttributes.Add("style", "background-color: " + settings.FilterColor); }
+        
+        if (settings.Caption != null)
+        {
+            @:<div>
+        }
+
+        <div class="image-filter image-filter--@settings.FilterPrimary.ToString().ToLower() u-position-relative dw-mod" @ComponentMethods.AddAttributes(optionalAttributes)>
+            <div class="image-filter image-filter--@settings.FilterSecondary.ToString().ToLower() dw-mod">
+                @if (settings.Link != null)
+                {
+                    <a href="@settings.Link">
+                        @RenderTheImage(settings)
+                    </a>
+                }
+                else
+                {
+                    @RenderTheImage(settings)
+                }
+            </div>
+        </div>
+
+        if (settings.Caption != null)
+        {
+            <span class="image-caption dw-mod">@settings.Caption</span>
+            @:</div>
+        }
+    }
+    else 
+    {
+        if (settings.Caption != null)
+        {
+            @:<div>
+        }
+        if (!string.IsNullOrEmpty(settings.Link))
+        {
+            <a href="@settings.Link">
+                @RenderTheImage(settings)
+            </a>
+        }
+        else
+        {
+            @RenderTheImage(settings)
+        }
+
+        if (settings.Caption != null)
+        {
+            <span class="image-caption dw-mod">@settings.Caption</span>
+            @:</div>
+        }
+    }
+}
+
+@functions {
+    string getImagePathFromSettings(ImageSettings settings)
+    {
+        string result = "";
+
+        if (settings != null)
+        {
+            result += settings.Width != 0 ? "Width=" + settings.Width + "&" : "";
+            result += settings.Height != 0 ? "Height=" + settings.Height + "&" : "";
+            result += "Crop=" + settings.Crop + "&";
+            result += "Compression=" + settings.Compression + "&";
+            result += "DoNotUpscale=" + settings.DoNotUpscale.ToString() + "&";
+            result += "FillCanvas=" + settings.FillCanvas.ToString() + "&";
+        }
+
+        return result;
+    }
+}
+
+@helper RenderTheImage(Image settings)
+{
+    if (settings != null)
+    {
+        string placeholderImage = "/Files/Images/placeholder.gif";
+        string imageEngine = "/Admin/Public/GetImage.ashx?";
+
+        string imageStyle = "";
+
+        switch (settings.Style)
+        {
+            case ImageStyle.Ball:
+                imageStyle = "grid__cell-img--ball";
+                break;
+        }
+
+        if (settings.Style == ImageStyle.Ball || settings.Style == ImageStyle.Circle)
+        {
+            if (settings.ImageDefault != null)
+            {
+                settings.ImageDefault.Height = settings.ImageDefault.Width;
+            }
+            if (settings.ImageMedium != null)
+            {
+                settings.ImageMedium.Height = settings.ImageMedium.Width;
+            }
+            if (settings.ImageSmall != null)
+            {
+                settings.ImageSmall.Height = settings.ImageSmall.Width;
+            }
+        }
+
+        string defaultImage = imageEngine;
+        string imageSmall = "";
+        string imageMedium = "";
+
+        if (settings.DisableImageEngine) {
+            defaultImage = settings.Path;
+        } else {
+            if (settings.ImageDefault != null)
+            {
+                defaultImage += getImagePathFromSettings(settings.ImageDefault);
+
+                if (settings.Path.GetType() != typeof(string))
+                {
+                    defaultImage += settings.Path != null ? "Image=" + settings.Path.PathUrlEncoded : "";
+                    defaultImage += settings.Path != null ? "&" + settings.Path.GetFocalPointParameters() : "";
+                }
+                else
+                {
+                    defaultImage += settings.Path != null ? "Image=" + settings.Path : "";
+                }
+            }
+
+            if (settings.ImageSmall != null)
+            {
+                imageSmall = "data-src-small=\"" + imageEngine;
+                imageSmall += getImagePathFromSettings(settings.ImageSmall);
+
+                if (settings.Path.GetType() != typeof(string))
+                {
+                    imageSmall += settings.Path != null ? "Image=" + settings.Path.PathUrlEncoded : "";
+                    imageSmall += settings.Path != null ? "&" + settings.Path.GetFocalPointParameters() : "";
+                }
+                else
+                {
+                    imageSmall += settings.Path != null ? "Image=" + settings.Path : "";
+                }
+
+                imageSmall += "\"";
+            }
+
+            if (settings.ImageMedium != null)
+            {
+                imageMedium = "data-src-medium=\"" + imageEngine;
+                imageMedium += getImagePathFromSettings(settings.ImageMedium);
+
+                if (settings.Path.GetType() != typeof(string))
+                {
+                    imageMedium += settings.Path != null ? "Image=" + settings.Path.PathUrlEncoded : "";
+                    imageMedium += settings.Path != null ? "&" + settings.Path.GetFocalPointParameters() : "";
+                }
+                else
+                {
+                    imageMedium += settings.Path != null ? "Image=" + settings.Path : "";
+                }
+
+                imageMedium += "\"";
+            }
+        }
+
+        Dictionary<string, string> optionalAttributes = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(settings.OnClick)) { optionalAttributes.Add("onclick", settings.OnClick); }
+        if (!string.IsNullOrEmpty(settings.Title)) 
+        { 
+            optionalAttributes.Add("alt", settings.Title); 
+            optionalAttributes.Add("title", settings.Title); 
+        }
+
+        if (settings.DisableLazyLoad) {
+            <img id="@settings.Id" class="@imageStyle @settings.CssClass dw-mod" src="@defaultImage" @ComponentMethods.AddAttributes(optionalAttributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes) />
+        } else {
+            <img id="@settings.Id" class="b-lazy @imageStyle @settings.CssClass dw-mod" src="@placeholderImage" data-src="@defaultImage" @imageSmall @imageMedium @ComponentMethods.AddAttributes(optionalAttributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes) />
+        }
+    }
+}

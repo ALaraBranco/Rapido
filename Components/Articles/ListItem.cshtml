@@ -1,0 +1,169 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+@using System.Text.RegularExpressions
+
+@* Component for the articles *@
+
+@helper RenderArticleListItem(ArticleListItem settings)
+{
+    switch (settings.Type) {
+        case ArticleListItemType.Card:
+            @RenderArticleListItemCard(settings);
+            break;
+        case ArticleListItemType.List:
+            @RenderArticleListItemList(settings);
+            break;
+        case ArticleListItemType.Simple:
+            @RenderArticleListItemSimple(settings);
+            break;
+        default:
+            @RenderArticleListItemCard(settings);
+        break;
+    }
+}
+
+@helper RenderArticleListItemCard(ArticleListItem settings) {
+    <a href="@settings.Link" class="u-full-height u-color-light--bg">
+        <div class="u-color-light--bg u-no-padding dw-mod">
+            @if (settings.Logo != null)
+            {
+                string backgroundImage = settings.Image != null ? "background-image:url(/Admin/Public/GetImage.ashx?width=992&amp;height=760&amp;crop=0&amp;Compression=75&amp;DoNotUpscale=True&amp;image=" + settings.Image.Path + "); background-size: cover;" : "";
+                settings.Logo.ImageDefault.Crop = 5;
+                settings.Logo.ImageDefault.Width = settings.Logo.ImageDefault.Width == 1920 ? 240 : settings.Logo.ImageDefault.Width;
+                settings.Logo.ImageDefault.Height = settings.Logo.ImageDefault.Height == 1080 ? 200 : settings.Logo.ImageDefault.Height;
+                <div class="image-hover__wrapper layered-image layered-image--tinted dw-mod" style="@backgroundImage">
+                    @if (settings.Stickers != null)
+                    {
+                        if (settings.Stickers.Position != StickersListPosition.Custom)
+                        {
+                            @Render(settings.Stickers);
+                        }
+                    }
+                    @RenderImage(settings.Logo)
+                </div>
+            } else if (settings.Image != null)
+            {
+                <div class="flex-img image-hover__wrapper u-position-relative dw-mod">
+                    @if (settings.Stickers != null)
+                    {
+                        if (settings.Stickers.Position != StickersListPosition.Custom)
+                        {
+                            @Render(settings.Stickers);
+                        }                                                        
+                    }
+                    @Render(settings.Image)
+                </div>
+            }
+        </div>
+
+        @if (!String.IsNullOrEmpty(settings.Title) || !String.IsNullOrEmpty(settings.Summary))
+        {
+            <div class="card u-color-light--bg dw-mod">
+                @if (settings.Stickers != null)
+                {
+                    if (settings.Stickers.Position == StickersListPosition.Custom)
+                    {
+                        @Render(settings.Stickers);
+                    }                                                        
+                }
+                @if (!String.IsNullOrEmpty(settings.Title))
+                {
+                    <h3 class="article-list__item-header u-truncate-text dw-mod">@settings.Title</h3>
+                }
+                @if (!String.IsNullOrEmpty(settings.SubTitle))
+                {
+                    <div class="article-list__item-micro-info u-truncate-text dw-mod">@settings.SubTitle</div>
+                }
+                @if (!String.IsNullOrEmpty(settings.Summary))
+                {
+                    <p class="article__short-summary dw-mod">@settings.Summary</p>
+                }
+            </div>
+        }
+    </a>
+}
+
+@helper RenderArticleListItemList(ArticleListItem settings) { 
+    <a href="@settings.Link">
+        <div class="grid u-color-light--bg u-no-padding dw-mod">
+            <div class="grid__col-md-3">
+                <div class="u-color-light--bg u-no-padding dw-mod">
+                    @if (settings.Logo != null)
+                    {
+                        string backgroundImage = settings.Image != null ? "background-image:url(/Admin/Public/GetImage.ashx?width=992&amp;height=760&amp;crop=0&amp;Compression=75&amp;DoNotUpscale=True&amp;image=" + settings.Image.Path + "); background-size: cover;" : "";
+                        settings.Logo.ImageDefault.Crop = 5;
+                        settings.Logo.ImageDefault.Width = settings.Logo.ImageDefault.Width == 1920 ? 240 : settings.Logo.ImageDefault.Width;
+                        settings.Logo.ImageDefault.Height = settings.Logo.ImageDefault.Height == 1080 ? 200 : settings.Logo.ImageDefault.Height;
+                        <div class="image-hover__wrapper layered-image layered-image--tinted dw-mod" style="@backgroundImage">
+                            @if (settings.Stickers != null)
+                            {
+                                if (settings.Stickers.Position != StickersListPosition.Custom)
+                                {
+                                    @Render(settings.Stickers);
+                                }                                                        
+                            }
+                            @RenderImage(settings.Logo)
+                        </div>
+                    } else if (settings.Image != null)
+                    {
+                        <div class="flex-img image-hover__wrapper dw-mod">
+                            @if (settings.Stickers != null)
+                            {
+                                if (settings.Stickers.Position != StickersListPosition.Custom)
+                                {
+                                    @Render(settings.Stickers);
+                                }                                                        
+                            }
+                            @Render(settings.Image)
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (!String.IsNullOrEmpty(settings.Title) || !String.IsNullOrEmpty(settings.Summary))
+            {
+                <div class="grid__col-md-9">
+                    @if (!String.IsNullOrEmpty(settings.Title))
+                    {
+                        <h3 class="article-list__item-header u-truncate-text dw-mod">@settings.Title</h3>
+                    }
+                    @if (settings.Stickers != null)
+                    {
+                        if (settings.Stickers.Position == StickersListPosition.Custom)
+                        {
+                            @Render(settings.Stickers);
+                        }
+                    }
+                    @if (!String.IsNullOrEmpty(settings.SubTitle))
+                    {
+                        <div class="article-list__item-micro-info u-truncate-text dw-mod">@settings.SubTitle</div>
+                    }
+                    @if (!String.IsNullOrEmpty(settings.Summary))
+                    {
+                    <p class="article__short-summary dw-mod">@settings.Summary</p>
+                    }
+                </div>
+            }
+        </div>
+    </a>
+}
+
+@helper RenderArticleListItemSimple(ArticleListItem settings) {
+    <a href="@settings.Link" class="u-color-inherit">
+        <div class="grid u-color-light--bg u-no-padding dw-mod">
+            <div class="grid__col-md-12">
+                @if (!String.IsNullOrEmpty(settings.Title))
+                {
+                    <div class="article-list-item__header u-truncate-text u-no-margin dw-mod">@settings.Title</div>
+                }
+                @if (!String.IsNullOrEmpty(settings.SubTitle))
+                {
+                    <div class="article-list__item-micro-info u-truncate-text dw-mod">@settings.SubTitle</div>
+                }
+            </div>
+        </div>
+    </a>
+}

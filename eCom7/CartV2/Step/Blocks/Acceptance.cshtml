@@ -1,0 +1,53 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{
+    BlocksPage acceptanceBlocksPage = BlocksPage.GetBlockPage("CheckoutPage");
+
+    Block acceptanceBlock = new Block()
+    {
+        Id = "Acceptance",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "AcceptanceBody",
+                SortId = 10,
+                Template = RenderAcceptance(),
+                Design = new Design {
+                    RenderType = RenderType.CardHeader,
+                    CssClass = "u-color-light--bg u-no-padding--xs"
+                }
+            }
+        }
+    };
+    acceptanceBlocksPage.Add("SummaryContainerRow", acceptanceBlock);
+}
+
+@helper RenderAcceptance() {
+    if (GetBoolean("Ecom:Cart.UseNewsletterSubscription"))
+    {
+        @Render(new HiddenField { Name = "EcomOrderSubscribeToNewsletter" })
+        @Render(new CheckboxField { Name = "EcomOrderSubscribeToNewsletter", Id = "EcomOrderSubscribeToNewsletter", Label = Translate("Subscribe to newsletter") })
+    }
+
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideTermsAndConditions"))
+    {
+        @Render(new HiddenField { Name = "EcomOrderCustomerAccepted", Id = "EcomOrderCustomerAccepted", Value = "1" })
+    }
+    else
+    {
+        string termsPageIt = GetPageIdByNavigationTag("TermsAndConditions").ToString();
+        @Render(new CheckboxField { Name = "EcomOrderCustomerAccepted", Id = "EcomOrderCustomerAccepted", OnChange = "Cart.EnableCheckoutButton()", Label = "<a href=\"/Default.aspx?ID=" + termsPageIt + "\">" + Translate("I accept the terms and conditions") + "</a>", ErrorMessage = GetString("Ecom:Cart.ValidationError.EcomOrderCustomerAccepted.ErrorMessage") })
+    }
+}

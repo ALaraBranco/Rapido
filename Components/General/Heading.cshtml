@@ -1,0 +1,32 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Core
+
+@* Component *@
+
+@helper RenderHeading(Heading settings)
+{
+    if (settings != null && !string.IsNullOrEmpty(settings.Title))
+    {
+        string color = settings.Color != null ? "style=\"color: " + settings.Color + "\"" : "";
+        string tagName = "h" + settings.Level.ToString();
+
+        @("<" + tagName + " class=\"" + settings.CssClass + " dw-mod\" " + color + ">")
+            if (!string.IsNullOrEmpty(settings.Link))
+            {
+                @Render(new Link { Href = settings.Link, Icon = settings.Icon, Title = settings.Title, ButtonLayout = ButtonLayout.None })
+            } 
+            else
+            {
+                string content = settings.Title;
+                if (settings.Icon != null)
+                {
+                    content = settings.Icon.LabelPosition == IconLabelPosition.Before ?
+                              Converter.ToString(Render(settings.Icon)) + content :
+                              content + Converter.ToString(Render(settings.Icon));
+                }
+                @content
+            }
+        @("</" + tagName + ">");
+    }
+}

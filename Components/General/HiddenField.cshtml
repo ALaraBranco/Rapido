@@ -1,0 +1,16 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderHiddenField(HiddenField settings) {
+    var attributes = new Dictionary<string, string>();
+    attributes.Add("type", "hidden");
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (!string.IsNullOrEmpty(settings.Value)) { attributes.Add("value", settings.Value); }
+    if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+
+    <input @ComponentMethods.AddAttributes(attributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)/>
+}

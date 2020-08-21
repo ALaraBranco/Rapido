@@ -1,0 +1,212 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks 
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage productAssetsPage = BlocksPage.GetBlockPage("Product");
+}
+
+@{
+    string productAssetsLayout = !String.IsNullOrEmpty(Pageview.AreaSettings.GetItem("ProductPage").GetString("ProductAssetsLayout")) ? Pageview.AreaSettings.GetItem("ProductPage").GetList("ProductAssetsLayout").SelectedValue : "Section";
+    productAssetsLayout = productAssetsLayout == "Ribbon" ? "Section" : productAssetsLayout;
+
+    if (productAssetsLayout != "hide")
+    {
+        Block productAssetsBlock = new Block()
+        {
+            Name = productAssetsLayout != "MainInformation" ? Translate("Product assets") : "",
+            Id = "ProductAssets",
+            SortId = 10,
+            Template = RenderProductAssets(productAssetsLayout, downloadDocuments), @*downloadDocuments variable, declared in Product.cshtml and defined in Fields.cshtml*@
+            Design = new Design
+            {
+                Size = "12",
+                RenderType = RenderType.Column,
+                HidePadding = true
+            }
+        };
+    productAssetsPage.Add(productAssetsLayout, productAssetsBlock);
+}
+}
+
+@helper RenderProductAssets(string layout, List<LoopItem> documents)
+{
+    string ribbonClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("ProductAssetsLayout").SelectedValue == "Ribbon" ? "product__section--ribbon paragraph-container paragraph-container--full-width" : "";
+    string ribbonSubClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("ProductAssetsLayout").SelectedValue == "Ribbon" ? "u-padding--lg" : "";
+    string exportPageId = GetPageIdByNavigationTag("ProductExportFeed").ToString();
+
+    //images
+
+    HashSet<string> images = new HashSet<string>();
+
+    images.Add(GetProductImage());
+
+    foreach (LoopItem alternativeImage in GetLoop("Ecom:Product.AlternativeImages"))
+    {
+        string alt_image = alternativeImage.GetString("Ecom:Product.AlternativeImages.Image");
+
+        if (!string.IsNullOrEmpty(alt_image))
+        {
+            images.Add(alt_image);
+        }
+    }
+
+    foreach (LoopItem detail in GetLoop("Details"))
+    {
+        string detail_image = detail.GetString("Ecom:Product:Detail.Image.Clean");
+
+        if (!string.IsNullOrEmpty(detail_image))
+        {
+            images.Add(detail_image);
+        }
+    }
+
+    <div class="product__section @ribbonClasses dw-mod">
+        <div class="product__description center-container @ribbonSubClasses dw-mod">
+            @if (layout == "Section")
+            {
+                @Render(new Heading { Title = Translate("Product assets"), Level = 2 })
+            }
+
+            <form action="/Default.aspx?ID=@exportPageId&ProductID=@System.Web.HttpContext.Current.Request.QueryString.Get("ProductID")&VariantID=@System.Web.HttpContext.Current.Request.QueryString.Get("VariantID")" method="post" class="u-flex grid--direction-column u-no-margin">
+                <div class="grid">
+                    @if (images.Count > 0)
+                    {
+                        <div class="grid__col-md-4">
+                            <div class="u-margin-bottom">
+                                @Render(new CheckboxField { Id = "allImages", OnChange = "selectAll(this)", Label = Translate("Images") + "(" + images.Count + ")" })
+                            </div>
+
+                            <ul class="panel-list">
+                                @foreach (string image in images)
+                                {
+                                    @RenderProductPanelListItem(image)
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (documents.Count > 0)
+                    {
+                        <div class="grid__col-md-4">
+                            <div class="u-margin-bottom">
+                                @Render(new CheckboxField { Id = "allDocuments", OnChange = "selectAll(this)", Label = Translate("Documents") + "(" + documents.Count + ")" })
+                            </div>
+
+                            <ul class="panel-list">
+                                @foreach (LoopItem document in documents)
+                                {
+                                    string fieldValue;
+                                    if (!string.IsNullOrEmpty(document.GetString("Document.FullPath")))
+                                    {
+                                        fieldValue = document.GetString("Product.CustomField.Value.Clean");
+                                        @RenderDocument(fieldValue)
+                                    }
+                                    if (document.GetString("Ecom:Product.CategoryField.TypeID") == "9")
+                                    {
+                                        fieldValue = document.GetString("Ecom:Product.CategoryField.Value");
+                                        @RenderDocument(fieldValue)
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    }
+                    <div class="grid__col-md-4">
+                        @Render(new HiddenField { Id = "ID", Name = "ID", Value = "532" })
+                        @Render(new HiddenField { Id = "download", Name = "download", Value = "true" })
+                        @Render(new HiddenField { Id = "siteUrl", Name = "siteUrl", Value = string.Format("{0}://{1}", GetGlobalValue("Global:Request.Scheme"), GetGlobalValue("Global:Request.Host")) })
+
+                        <div class="u-bold u-margin-bottom">@Translate("Export")</div>
+
+                        @{
+                            SelectField languageSelect = new SelectField
+                            {
+                                Id = "exportLanguage",
+                                Label = Translate("Language"),
+                                Name = "RequestLanguageId",
+                                CssClass = "u-full-width"
+                            };
+                            foreach (var lang in Services.Languages.GetLanguages().OrderBy(l => l.Name))
+                            {
+                                var selected = lang.IsDefault ? true : false;
+                                languageSelect.Options.Add(new SelectFieldOption { Label = lang.Name, Value = lang.LanguageId, Checked = selected });
+                            }
+                            @Render(languageSelect)
+
+                            SelectField purposeSelect = new SelectField
+                            {
+                                Id = "purpose",
+                                Label = Translate("Image purpose"),
+                                Name = "purpose",
+                                CssClass = "u-full-width"
+                            };
+                            purposeSelect.Options.Add(new SelectFieldOption { Label = Translate("Office"), Value = "Office" });
+                            purposeSelect.Options.Add(new SelectFieldOption { Label = Translate("Original"), Value = "Original" });
+                            purposeSelect.Options.Add(new SelectFieldOption { Label = Translate("Print"), Value = "Print" });
+                            purposeSelect.Options.Add(new SelectFieldOption { Label = Translate("Web"), Value = "Web" });
+                            @Render(purposeSelect)
+
+                            SelectField formatSelect = new SelectField
+                            {
+                                Id = "exportFormat",
+                                Label = Translate("Export format"),
+                                Name = "exportFormat",
+                                CssClass = "u-full-width"
+                            };
+                            formatSelect.Options.Add(new SelectFieldOption { Label = Translate("Csv"), Value = "csv" });
+                            formatSelect.Options.Add(new SelectFieldOption { Label = Translate("Json"), Value = "json" });
+                            formatSelect.Options.Add(new SelectFieldOption { Label = Translate("Xml"), Value = "xml" });
+                            @Render(formatSelect)
+                        }
+
+                        @Render(new Button { ButtonType = ButtonType.Submit, ButtonLayout = ButtonLayout.Primary, CssClass = "btn--full u-no-margin", Title = Translate("Download") })
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        function selectAll(checkbox) {
+            Array.prototype.slice.call(checkbox.parentElement.nextElementSibling.getElementsByTagName('input')).forEach(function (input) {
+                input.checked = checkbox.checked;
+            });
+        }
+    </script>
+}
+
+@helper RenderProductPanelListItem(string imageName)
+{
+    <li class="panel-list__item">
+        <div class="panel-list__item-check">
+            @Render(new CheckboxField { Name = "Image_" + imageName, Id = "Image_" + imageName, CssClass = "u-no-margin" })
+        </div>
+        <div class="panel-list__item-image">
+            <label for="Image_@imageName">
+                @Render(new Image { Path = imageName, Title = Path.GetFileName(imageName), ImageDefault = new ImageSettings { Width = 55, Height = 55, Crop = 5, FillCanvas = true } })
+            </label>
+        </div>
+        <div class="panel-list__item-name">
+            <label for="Image_@imageName" class="u-truncate-text u-w170px">
+                @Path.GetFileName(imageName)
+            </label>
+        </div>
+    </li>
+}
+
+@helper RenderDocument(string fieldValue)
+{
+    <li class="panel-list__item">
+        <div class="panel-list__item-check">
+            @Render(new CheckboxField { Name = "Document_" + fieldValue, Id = "Document_" + fieldValue, CssClass = "u-no-margin" })
+        </div>
+        <div class="panel-list__item-name">
+            <label for="Document_@fieldValue" class="u-truncate-text u-max-w220px">
+                @Path.GetFileName(fieldValue)
+            </label>
+        </div>
+    </li>
+}

@@ -1,0 +1,68 @@
+﻿@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+
+@functions {
+    BlocksPage downloadModalPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block downloadModal = new Block()
+    {
+        Id = "DownloadModal",
+        Component = new Modal
+        {
+            Id = "Download",
+            Width = ModalWidth.Sm,
+            Heading = new Heading { Title = Translate("Download"), Level = 2 },
+            BodyTemplate = RenderDownloadModal()
+        }
+    };
+
+    downloadModalPage.Add(downloadModal);
+
+}
+
+@helper RenderDownloadModal()
+{
+    int exportPageId = GetPageIdByNavigationTag("PIMAssetExport");
+
+    Form downloadForm = new Form
+    {
+        Action = "/Default.aspx?ID=" + exportPageId,
+        Method = FormMethod.Post,
+        CssClass = "u-no-margin"
+    };
+
+    downloadForm.Add(new HiddenField { Id = "assetPath", Name = "assetPath" });
+    downloadForm.Add(new HiddenField { Id = "siteUrl", Name = "siteUrl", Value = string.Format("{0}://{1}", GetGlobalValue("Global:Request.Scheme"), GetGlobalValue("Global:Request.Host")) });
+
+    SelectField purposeSelect = new SelectField
+    {
+        Id = "purpose",
+        Name = "purpose",
+        Label = Translate("Purpose"),
+        CssClass = "u-full-width",
+        Options = new List<SelectFieldOption> {
+            new SelectFieldOption {
+                Value = "Office",
+                Label = Translate("Office")
+            },
+            new SelectFieldOption {
+                Value = "Original",
+                Label = Translate("Original")
+            },
+            new SelectFieldOption {
+                Value = "Print",
+                Label = Translate("Print")
+            },
+            new SelectFieldOption {
+                Value = "Web",
+                Label = Translate("Web")
+            }
+        }
+    };
+    downloadForm.Add(purposeSelect);
+    downloadForm.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Export asset"), CssClass = "u-pull--right" });
+
+    @Render(downloadForm)
+}

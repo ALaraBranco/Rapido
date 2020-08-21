@@ -1,0 +1,154 @@
+﻿@using System.Text.RegularExpressions
+@using System.Collections.Generic
+@using System.Reflection
+@using System.Web
+@using System.Web.UI.HtmlControls
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.Documentation
+@using Dynamicweb.Rapido.Blocks
+
+
+@*--- START: Base block renderers ---*@
+
+@helper RenderBlockList(List<Block> blocks)
+{
+    bool debug = !String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("debug")) ? Convert.ToBoolean(HttpContext.Current.Request.QueryString.Get("debug")) : false;
+    blocks = blocks.OrderBy(item => item.SortId).ToList();
+
+    foreach (Block item in blocks)
+    {
+        if (debug) {
+        <!-- Block START: @item.Id -->
+        }
+
+        if (item.Design == null)
+        {
+            @RenderBlock(item)
+        }
+        else if (item.Design.RenderType == RenderType.None) {
+            string cssClass = item.Design.CssClass != null ? item.Design.CssClass : "";
+
+            <div class="@cssClass dw-mod">
+               @RenderBlock(item)
+            </div>
+        }
+        else if (item.Design.RenderType != RenderType.Hide)
+        {
+            string cssClass = item.Design.CssClass != null ? item.Design.CssClass : "";
+
+            if (!item.SkipRenderBlocksList) {
+                if (item.Design.RenderType == RenderType.Row)
+                {
+                    <div class="grid grid--align-content-start @cssClass dw-mod" id="Block__@item.Id">
+                        @RenderBlock(item)
+                    </div>
+                }
+
+                if (item.Design.RenderType == RenderType.Column)
+                {
+                    string hidePadding = item.Design.HidePadding ? "u-no-padding" : "";
+                    string size = item.Design.Size ?? "12";
+                    size = Regex.IsMatch(size, @"\d") ? "md-" + item.Design.Size : item.Design.Size;
+
+                    <div class="grid__col-lg-@item.Design.Size grid__col-md-@item.Design.Size grid__col-sm-12 grid__col-xs-12 @hidePadding @cssClass dw-mod" id="Block__@item.Id">
+                        @RenderBlock(item)
+                    </div>
+                }
+
+                if (item.Design.RenderType == RenderType.Table)
+                {
+                    <table class="table @cssClass dw-mod" id="Block__@item.Id">
+                        @RenderBlock(item)
+                    </table>
+                }
+
+                if (item.Design.RenderType == RenderType.TableRow)
+                {
+                    <tr class="@cssClass dw-mod" id="Block__@item.Id">
+                        @RenderBlock(item)
+                    </tr>
+                }
+
+                if (item.Design.RenderType == RenderType.TableColumn)
+                {
+                    <td class="@cssClass dw-mod" id="Block__@item.Id">
+                        @RenderBlock(item)
+                    </td>
+                }
+
+                if (item.Design.RenderType == RenderType.CardHeader)
+                {
+                    <div class="card-header @cssClass dw-mod">
+                        @RenderBlock(item)
+                    </div>
+                }
+
+                if (item.Design.RenderType == RenderType.CardBody)
+                {
+                    <div class="card @cssClass dw-mod">
+                        @RenderBlock(item)
+                    </div>
+                }
+
+                if (item.Design.RenderType == RenderType.CardFooter)
+                {
+                    <div class="card-footer @cssClass dw-mod">
+                        @RenderBlock(item)
+                    </div>
+                }
+            }
+            else 
+            {
+                @RenderBlock(item)
+            }
+        }
+
+        if (debug) {
+        <!-- Block END: @item.Id -->
+        }
+    }
+}
+
+@helper RenderBlock(Block item)
+{
+    bool debug = !String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("debug")) ? Convert.ToBoolean(HttpContext.Current.Request.QueryString.Get("debug")) : false;
+
+    if (item.Template != null)
+    {
+        @BlocksPage.RenderTemplate(item.Template)
+    }
+
+    if (item.Component != null)
+    {
+        string customSufix = "Custom";
+        string methodName = item.Component.HelperName;
+
+        ComponentBase[] methodParameters = new ComponentBase[1]; 
+        methodParameters[0] = item.Component; 
+        Type methodType = this.GetType();
+
+        MethodInfo customMethod = methodType.GetMethod(methodName + customSufix);
+        MethodInfo generalMethod = methodType.GetMethod(methodName);
+
+        try {
+            if (debug) {
+            <!-- Component: @methodName.Replace("Render", "") -->
+            }
+            @customMethod.Invoke(this, methodParameters).ToString();
+        } catch {
+            try {
+                @generalMethod.Invoke(this, methodParameters).ToString();
+            } catch(Exception ex) {
+                throw new Exception(item.Component.GetType().Name + " method '" + methodName +"' could not be invoked", ex);
+            }
+        }
+    }
+
+    if (item.BlocksList.Count > 0 && !item.SkipRenderBlocksList)
+    {
+        @RenderBlockList(item.BlocksList)
+    }
+}
+
+@*--- END: Base block renderers ---*@

@@ -1,0 +1,19 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+@* Component *@
+
+@helper RenderUnitSelector(UnitSelector settings)
+{
+    var id = settings.Id;
+    var disabledClass = settings.Disabled ? "disabled" : "";
+    settings.CssClass += " u-w150px u-w100px--xs";
+
+    <input type="checkbox" id="@id" class="dropdown-trigger" />
+    <div class="dropdown @settings.CssClass @disabledClass dw-mod" @ComponentMethods.AddAttributes(settings.ExtraAttributes)>
+        <label class="dropdown__header dropdown__btn dw-mod" for="@id">@settings.SelectedOption</label>
+        <div class="dropdown__content dw-mod">
+            @settings.OptionsContent
+        </div>
+        <label class="dropdown-trigger-off" for="@id"></label>
+    </div>
+}

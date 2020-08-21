@@ -1,0 +1,115 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Ecommerce
+@using System.Linq
+@using System.Web
+
+@Include("../../../GetProductImage.cshtml")
+@Include("../../../Components/GridBuilder.cshtml")
+@Include("../../../Components/GeneralComponents.cshtml")
+
+@{
+    string exportPageId = GetPageIdByNavigationTag("ProductExportFeed").ToString();
+}
+
+<section class="multiple-paragraphs-container u-color-light-gray--bg paragraph-container--full-width u-min-h500px">
+    <div class="center-container center-container--with-background-image dw-mod">
+        <div class="paragraph-container u-padding">
+            <form action="/Default.aspx?ID=@exportPageId" method="post" class="u-no-margin" onsubmit="SubmitHandler()">
+                <div class="grid">
+                    <div class="grid__col-12">
+                        <div class="u-margin-bottom">
+                            <h2 class="u-no-margin">@Translate("Downloads")</h2>
+                        </div>
+                    </div>
+                    <div class="grid__col-8">
+                        <div class="card-header u-color-light--bg dw-mod">
+                            <h3><i class="fas fa-download"></i> @Translate("Items ready to download") (<span id="cart_items_counter">@GetString("Ecom:Order.OrderLines.TotalProductQuantity")</span>)</h3>
+                        </div>
+                        <div class="card u-color-light--bg dw-mod">
+                            <ul class="panel-list" id="download_cart_list">
+                                @foreach (LoopItem orderline in GetLoop("OrderLines"))
+                                {
+                                    if (orderline.GetBoolean("Ecom:Order:OrderLine.IsProduct"))
+                                    {
+                                        <li class="panel-list__item" data-id="@orderline.GetString("Ecom:Product.ID")">
+                                            <img class="u-margin-right b-lazy" src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=60&height=60&crop=5&Compression=75&image=@GetProductImage(orderline)" alt="@orderline.GetString("Ecom:Order:OrderLine.ProductName")">
+                                            <div class="panel-list__item-name">
+                                                <div class="u-truncate-text">@orderline.GetString("Ecom:Order:OrderLine.ProductName")</div>
+                                                <small>@orderline.GetString("Ecom:Order:OrderLine.ProductNumber")</small>
+                                            </div>
+                                            <div class="panel-list__item-actions">
+                                                <button type="button" title="@Translate("Remove")" class="btn btn--primary btn--condensed u-no-margin dw-mod" onclick="RemoveOrderLineFromList('@orderline.GetString("Ecom:Order:OrderLine.Id")', this);">
+                                                    <i class="fas fa-minus"></i> <span>@Translate("Remove")</span>
+                                                </button>
+                                            </div>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                            <div class="u-border-top u-padding-top--lg">
+                                <button type="button" title="@Translate("Empty cart")" class="btn btn--secondary btn--condensed dw-mod u-pull--left u-no-margin" onclick="EmptyCart();">@Translate("Empty cart")</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid__col-4">
+                        <div class="card-header u-color-light--bg dw-mod">
+                            <h3><i class="fas fa-file"></i> @Translate("Export")</h3>
+                        </div>
+                        <div class="card u-color-light--bg dw-mod">
+                            <input name="ID" type="hidden" value="532" />
+                            <input id="download" name="download" type="hidden" value="true" />
+                            <input id="productIds" name="ProductIds" type="hidden" value="" />
+                            <label for="exportLanguage">@Translate("Language")</label>
+                            <select id="exportLanguage" name="RequestLanguageId" class="u-full-width">
+                                @foreach (var lang in Services.Languages.GetLanguages().OrderBy(l => l.Name))
+                                {
+                                    var selected = lang.IsDefault ? "selected" : "";
+                                    <option value="@lang.LanguageId" @selected>@lang.Name</option>
+                                }
+                            </select>
+
+                            <label for="exportFormat">@Translate("Export format")</label>
+                            <select id="exportFormat" name="format" class="u-full-width">
+                                <option value="csv">Csv</option>
+                                <option value="json">Json</option>
+                                <option value="xml">Xml</option>
+                            </select>
+                            <input type="submit" title="@Translate("Submit")" class="btn btn--full btn--primary dw-mod u-no-margin" value="@Translate("Submit")" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    function RemoveOrderLineFromList(orderLineId, button) {
+        downloadCart.RemoveFromDownloadCart(orderLineId, button, function (result) {
+            button.closest('li.panel-list__item').remove();
+            ReduceCartItemsCounter();
+        });
+    }
+
+    function ReduceCartItemsCounter() {
+        let span = document.getElementById('cart_items_counter');
+        let count = parseInt(span.innerText);
+        if (count - 1 == 0) {
+            location.reload();
+        } else {
+            span.innerText = count - 1;
+        }
+    }
+
+    function SubmitHandler() {
+        let productIds = [];
+        document.querySelectorAll('#download_cart_list > li').forEach(function (product) {
+            productIds.push(product.getAttribute('data-id'));
+        });
+        document.getElementById('productIds').value = productIds.join(',');
+    }
+
+    function EmptyCart() {
+        document.location.href = "/Default.aspx?ID=@(Pageview.Page.ID)&OrderContext=" + downloadCart.settings.contextId + "&cartcmd=emptycart";
+    }
+</script>

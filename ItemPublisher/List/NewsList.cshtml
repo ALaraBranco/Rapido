@@ -1,0 +1,147 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions { 
+    BlocksPage newsListPage = BlocksPage.GetBlockPage("NewsList");
+
+    string Truncate(string value, int maxChars)
+    {
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
+    }
+}
+
+@{
+    Block listContainer = new Block
+    {
+        Id = "ArticleListContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+                new Block {
+                Id = "ArticleListBody",
+                SortId = 30,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "8",
+                    HidePadding = true
+                }
+            }
+        }
+    };
+    newsListPage.Add(listContainer);
+
+    Block articleListBodyRow = new Block
+    {
+        Id = "ArticleListBodyRow",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    newsListPage.Add("ArticleListBody", articleListBodyRow);
+
+    int index = 0;
+    foreach (LoopItem listItem in GetLoop("ItemPublisher:Items.List"))
+    {
+        Block articleListItem = new Block
+        {
+            Id = "ArticleListItem" + index,
+            SortId = (index * 10),
+            Component = new ArticleListItem {
+                Title = listItem.GetString("ItemPublisher:Item.Title"),
+                SubTitle = listItem.GetDate("ItemPublisher:Item.Date").ToString("dd.MM.yyyy, HH:mm"),
+                Summary = Truncate(listItem.GetString("ItemPublisher:Item.Summary"), 260),
+                Link = "/Default.aspx?ID=" + listItem.GetString("ItemPublisher:Item.Field.PageId"),
+                Type = ArticleListItemType.List,
+                Image = new Image {
+                    Title = listItem.GetString("ItemPublisher:Item.Title"),
+                    Path = listItem.GetString("ItemPublisher:Item.Image"),
+                    ImageDefault = new ImageSettings
+                    {
+                        Width = 350,
+                        Height = 245,
+                        Crop = 5,
+                        DoNotUpscale = true
+                    },
+                    ImageSmall = new ImageSettings
+                    {
+                        Width = 1024,
+                        Height = 717,
+                        Crop = 5,
+                        DoNotUpscale = true
+                    },
+                    ImageMedium = new ImageSettings
+                    {
+                        Width = 1150,
+                        Height = 805,
+                        Crop = 5,
+                        DoNotUpscale = true
+                    }
+                }
+            },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                CssClass = "image-hover--zoom"
+            }
+        };
+        newsListPage.Add("ArticleListBodyRow", articleListItem);
+
+        index++;
+    }
+
+    if (GetLoop("ItemPublisher:Items.List").Count == 0)
+    {
+        Block notFoundInfo = new Block
+        {
+            Id = "NotFoundInfo",
+            SortId = 40,
+            Component = new ArticleListNoResultsInfo { },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        newsListPage.Add("ArticleListContainer", notFoundInfo);
+    }
+
+    if (GetInteger("ItemPublisher:Items.Paging.TotalPages") > 1)
+    {
+        Block paginationBlock = new Block
+        {
+            Id = "ArticleListPagination",
+            SortId = 40,
+            Component = new Pagination { PagingTag = "ItemPublisher:Items" },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        newsListPage.Add("ArticleListContainer", paginationBlock);
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/ArticleComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")
+
+
+@* Include the Blocks for the page *@
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(newsListPage.BlocksRoot.BlocksList)   
+

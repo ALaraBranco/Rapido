@@ -1,0 +1,115 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage mapFormPage = BlocksPage.GetBlockPage("MapPage");
+}
+
+@{
+    SelectField locationsFilter = new SelectField
+    {
+        CssClass = "js-locations-filter"
+    };
+
+    locationsFilter.Options.Add(new SelectFieldOption
+    {
+        Label = Translate("All"),
+        Value = Translate("*"),
+    });
+
+    foreach (var group in GetLoop("GroupGroups"))
+    {
+        locationsFilter.Options.Add(new SelectFieldOption
+        {
+            Label = group.GetString("Name"),
+            Value = group.GetString("ID"),
+        });
+    }
+
+    Block mapForm = new Block
+    {
+        Id = "MapForm",
+        SortId = 10,
+        Template = RenderMapForm(),
+        SkipRenderBlocksList = true
+    };
+
+    mapFormPage.Add("MapContainer", mapForm);
+
+
+    Block mapTools = new Block
+    {
+        Id = "MapTools",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--justify-end"
+        },
+    };
+
+    mapFormPage.Add("MapForm", mapTools);
+
+    if (GetLoop("GroupGroups").Count > 0)
+    {
+        Block mapLocationsFilter = new Block
+        {
+            Id = "MapLocationsFilter",
+            SortId = 10,
+            Component = locationsFilter,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "4",
+                CssClass = "grid__col--bleed-y"
+            }
+        };
+
+        mapFormPage.Add("MapTools", mapLocationsFilter);
+    }
+
+    Block mapLocationsSearch = new Block
+    {
+        Id = "MapLocationsSearch",
+        SortId = 20,
+        Component = new TextField {
+           Id = "dynamicweb-map-query",
+           Type = TextFieldType.Text,
+           Placeholder = Translate("Search"),
+           ExtraAttributes = new Dictionary<string, string>() {
+                { "data-search", "byName" }
+           },
+           ActionButton = new Button {
+                Title = Translate("Find nearest"),
+                ButtonType = ButtonType.Submit,
+                CssClass = "btn--condensed js-dynamicweb-map-btn",
+                Icon = new Icon { Prefix = "fas", Name = "fa-search" },
+                ExtraAttributes = new Dictionary<string, string>() {
+                    { "data-search", "nearest" }
+                }
+           }
+        },
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "4",
+            CssClass = "grid__col--bleed-y"
+        }
+    };
+
+    mapFormPage.Add("MapTools", mapLocationsSearch);
+}
+
+@helper RenderMapForm()
+{
+    List<Block> subBlocks = this.mapFormPage.GetBlockListById("MapForm").OrderBy(item => item.SortId).ToList();
+
+    <form class="u-no-margin">
+        @RenderBlockList(subBlocks)
+    </form>
+}

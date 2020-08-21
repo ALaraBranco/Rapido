@@ -1,0 +1,185 @@
+//Panels
+
+.panel-trigger {
+    visibility: hidden;
+    position: absolute;
+}
+
+.panel {
+    position: fixed;
+    z-index: @z-index-top;
+    background-color: @white;
+    box-shadow: 0 0 18px rgba(0,0,0,.175);
+    transition: all 0.2s ease-out;
+
+    &.panel--full-width {
+        width: 100%;
+    }
+
+    &.panel--left {
+        min-width: 320px;
+        left: 0;
+        right: auto;
+        bottom: 0;
+        top: 0;
+        height: 100%;
+
+        .panel-trigger-btn::before {
+            content: '\f104'; 
+        }
+
+        .panel-trigger:not(:checked) ~ & {
+            left: -290px;
+
+            .panel-trigger-btn::before {
+                content: '\f105';
+            }
+        }
+    }
+
+    &.panel--right {
+        min-width: 320px;
+        right: 0;
+        left: auto;
+        bottom: 0;
+        top: 0;
+        height: 100%;
+
+        .panel-trigger-btn::before {
+            content: '\f105'; 
+        }
+
+        .panel-trigger:not(:checked) ~ & {
+            right: -290px;
+
+            &.panel--with-close-btn {
+                right: -100%;
+            }
+
+            .panel-trigger-btn::before {
+                content: '\f104';  
+            }
+        }
+    }
+
+    &.panel--top {
+        top: 0;
+        bottom: auto;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 260px;
+
+        .panel-trigger-btn::before {
+            content: '\f106'; 
+        }
+
+        .panel-trigger:not(:checked) ~ & {
+            top: -220px;
+
+            .panel-trigger-btn::before {
+                content: '\f107';  
+            }
+        }
+    }
+
+    &.panel--bottom {
+        bottom: 0;
+        top: auto;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 260px;
+
+        .panel-trigger-btn::before {
+            content: '\f107'; 
+        }
+
+        .panel-trigger:not(:checked) ~ & {
+            bottom: -220px;
+
+            .panel-trigger-btn::before {
+                content: '\f106';  
+            }
+        }
+    }
+}
+
+.panel__header {
+    margin-bottom: 0;
+
+    &.panel__header--line {
+        font-weight: bold;
+        border-top: 1px solid @gray-light;
+        padding: @reflex-cell-spacing-md 0;
+    }
+}
+
+.panel__header-action {
+    float: right;
+    padding: 0 15px;
+    margin-bottom: 0;
+}
+
+.panel__content {
+    width: ~"calc(100% - 32px)";
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    float: left;
+    padding: @reflex-cell-spacing-md;
+    transition: all 0.2s ease-in;
+}
+
+.panel__content-body {
+    overflow: auto;
+
+    &.panel__content-body--cart {
+        max-height: unset;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+.panel__content-footer {
+    padding-top: @reflex-cell-spacing-md;
+}
+
+.panel-trigger-btn {
+    height: 100%;
+    display: inline-block;
+    background-color: @gray-lightest;
+    float: left;
+    padding: @reflex-cell-spacing-md;
+    cursor: pointer;
+
+    &::before {
+        font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 18px;
+        padding: @reflex-cell-spacing-sm / 2;  
+        color: @text-color;
+    }
+}
+
+.panel-trigger:not(:checked) ~ .panel .panel__content {
+    display: none;
+}
+
+.panel-fit-size {
+    transition: all 0.2s ease-out;
+}
+
+.panel-fit-size.expandable--collapsed {
+    display: block !important;
+    margin-right: 320px;
+}
+
+.panel__close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 10px;
+    margin-top: 5px;
+}

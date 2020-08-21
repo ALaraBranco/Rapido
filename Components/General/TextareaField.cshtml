@@ -1,0 +1,45 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderTextareaField(TextareaField settings)
+{
+    Dictionary<string, string> attributes = new Dictionary<string, string>();    
+    string id = settings.Id;
+    if (!string.IsNullOrEmpty(settings.Label) && string.IsNullOrEmpty(id)) 
+    {
+        id = Guid.NewGuid().ToString("N");
+    }
+    
+    if (!string.IsNullOrEmpty(id)) { attributes.Add("id", id); }
+    if (!string.IsNullOrEmpty(settings.OnClick)) { attributes.Add("onclick", settings.OnClick); }
+    if (!string.IsNullOrEmpty(settings.OnKeyUp)) { attributes.Add("onkeyup", settings.OnKeyUp); }
+    if (!string.IsNullOrEmpty(settings.OnInput)) { attributes.Add("oninput", settings.OnInput); }
+    if (!string.IsNullOrEmpty(settings.OnFocus)) { attributes.Add("onfocus", settings.OnFocus); }
+    if (!string.IsNullOrEmpty(settings.OnChange)) { attributes.Add("onchange", settings.OnChange); }
+    if (!string.IsNullOrEmpty(settings.Placeholder)) { attributes.Add("placeholder", settings.Placeholder); }
+    if (settings.Disabled) { attributes.Add("disabled", "true"); }
+    if (settings.Required) { attributes.Add("required", "true"); }
+    if (settings.ReadOnly) { attributes.Add("readonly", "true"); }
+    if (settings.MaxLength != 0) { attributes.Add("maxlength", settings.MaxLength.ToString()); }
+    if (settings.Rows != 0) { attributes.Add("rows", settings.Rows.ToString()); }
+    attributes.Add("name", settings.Name);
+
+    <div class="form__field-group dw-mod">
+        @if (!string.IsNullOrEmpty(settings.Label))
+        {
+            <label for="@id">@settings.Label</label>
+        }
+        @if (!string.IsNullOrEmpty(settings.HelpText))
+        {
+            <small class="form__help-text">@settings.HelpText</small>
+        }
+
+        <textarea class="u-full-width @settings.CssClass dw-mod" @ComponentMethods.AddAttributes(attributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>@settings.Value</textarea>
+
+        @Render(new NotificationMessage { Message = settings.ErrorMessage })
+    </div>
+}

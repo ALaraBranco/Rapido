@@ -1,0 +1,351 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@if (Pageview.AreaSettings.GetItem("ProductList").GetBoolean("EnableDetailsView"))
+{
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+
+    Block detailsViewButton = new Block
+    {
+        Id = "ProductDetailsItemContainer",
+        Name = "list",
+        SortId = 30
+    };
+    productList.Add("Views", detailsViewButton);
+
+    Block detailsViewScripts = new Block
+    {
+        Id = "DetailsViewScripts",
+        SortId = 30,
+        Template = DetailsView(),
+        BlocksList = new List<Block>
+        {
+            new Block
+            {
+                Id = "ProductDetailsItem",
+                SortId = 10,
+                Template = RenderProductDetailsItem(),
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block> {
+                    new Block
+                    {
+                        Id = "ProductDetailsItemHiddenProperties",
+                        SortId = 10,
+                        Template = RenderProductDetailsItemHiddenProperties()
+                    },
+                    new Block
+                    {
+                        Id = "ProductDetailsItemLeft",
+                        SortId = 10,
+                        SkipRenderBlocksList = true,
+                        Template = RenderProductDetailsItemLeft(),
+                        BlocksList = new List<Block> {
+                            new Block
+                            {
+                                Id = "ProductDetailsItemImage",
+                                SortId = 10,
+                                Template = RenderProductDetailsItemImage()
+                            },
+                            new Block
+                            {
+                                Id = "ProductDetailsItemInfoContainer",
+                                SortId = 20,
+                                SkipRenderBlocksList = true,
+                                Template = RenderProductDetailsItemInfoContainer(),
+                                BlocksList = new List<Block> {
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemTitle",
+                                        SortId = 20,
+                                        Template = RenderProductDetailsItemTitle()
+                                    },
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemNumber",
+                                        SortId = 30,
+                                        Template = RenderProductDetailsItemNumber()
+                                    },
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemStaticVariants",
+                                        SortId = 40,
+                                        Template = RenderProductDetailsItemStaticVariants()
+                                    },
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemStickers",
+                                        SortId = 50,
+                                        Template = RenderProductDetailsItemStickers()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    new Block
+                    {
+                        Id = "ProductDetailsItemRight",
+                        SortId = 20,
+                        SkipRenderBlocksList = true,
+                        Template = RenderProductDetailsItemRight(),
+                        BlocksList = new List<Block> {
+                            new Block {
+                                Id = "ProductDetailsItemRightTop",
+                                SortId = 10,
+                                SkipRenderBlocksList = true,
+                                Template = RenderProductDetailsItemRightTop(),
+                                BlocksList = new List<Block> {
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemPrice",
+                                        SortId = 10,
+                                        Template = RenderProductDetailsItemPrice()
+                                    },
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemFavorites",
+                                        SortId = 20,
+                                        Template = RenderProductDetailsItemFavorites()
+                                    }
+                                }
+                            },
+                            new Block {
+                                Id = "ProductDetailsItemRightBottom",
+                                SortId = 20,
+                                SkipRenderBlocksList = true,
+                                Template = RenderProductDetailsItemRightBottom(),
+                                BlocksList = new List<Block> {
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemAddToCart",
+                                        SortId = 30,
+                                        Template = RenderProductDetailsItemAddToCart()
+                                    },
+                                    new Block
+                                    {
+                                        Id = "ProductDetailsItemDownloadButton",
+                                        SortId = 40,
+                                        Template = RenderProductDetailsItemDownloadButton()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        }
+    };
+    productList.Add("BottomSnippets", detailsViewScripts);
+}
+
+@helper DetailsView()
+{
+    <script id="ProductDetailsItemContainer" type="text/x-template">
+        {{#.}}
+            <div id="Product{{id}}" data-template="ProductDetailsItem" data-preloader="overlay" class="grid__col-12 u-no-padding-y" style="z-index: {{zIndex}}">
+                {{#Product}}
+                    {{>ProductDetailsItem}}
+                {{/Product}}
+            </div>
+        {{/.}}
+    </script>
+}
+
+@helper RenderProductDetailsItem() { 
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItem");
+
+    <script id="ProductDetailsItem" type="text/x-template">
+        {{#.}}
+            <div class="product-list__details-item grid__col-12 dw-mod">
+                @RenderBlockList(subBlocks)
+            </div>
+        {{/.}}
+    </script>
+}
+
+@helper RenderProductDetailsItemHiddenProperties() { 
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Pageview.AreaSettings.GetItem("Settings").GetString("GoogleTagManagerID"));
+
+    if (useGoogleTagManager)
+    {
+        <text>{{{googleEnchantImpression 'Product catalogue' currency googleImpression}}}</text>
+    }
+    <input type="hidden" name="ProductLoopCounter{{id}}" value="{{id}}" />
+    <input type="hidden" name="ProductID{{id}}" value="{{productId}}" />    
+}
+
+@helper RenderProductDetailsItemLeft() { 
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItemLeft");
+
+    <div class="product-list__details-item__left grid__cell dw-mod">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderProductDetailsItemInfoContainer(){
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItemInfoContainer");
+
+    <div class="u-margin-left u-margin-right">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderProductDetailsItemImage() { 
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showImage = detailsViewSettings.GetBoolean("ShowImage");
+
+    if (showImage)
+    {
+        <div class="lightbox">
+            <a href="{{link}}" onclick="Scroll.SavePosition(event); {{googleImpressionClick}}" title="{{name}}">
+                <img class="lightbox__image {{noImage}}" src="/Admin/Public/GetImage.ashx?width=220&amp;height=220&amp;crop=5&amp;Compression=75&amp;image={{image}}" alt="{{name}}" />
+                <div class="u-margin-right {{noImage}}">
+                    <img class="b-lazy" src="/Files/Images/placeholder.gif"
+                            data-src="/Admin/Public/GetImage.ashx?width=75&amp;height=55&amp;crop=5&FillCanvas=true&amp;Compression=75&amp;image={{image}}"
+                            alt="{{name}}" />
+                </div>
+            </a>
+        </div>
+    }    
+}
+
+@helper RenderProductDetailsItemTitle() { 
+    <a href="{{link}}" onclick="Scroll.SavePosition(event); {{googleImpressionClick}}" title="{{name}}">
+        <h6 class="u-no-margin">{{name}}</h6>
+    </a>
+}
+
+@helper RenderProductDetailsItemNumber() { 
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showNumber = detailsViewSettings.GetBoolean("ShowProductNumber");
+
+    if (showNumber)
+    {
+        <div class="item-number item-number--compressed dw-mod">
+            <div class="item-number dw-mod">{{number}}</div>
+        </div>
+    }
+}
+
+@helper RenderProductDetailsItemStock() { 
+    var ecommerceSettings = Pageview.AreaSettings.GetItem("Ecommerce");
+    bool onlyPreview = ecommerceSettings.GetBoolean("OnlyPreviewForAnonymous") && Pageview.User == null;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showStock = detailsViewSettings.GetBoolean("ShowStockAndShipping");
+
+    if (!onlyPreview && showStock)
+    {
+        <div class="item-number item-number--compressed dw-mod">
+            <span>
+                <span class="stock-icon {{stockState}} u-no-margin dw-mod" title="{{stockText}}"></span>
+                <span class="u-margin-right--lg"> {{stockText}}</span>
+                {{deliveryText}}
+            </span>
+        </div>
+    }
+}
+
+@helper RenderProductDetailsItemStaticVariants() { 
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showStaticVariants = detailsViewSettings.GetBoolean("ShowStaticVariants");
+
+    if (showStaticVariants)
+    {
+        <span>
+            {{#Variants}}
+                {{>StaticVariantsTemplate}}
+            {{/Variants}}
+        </span>
+        <text>
+            {{#ifCond variantGroupsCount '>' 1}}
+                <div class="static-variant">
+                    @Translate("More options available")
+                </div>
+            {{/ifCond}}
+        </text>
+    }
+}
+
+@helper RenderProductDetailsItemStickers() { 
+    <div class="grid__cell-footer stickers-container stickers-container--row u-margin-top dw-mod">
+        {{#StickersContainers}}
+            {{#Stickers}}
+                {{>MiniSticker}}
+            {{/Stickers}}
+        {{/StickersContainers}}
+    </div>    
+}
+
+@helper RenderProductDetailsItemRight() {
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItemRight");
+
+    <div class="product-list__details-item__right grid__cell dw-mod">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderProductDetailsItemRightTop() { 
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItemRightTop");
+
+    <div class="u-margin-bottom u-ta-right u-flex">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderProductDetailsItemRightBottom() {
+    BlocksPage productList = BlocksPage.GetBlockPage("ProductList");
+    List<Block> subBlocks = productList.GetBlockListById("ProductDetailsItemRightBottom");
+
+    <div class="u-flex">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderProductDetailsItemPrice() {
+    <div class="product-list__details-price">
+        @RenderPriceInfo("DetailsView")
+    </div>
+}
+
+@helper RenderProductDetailsItemFavorites() { 
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showFavoriteButton = !detailsViewSettings.GetBoolean("HideFavoriteButton");
+
+    if (showFavoriteButton && Pageview.User != null)
+    {
+        <div class="favorites u-margin-left product-list__details-favorites {{hasVariants}} dw-mod" {{hasVariants}}>
+            {{#Favorite}}
+                {{>FavoriteTemplate}}
+            {{/Favorite}}
+        </div>
+    }   
+}
+
+@helper RenderProductDetailsItemAddToCart() {
+    @RenderBuyActions("DetailsView")
+}
+
+@helper RenderProductDetailsItemDownloadButton() {
+    var detailsViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("DetailsView");
+    bool showAddToDownloadButton = detailsViewSettings.GetBoolean("ShowAddToDownloadButton");
+
+    if (showAddToDownloadButton && Pageview.User != null)
+    {
+        <button type="button" class="btn btn--primary u-no-margin u-margin-left btn--condensed dw-mod js-add-to-downloads" title="@Translate("Add")" data-product-id="{{productId}}">
+            @Render(new Icon { Prefix = "fas", Name = "fa-plus", CssClass = "js-button-icon" })
+        </button>
+    }
+}
+

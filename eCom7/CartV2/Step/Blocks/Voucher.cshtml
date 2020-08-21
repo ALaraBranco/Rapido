@@ -1,0 +1,111 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@{ 
+    BlocksPage voucherCheckoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+    string voucherCardHeightClass = Pageview.Device.ToString() != "Tablet" ? "u-full-height" : "";
+
+    if (!Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideVoucher"))
+    {
+        Block voucherBlock = new Block()
+        {
+            Id = "Voucher",
+            SortId = 30,
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "auto"
+            },
+            BlocksList = new List<Block> {
+                new Block {
+                    Id = "VoucherHeader",
+                    SortId = 10,
+                    Component = new Heading { Level = 3, Title = Translate("Voucher"), Icon = new Icon { Prefix = "fas", Name = "fa-gift" } },
+                    Design = new Design {
+                        RenderType = RenderType.CardHeader,
+                        CssClass = "u-color-light--bg"
+                    }
+                },
+                new Block {
+                    Id = "VoucherBody",
+                    SortId = 20,
+                    Template = RenderVoucher(),
+                    Design = new Design {
+                        RenderType = RenderType.CardBody,
+                        CssClass = "u-color-light--bg " + voucherCardHeightClass
+                    }
+                }
+            }
+        };
+        voucherCheckoutPage.Add("OrderContainerRow", voucherBlock);
+    }
+}
+
+@helper RenderVoucher() {
+    <div class="form__field-combi">
+        @Render(new TextField { Placeholder = Translate("Enter voucher code"), Name = "EcomOrderVoucherCode", Id = "EcomOrderVoucherCode", OnKeyUp = "checkEmpty();", Value = GetString("Ecom:Order.Customer.VoucherCode"), CssClass = "u-full-width" })
+        @Render(new Button { ButtonType = ButtonType.Submit, Id = "EcomOrderVoucherApply", Title = Translate("Apply"), CssClass = "btn--condensed u-no-margin" })
+    </div>
+
+    var errors = new List<string>();
+    string voucherCode = GetString("Ecom:Order.Customer.VoucherCode");
+
+    if (!string.IsNullOrWhiteSpace(voucherCode))
+    {
+        Order order = new OrderService().GetOrder(GetString("Ecom:Order.ID"));
+
+        IEnumerable<string> codes = new List<string>();
+        bool vouchersAppliedAsDiscounts = false;
+
+        if (order.VoucherUseType.HasFlag(VoucherUseCategoryType.Discount))
+        {
+            codes = voucherCode.Split(new string[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries);
+            vouchersAppliedAsDiscounts = true;
+        }
+        else
+        {
+            codes = new string[] { voucherCode.Trim() };
+        }
+
+        if (vouchersAppliedAsDiscounts && codes.Count() == 1)
+        {
+            @Render(new NotificationMessage { MessageType = NotificationMessageType.Success, Message = "<span class=\"u-bold\">" + voucherCode + "</span> " + Translate("applied to order") })
+        }
+        else
+        {
+            foreach (string code in codes)
+            {
+                Voucher vouch = Voucher.GetVoucherByCode(code);
+                if (vouch == null)
+                {
+                    errors.Add(Translate("Voucher") + " <span class=u-bold>" + code + "</span> " + Translate("not found"));
+                    continue;
+                }
+                if (vouch.DateUsed.HasValue)
+                {
+                    errors.Add(Translate("Voucher") + " <span class=u-bold>" + code + "</span> " + Translate("already used"));
+                    continue;
+                }
+                VoucherList voucherList = VoucherList.GetListById(vouch.ListId);
+                if (!voucherList.ListActive)
+                {
+                    errors.Add(Translate("Voucher") + " <span class=u-bold>" + code + "</span> " + Translate("is not active"));
+                    continue;
+                }
+                @Render(new NotificationMessage { MessageType = NotificationMessageType.Success, Message = Translate("Voucher") + " <span class=\"u-bold\">" + code + "</span> " + Translate("applied to order") })
+            }
+        }
+
+        foreach (string error in errors)
+        {
+            @Render(new NotificationMessage { MessageType = NotificationMessageType.Error, Message = error })
+
+    }
+}
+}

@@ -1,0 +1,16 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderSelectFieldOption(SelectFieldOption settings)
+{
+    Dictionary<string, string> attributes = new Dictionary<string, string>();
+    if (settings.Checked) { attributes.Add("selected", "true"); }
+    if (settings.Disabled) { attributes.Add("disabled", "true"); }
+    if (!string.IsNullOrEmpty(settings.Value)) { attributes.Add("value", settings.Value); }
+
+    <option @ComponentMethods.AddAttributes(attributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>@settings.Label</option>
+}

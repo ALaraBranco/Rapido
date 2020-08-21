@@ -1,0 +1,20 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleImage(ArticleImage settings)
+{
+    if (settings.Image != null)
+    {
+        if (settings.Image.Path != null)
+        {
+            <div class="u-margin-bottom--lg">
+                @Render(settings.Image)
+            </div>
+        }
+    }
+}

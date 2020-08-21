@@ -1,0 +1,69 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb
+@using Dynamicweb.Core
+@using Dynamicweb.Frontend.Devices
+@using System.Web
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage recurringOrderDetailsPage = BlocksPage.GetBlockPage("RecurringOrderDetails");
+}
+
+@{
+    string currentView = GetString("Ecom:CustomerCenter.RecurringOrderDetails.CurrentView");
+    bool isPrevious = currentView == "previous";
+    string pagingShowTag = isPrevious ? GetString("Ecom:CustomerCenter.PreviousRecurringOrders.Paging.Show") : GetString("Ecom:CustomerCenter.FutureRecurringOrders.Paging.Show");
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10
+    };
+
+    recurringOrderDetailsPage.Add(pageContainer);
+
+    if ((GetBoolean("Ecom:CustomerCenter.PreviousRecurringOrders.EmptyList") && isPrevious) || (GetBoolean("Ecom:CustomerCenter.FutureRecurringOrders.EmptyList") && !isPrevious))
+    {
+        pageContainer.Add(new Block
+        {
+            Id = "EmptyListMessage",
+            SortId = 40,
+            Design = new Design {
+                CssClass = "u-margin-top--lg"
+            },
+            Component = new Text { Content = Translate("No deliveries found") }
+        });
+
+    } else {
+
+        if (!string.IsNullOrWhiteSpace(pagingShowTag))
+        {
+            pageContainer.Add(new Block
+            {
+                Id = "Pagination",
+                SortId = 60,
+                Component = new Pagination
+                {
+                    PagingTag = "Ecom:CustomerCenter",
+                    ShowNextAndPrevControls = true
+                }
+            });
+        }
+    }
+}
+
+@Include("Blocks/RecurringOrderDetails/Header.cshtml")
+@Include("Blocks/RecurringOrderDetails/Details.cshtml")
+@Include("Blocks/RecurringOrderDetails/RecurringOrders.cshtml")
+@Include("Blocks/RecurringOrderDetails/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(recurringOrderDetailsPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")

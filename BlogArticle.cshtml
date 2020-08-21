@@ -1,0 +1,117 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("Master.cshtml")
+
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage articlePage = BlocksPage.GetBlockPage("BlogArticle");
+}
+
+@{
+    string image = !String.IsNullOrEmpty(Model.Item.GetString("Image")) ? Model.Item.GetFile("Image").PathUrlEncoded : "";
+
+    ArticleHeader topBanner = new ArticleHeader
+    {
+        Layout = ArticleHeaderLayout.Banner,
+        Image = new Image { Path = image },
+        Heading = Model.Item.GetString("Title"),
+        Subheading = Model.Item.GetString("Summary"),
+        TextColor = "#fff",
+        Category = Model.Item.GetString("Author"),
+        Date = Model.Item.GetString("Date"),
+        ButtonLayout = ButtonLayout.Primary,
+        TextLayout = ArticleHeaderTextLayout.Full
+    };
+
+    ButtonLayout buttonDesign;
+    Enum.TryParse<ButtonLayout>(Model.Item.GetString("ButtonDesign"), out buttonDesign);
+    if (buttonDesign == ButtonLayout.None)
+    {
+        buttonDesign = ButtonLayout.Primary;
+    }
+
+    Block articleContainer = new Block
+    {
+        Id = "ArticleContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleHeader",
+                SortId = 20,
+                Component = topBanner,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12",
+                    HidePadding = true,
+                    CssClass = "article-head"
+                }
+            },
+            new Block {
+                Id = "ArticleBody",
+                SortId = 30,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "8"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleBodyRow",
+                        SortId = 10,
+                        Design = new Design {
+                            RenderType = RenderType.Row
+                        },
+                        BlocksList = new List<Block> {
+                            new Block {
+                                Id = "ArticleText",
+                                SortId = 10,
+                                Component = new ArticleText { Text = Model.Item.GetString("Text") },
+                                Design = new Design {
+                                    RenderType = RenderType.Column,
+                                    Size = "12",
+                                    CssClass = "u-padding--lg"
+                                }
+                            },
+                            new Block {
+                                Id = "ArticleLink",
+                                SortId = 20,
+                                Component = new ArticleLink { Href = Model.Item.GetString("Link"), Title = Model.Item.GetString("LinkText"), ButtonLayout = buttonDesign },
+                                Design = new Design {
+                                    RenderType = RenderType.Column,
+                                    Size = "12",
+                                    CssClass = "u-padding--lg u-ta-right"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    articlePage.Add(articleContainer);
+
+    if (Model.PropertyItem.GetList("ShowBreadcrumb").SelectedValue == "True")
+    {
+        Block breadcrumb = new Block
+        {
+            Id = "ArticleBreadcrumb",
+            SortId = 10,
+            Component = new BreadcrumbNavigation { },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        articlePage.Add("ArticleContainer", breadcrumb);
+    }
+}
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articlePage.BlocksRoot.BlocksList)

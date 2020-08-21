@@ -1,0 +1,38 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@helper RenderTableRow(TableRow settings)
+{
+    Dictionary<string, string> attributes = new Dictionary<string, string>();
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    
+    var enumToClasses = new Dictionary<TableRowDesign, string> 
+    {
+        { TableRowDesign.NoBorder, "table__row--no-border" },
+        { TableRowDesign.Border, "table__row--border" },
+        { TableRowDesign.TopBorder, "table__row--top-line" },
+        { TableRowDesign.BottomBorder, "table__row--bottom-line" },
+        { TableRowDesign.Solid, "table__row--solid" }
+    };
+
+    string tableRowDesignClass = "";
+    if (settings.Design != TableRowDesign.None) 
+    {
+        tableRowDesignClass = enumToClasses[settings.Design];
+    }
+
+    if (!string.IsNullOrEmpty(settings.CssClass) || settings.Design != TableRowDesign.None) { attributes.Add("class", "table__row " + tableRowDesignClass + " " + settings.CssClass + " dw-mod"); }
+
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary(d => d.Key, d => d.Last().Value);
+
+    <tr @ComponentMethods.AddAttributes(resultAttributes)>
+        @foreach (var cell in settings.GetCells())
+        {
+            if (settings.IsHeaderRow)
+            {
+                cell.IsHeader = true;
+            }
+            @Render(cell)
+        }
+    </tr>
+}

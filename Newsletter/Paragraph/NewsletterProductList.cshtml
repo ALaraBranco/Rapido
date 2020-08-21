@@ -1,0 +1,79 @@
+﻿@inherits RazorTemplateBase<RazorTemplateModel<Template>>
+@using Dynamicweb.Rendering;
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Security;
+
+@Include("../../EmailGeneralHelpers.cshtml")
+@Include("../../EmailHelpers.cshtml")
+
+@RenderBodySection()
+
+@* CONTENT HELPERS *@
+
+@helper RenderBodySection()
+{
+    string heading = GetString("Item.Heading");
+    string backgroundColor = GetString("Item.BackgroundColor");
+    string fontColor = GetString("Item.FontColor");
+    bool showViewButton = GetBoolean("Item.ShowViewButton");
+    string viewButtonText = GetString("Item.ViewButtonText");
+    bool separationLines = GetBoolean("Item.SeparationLines");
+    string layout = GetString("Item.Layout");
+    ProductDesign productDesign = new ProductDesign {
+        separationLines = separationLines,
+        backgroundColor = backgroundColor,
+        fontColor = fontColor,
+        showViewButton = showViewButton,
+        viewButtonText = viewButtonText
+    };
+
+    Column centerColumn = new Column();
+
+    centerColumn.align = "center";
+    centerColumn.header = heading;
+    centerColumn.textColor = fontColor;
+    @CreateRow(centerColumn, new RowSettings { backgroundColor = backgroundColor, padding = "15" });
+
+    bool isOdd = true;
+    List<Column> row = new List<Column>();
+    productDesign.imagePosition = layout;
+
+    foreach (var product in GetLoop("Item.Products"))
+    {
+        if (layout == "oneColumn") 
+        {
+            @CreateRow(getProductColumn(product, productDesign), new RowSettings { backgroundColor = backgroundColor })
+            if (separationLines) {
+                @CreateRowDivider()
+            }
+        }
+        else if (layout == "twoColumns") 
+        {
+            row.Add(getProductColumn(product, productDesign));
+            if (row.Count == 2) 
+            {
+                @CreateRow(row[0], row[1], new RowSettings { backgroundColor = backgroundColor });
+                row.Clear();
+                if (separationLines) {
+                    @CreateRowDivider()
+                }
+            }
+        } else {
+            if (layout == "alternate") {
+                productDesign.imagePosition = isOdd ? "left" : "right";
+                isOdd = !isOdd;
+            }
+            @RenderProduct(product, productDesign);
+        }
+    }
+
+    if (layout == "twoColumns" && row.Count == 1) {
+        @CreateRow(row[0], new Column(), new RowSettings { backgroundColor = backgroundColor });
+        if (separationLines) {
+            @CreateRowDivider()
+        }
+    }
+    
+    @GetValue("ParagraphModule")
+}

@@ -1,0 +1,198 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using Dna.ThirdPartyShipping
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Linq
+
+@functions {
+    private static Block _rizzoThirdPartyShipping;
+}
+
+@{
+    BlocksPage checkoutPageThirdPartyShipping = BlocksPage.GetBlockPage("CheckoutPage");
+    
+    var thirdPartyShippingMethodSettings = Pageview.AreaSettings.GetItem("Rizzo").GetList("Shipping_Method_For_Third_Party_Shipping");
+    var shippingProviderForThirdPartyShipping = thirdPartyShippingMethodSettings != null ? thirdPartyShippingMethodSettings.SelectedValue : string.Empty;
+
+    if (!Pageview.AreaSettings.GetItem("Ecommerce").GetItem("Checkout").GetBoolean("HideShipping") && GetLoop("Shippingmethods").Count > 0)
+    {
+        _rizzoThirdPartyShipping = new Block()
+        {
+            Id = "RizzoThirdPartyShipping-" + shippingProviderForThirdPartyShipping,
+            SortId = 20,
+            Template = RizzoThirdPartyShipping(),
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12",
+                CssClass = "thirdPartyShippingContainer u-color-light--bg u-padding-left--lg u-padding-right--lg u-full-height " + shippingProviderForThirdPartyShipping + (Pageview.User != null ? " loggedIn" : string.Empty),
+            }
+        };
+        // NOTE: We cannot merge these conditions with the 'If Statement' above because the Block Id is needed for JS validations  
+        if (checkoutPageType=="onestep" || GetString("CartV2.CurrentStepButtonName") == "CartV2.GotoStep2" || string.IsNullOrEmpty(GetString("CartV2.CurrentStepButtonName")))
+        {
+            checkoutPageThirdPartyShipping.Add("Shipping", _rizzoThirdPartyShipping);
+        }
+    }
+}
+@helper RizzoThirdPartyShipping()
+{
+    var userAllowedMethodService = new UserAllowedMethodService();
+    var enableAddNewAccount = Pageview.AreaSettings.GetItem(Constants.Area.Item.Rizzo).GetBoolean("EnableAddNewAccount");
+    var userProvidersAndMethods = userAllowedMethodService.GetUserAllowedMethods(); // Get list of user's own Providers
+    
+    if (Method.HasThirdPartyShippingMethods() && (enableAddNewAccount || userProvidersAndMethods.Any()))
+    {
+        var allowedMethodsPerShippingProviderService = new AllowedMethodService();
+        var allowedMethodsPerShippingProvider = allowedMethodsPerShippingProviderService.GetAllowedMethodsPerShippingProvider(); // Get list of allowed providers
+        if (userProvidersAndMethods.Any())
+        {
+            // Set list of user allowed carriers
+            var providersField = new SelectField
+            {
+                Id = "OrderShippingAgent",
+                Label = Translate("Your Providers List"),
+                Required = true,
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"name", "DummyOrderShippingAgent"},
+                    {"required", ""}
+                }
+            };
+            providersField.Options.Add(new SelectFieldOption
+            {
+                Label = Translate("Pick one of your Shipping Providers"), Value = "",
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"value", ""}
+                }
+            });
+            foreach (var userCarrierAndMethod in userProvidersAndMethods)
+            {
+                var methodLabel = userCarrierAndMethod.MethodLabel.IsNotNullOrEmpty() ? string.Format(": {0}", userCarrierAndMethod.MethodLabel) : string.Empty;
+                var label = string.Format("{0}{1} ({2})", userCarrierAndMethod.ProviderName, methodLabel, userCarrierAndMethod.AccountNumber);
+                providersField.Options.Add(new SelectFieldOption
+                {
+                    Label = label,
+                    Value = string.Format("{0}:{1}", userCarrierAndMethod.ProviderId, userCarrierAndMethod.MethodId),
+                    Checked = string.Format("{0}:{1}", userCarrierAndMethod.ProviderId, userCarrierAndMethod.MethodId) == GetString("OrderShippingAgent"),
+                    ExtraAttributes = new Dictionary<string, string>
+                    {
+                        {"data-account-provider", userCarrierAndMethod.ProviderId},
+                        {"data-account-method", userCarrierAndMethod.MethodId},
+                        {"data-account-number", userCarrierAndMethod.AccountNumber}
+                    }
+                });
+            }
+            if (enableAddNewAccount)
+            {
+                providersField.Options.Add(new SelectFieldOption
+                {
+                    Label = Translate("Add New Account"),
+                    Value = "ownCarrierSelectedAddNew",
+                    Checked = "ownCarrierSelectedAddNew" == GetString("OrderShippingAgent"),
+                    ExtraAttributes = new Dictionary<string, string>
+                    {
+                        {"data-account-provider", ""},
+                        {"required", "true"}
+                    }
+                });
+            }
+            _rizzoThirdPartyShipping.BlocksList.Add(new Block {Id = "providersField", SortId = 1, Component = providersField});
+        }
+        // Set list of allowed carriers
+        var listOfAllowedCarriers = allowedMethodsPerShippingProvider.GroupBy(c => c.ProviderId).Select(g => g.First()).OrderBy(c => c.ProviderName).ToList();
+        if (listOfAllowedCarriers.Any())
+        {
+            var allowedCarriers = new SelectField
+            {
+                Id = "newOrderShippingAgent",
+                Label = Translate("Carrier"),
+                Required = true,
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"name", "OrderShippingAgent"},
+                    {"required", ""}
+                }
+            };
+            allowedCarriers.Options.Add(new SelectFieldOption
+            {
+                Label = Translate("Pick Carrier"), Value = "",
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"value", ""}
+                }
+            });
+            foreach (var carrier in listOfAllowedCarriers)
+            {
+                allowedCarriers.Options.Add(new SelectFieldOption
+                {
+                    Label = carrier.ProviderName,
+                    Value = carrier.ProviderId,
+                    Checked = carrier.ProviderId == GetString("newOrderShippingAgent"),
+                });
+            }
+            _rizzoThirdPartyShipping.BlocksList.Add(new Block {Id = "allowedCarriers", SortId = 1, Component = allowedCarriers});
+        }
+
+        if (allowedMethodsPerShippingProvider.Any())
+        {
+            // Set list of allowed methods
+            var allowedMethodsList = new SelectField
+            {
+                Id = "OrderShippingAgentService",
+                Label = Translate("Method"),
+                Required = true,
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"name", "OrderShippingAgentService"},
+                    {"required", ""}
+                }
+            };
+            allowedMethodsList.Options.Add(new SelectFieldOption
+            {
+                Label = Translate("Pick Method"), Value = "",
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"value", ""}
+                }
+            });
+            foreach (var method in allowedMethodsPerShippingProvider)
+            {
+                allowedMethodsList.Options.Add(new SelectFieldOption
+                {
+                    Label = method.MethodLabel,
+                    Value = method.MethodId,
+                    Checked = method.MethodId == GetString("OrderShippingAgentService"),
+                    Disabled = true,
+                    ExtraAttributes = new Dictionary<string, string>
+                    {
+                        {"data-carrier-id", method.ProviderId},
+                        {"required", ""},
+                        {"id", string.Format("{0}-{1}", method.MethodId, method.ProviderId)}
+                    }
+                });
+            }
+            _rizzoThirdPartyShipping.BlocksList.Add(new Block {Id = "allowedMethodsList", SortId = 1, Component = allowedMethodsList});
+        }
+        if (listOfAllowedCarriers.Any())
+        {
+            // Set shipping account number
+            var newShippingNumber = new TextField
+            {
+                Id = "OrderShippingAccountNumber",
+                Label = Translate("Shipping Account Number"),
+                Value = GetString("OrderShippingAccountNumber.Clean"),
+                CssClass = "ownCarrierNewInput",
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"name", "OrderShippingAccountNumber"},
+                    {"required", ""}
+                }
+            };
+            _rizzoThirdPartyShipping.BlocksList.Add(new Block {Id = "newShippingNumber", SortId = 1, Component = newShippingNumber});
+        }
+    }
+}

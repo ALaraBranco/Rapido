@@ -1,0 +1,83 @@
+﻿@using Dynamicweb.Core
+@helper RenderPriceInfo(string view)
+{
+    bool onlyPreview = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Pageview.User == null;
+    
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    bool showPrice = !Pageview.AreaSettings.GetItem("ProductList").GetBoolean("HidePrice");
+    bool showCartButton = view == "ProductPage" ? !Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HideAddToCartButton") : Pageview.AreaSettings.GetItem("ProductList").GetItem(view).GetBoolean("ShowAddToCartButton");
+    bool showVATPrice = Pageview.AreaSettings.GetItem("ProductList").GetBoolean("ShowBothPricesWithWithoutVAT");
+    bool isPricesWithVATEnabled = Converter.ToBoolean(Pageview.Area.EcomPricesWithVat);
+
+    bool isPriceMicro = view == "DetailsView";
+    string priceClass = isPriceMicro ? "price--micro" : "";
+    string beforePriceClass = isPriceMicro ? "before-price--micro" : "";
+    string pageType = (view == "ProductPage") ? "page" : "list";
+
+    if (showPrice && !onlyPreview)
+    {
+        if (pointShopOnly)
+        {
+            <text>
+                {{#if havePointPrice}}
+                    <div class="price price--product-@pageType @priceClass dw-mod">{{points}} @Translate("points")</div>
+                    @if (showCartButton)
+                    {
+                        <text>
+                            {{#unless canBePurchasedWithPoints}}
+                                <small class="help-text u-no-margin">@Translate("Not enough points to buy this")</small>
+                            {{/unless}}
+                        </text>
+                    }
+                {{else}}
+                    @Translate("Not available")
+                {{/if}}
+            </text>
+        
+        }
+        else
+        {
+            <text>
+                {{#if isLiveProductInfoActive}}
+                {{#if isLiveProductInfoRequested}}
+                @RenderProductPrices(view)
+                {{/if}}
+                {{else}}
+                @RenderProductPrices(view)
+                {{/if}}
+            </text>
+        }
+    }
+}
+@helper RenderProductPrices(string view)
+{
+    bool showVATPrice = Pageview.AreaSettings.GetItem("ProductList").GetBoolean("ShowBothPricesWithWithoutVAT");
+    bool isPricesWithVATEnabled = Converter.ToBoolean(Pageview.Area.EcomPricesWithVat);
+
+    bool isPriceMicro = view == "DetailsView";
+    string priceClass = isPriceMicro ? "price--micro" : "";
+    string beforePriceClass = isPriceMicro ? "before-price--micro" : "";
+    string pageType = (view == "ProductPage") ? "page" : "list";
+
+    <div class="price price--product-@pageType @priceClass dw-mod">{{price}}</div>
+    <div class="before-price {{onSale}} @beforePriceClass dw-mod">{{discount}}</div>
+    if (showVATPrice)
+    {
+        <div class="vat-price vat-price--product-@pageType @priceClass u-margin-top dw-mod">
+            @if (isPricesWithVATEnabled)
+            {
+                <span>@Translate("excl. VAT")</span><span> ({{priceWithoutVAT}})</span>
+            }
+            else
+            {
+                <span>@Translate("incl. VAT")</span><span> ({{priceWithVAT}})</span>
+            }
+        </div>
+    }
+    <text>
+        {{#if priceRRP}}
+        <div><small>@Translate("RRP") {{priceRRP}}</small></div>
+        {{/if}}
+    </text>
+}

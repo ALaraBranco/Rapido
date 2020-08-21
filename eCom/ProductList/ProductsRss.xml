@@ -1,0 +1,9 @@
+﻿<!--@LoopStart(Products)--><item>
+    <title><!--@Ecom:Product.Name--></title>
+    <link><!--@Global:Request.Scheme-->://<!--@Global:Request.Host-->/<!--@Ecom:Product.LinkGroup.Clean.HtmlEncoded()--></link>
+    <description><!--@If(Ecom:Product.ShortDescription<>''--><!--@Ecom:Product.ShortDescription.StripHtml().HtmlEncoded()--><!--@Else--><!--@Ecom:Product.LongDescription.HtmlEncoded()--><!--@EndIf--></description>
+    <g:image_link><!--@Global:Request.Scheme-->://<!--@Global:Request.Host--><!--@Ecom:Product.ImageSmall.Default.Clean--></g:image_link>
+    <g:price><!--@Ecom:Product.Price--></g:price>
+    <g:condition>new</g:condition>
+    <g:id><!--@Ecom:Product.ID--></g:id>
+</item><!--@LoopEnd(Products)-->

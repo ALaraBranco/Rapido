@@ -1,0 +1,127 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@{
+    bool addToCartNotificationOnlyPreview = Model.Area.Item.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Model.CurrentUser.ID == 0;
+    addToCartNotificationOnlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : addToCartNotificationOnlyPreview;
+    string addToCartNotificationType = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("AddToCartNotificationType") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("AddToCartNotificationType").SelectedValue : "";
+    string addToCartNotificationMiniCartLayout = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("Layout") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("Layout").SelectedValue : "dropdown";
+    bool addToCartHideCartIcon = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideCart");
+
+    if (!addToCartNotificationOnlyPreview && !string.IsNullOrEmpty(addToCartNotificationType))
+    {
+        if (addToCartNotificationType == "modal")
+        {
+            Block addToCartNotificationModal = new Block
+            {
+                Id = "AddToCartNotificationModal",
+                Template = RenderAddToCartNotificationModal()
+            };
+
+            Block addToCartNotificationScript = new Block
+            {
+                Id = "AddToCartNotificationScript",
+                Template = RenderAddToCartNotificationModalScript()
+            };
+            BlocksPage.GetBlockPage("Master").Add("MasterTopSnippets", addToCartNotificationModal);
+            BlocksPage.GetBlockPage("Master").Add("MasterBottomSnippets", addToCartNotificationScript);
+        }
+        else if (addToCartNotificationType == "toggle" && addToCartNotificationMiniCartLayout != "none" && !addToCartHideCartIcon && Pageview.Device.ToString() != "Mobile" && Pageview.Device.ToString() != "Tablet")
+        {
+            Block addToCartNotificationScript = new Block
+            {
+                Id = "AddToCartNotificationScript",
+                Template = RenderAddToCartNotificationToggleScript()
+            };
+            BlocksPage.GetBlockPage("Master").Add("MasterBottomSnippets", addToCartNotificationScript);
+        }
+    }
+}
+
+@helper RenderAddToCartNotificationModal()
+{
+    <div id="LastAddedProductModal" data-template="LastAddedProductTemplate"></div>
+}
+
+@helper RenderAddToCartNotificationModalScript()
+{
+    int cartPageId = GetPageIdByNavigationTag("CartPage");
+
+    <script id="LastAddedProductTemplate" type="text/x-template">
+        @{
+
+            Modal lastAddedProduct = new Modal
+            {
+                Id = "LastAddedProduct",
+                Heading = new Heading
+                {
+                    Level = 2,
+                    Title = Translate("Product is added to the cart")
+                },
+                Width = ModalWidth.Md,
+                BodyTemplate = RenderModalContent()
+            };
+
+            lastAddedProduct.AddActions(
+                new Button
+                {
+                    ButtonType = ButtonType.Button,
+                    ButtonLayout = ButtonLayout.Secondary,
+                    Title = Translate("Continue shopping"),
+                    CssClass = "u-pull--left u-no-margin btn--sm",
+                    OnClick = "document.getElementById('LastAddedProductModalTrigger').checked = false"
+                },
+                new Link
+                {
+                    Href = "/Default.aspx?ID=" + cartPageId,
+                    ButtonLayout = ButtonLayout.Secondary,
+                    CssClass = "u-pull--right u-no-margin btn--sm",
+                    Title = Translate("Proceed to checkout")
+                }
+            );
+
+            @Render(lastAddedProduct)
+        }
+    </script>
+    <script>
+        document.addEventListener('addToCart', function (event) {
+            Cart.ShowLastAddedProductModal(event.detail);
+        });
+    </script>
+}
+
+@helper RenderModalContent()
+{
+    <div class="grid">
+        <div class="grid__col-2">
+            @Render(new Image { Path = "{{ productInfo.image }}", Link = "{{ productInfo.link }}", Title = "{{ productInfo.name }}", DisableImageEngine = true })
+        </div>
+        <div class="u-padding grid--align-self-center">
+            <span>{{quantity}}</span> x
+        </div>
+        <div class="grid__col-auto grid--align-self-center">
+            <div>{{productInfo.name}}</div>
+            {{#if productInfo.variantName}}
+            <small class="u-margin-bottom-5px">{{productInfo.variantName}}</small>
+            {{/if}}
+            {{#if productInfo.unitName}}
+            <small class="u-margin-bottom-5px">{{productInfo.unitName}}</small>
+            {{/if}}
+        </div>
+    </div>
+}
+
+@helper RenderAddToCartNotificationToggleScript()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+
+    <script>
+        document.addEventListener('addToCart', function () {
+            Cart.ToggleMiniCart('miniCartTrigger', 'miniCart', 'cartCounter', '@miniCartFeedPageId');
+        });
+    </script>
+}

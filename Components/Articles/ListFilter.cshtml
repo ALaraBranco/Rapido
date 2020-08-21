@@ -1,0 +1,59 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleListFilter(ArticleListFilter settings)
+{
+    string selectedFilter = !String.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get(settings.SystemName)) ? HttpContext.Current.Request.QueryString.Get(settings.SystemName) : Translate("All");
+    var query = HttpUtility.ParseQueryString(HttpContext.Current.Request.QueryString.ToString());
+
+    if (settings.Options != null)
+    {
+        foreach (var option in settings.Options)
+        {
+            selectedFilter = selectedFilter == option.Value ? option.Name : selectedFilter;
+        }
+
+        if (Pageview.Device.ToString() != "Mobile" && Pageview.Device.ToString() != "Tablet")
+        {
+            <div class="u-pull--right u-margin-left">
+                <div class="collection u-no-margin">
+                    <h5>@settings.Label</h5>
+                    <input type="checkbox" id="@(settings.SystemName)Selector" class="dropdown-trigger" />
+                    <div class="dropdown u-w180px dw-mod">
+                        <label class="dropdown__header dropdown__btn dw-mod" for="@(settings.SystemName)Selector">@Translate(selectedFilter)</label>
+                        <div class="dropdown__content dw-mod">
+                            <div class="dropdown__item" onclick="QueryArray.setParameterInCurrentURL('@settings.SystemName', '')">@Translate("All")</div>
+                            @foreach (var option in settings.Options)
+                            {
+                                <div class="dropdown__item" onclick="QueryArray.setParameterInCurrentURL('@settings.SystemName', '@option.Value')">@Translate(option.Name)</div>
+                            }
+                        </div>
+                        <label class="dropdown-trigger-off" for="@(settings.SystemName)Selector"></label>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="u-full-width u-margin-bottom">
+                <h5 class="u-no-margin">@settings.Label</h5>
+                <input type="checkbox" id="@(settings.SystemName)Selector" class="dropdown-trigger" />
+                <div class="dropdown u-full-width w-mod">
+                    <label class="dropdown__header dropdown__btn dw-mod" for="@(settings.SystemName)Selector">@Translate(selectedFilter)</label>
+                    <div class="dropdown__content dw-mod">
+                        <div class="dropdown__item" onclick="QueryArray.setParameterInCurrentURL('@settings.SystemName', '')">@Translate("All")</div>
+                        @foreach (var option in settings.Options)
+                        {
+                            <div class="dropdown__item" onclick="QueryArray.setParameterInCurrentURL('@settings.SystemName', '@option.Value')">@Translate(option.Name)</div>
+                        }
+                    </div>
+                    <label class="dropdown-trigger-off" for="@(settings.SystemName)Selector"></label>
+                </div>
+            </div>
+        }
+    }
+}

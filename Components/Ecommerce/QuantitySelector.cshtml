@@ -1,0 +1,34 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+@* Component *@
+
+@helper RenderQuantitySelector(QuantitySelector settings)
+{
+    var attributes = new Dictionary<string, string>();
+
+    /*base settings*/
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (!string.IsNullOrEmpty(settings.OnClick)) { attributes.Add("onclick", settings.OnClick); }
+    if (!string.IsNullOrEmpty(settings.OnChange)) { attributes.Add("onchange", settings.OnChange); }
+    if (settings.Disabled) { attributes.Add("disabled", "true"); }
+    if (settings.Required) { attributes.Add("required", "true"); }
+    if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+    /*end*/
+
+    if (!string.IsNullOrEmpty(settings.OnKeyUp)) { attributes.Add("onkeyup", settings.OnKeyUp); }
+    if (!string.IsNullOrEmpty(settings.OnInput)) { attributes.Add("oninput", settings.OnInput); }
+    if (!string.IsNullOrEmpty(settings.OnFocus)) { attributes.Add("onfocus", settings.OnFocus); }
+    if (settings.ReadOnly) { attributes.Add("readonly", "true"); }
+    if (settings.Max != null) { attributes.Add("max", settings.Max.ToString()); }
+    if (settings.Min == null) { settings.Min = 1; }
+    attributes.Add("min", settings.Min.ToString());
+    if (settings.Step != 0) { attributes.Add("step", settings.Step.ToString()); }
+    if (settings.Value == null) { settings.Value = 1; }
+    attributes.Add("value", settings.Value.ToString());
+    attributes.Add("type", "number");
+
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary (d => d.Key, d => d.Last().Value);
+
+    <input @ComponentMethods.AddAttributes(resultAttributes) class="@settings.CssClass dw-mod" />
+}

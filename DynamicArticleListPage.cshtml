@@ -1,0 +1,244 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("Master.cshtml")
+
+@using Dynamicweb.Content.Items
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+
+@functions {
+    BlocksPage articleListPage = BlocksPage.GetBlockPage("ArticleListPage");
+}
+
+@{ 
+    int pageId = Model.ID;
+    bool enableArticlesInFocus = Model.Item.GetBoolean("EnableArticlesInFocus");
+    bool enablePopular = Model.Item.GetBoolean("EnablePopularArticles");
+    bool showTitle = Model.Item.GetBoolean("ShowTitle");
+    bool showFilters = Model.Item.GetBoolean("ShowFilters");
+    bool showCategoryFilter = Model.Item.GetBoolean("ShowCategoryFilter");
+    bool showSearch = Model.Item.GetBoolean("ShowSearch");
+    string dynamicListWidth = enablePopular ? "8" : "12";
+    string itemType = Pageview.Item["ItemTypeName"] != null ? Pageview.Item["ItemTypeName"].ToString() : "DynamicArticle";
+
+    Dictionary<string, string> categoriesList = new Dictionary<string, string>();
+    categoriesList.Add(Translate("All"), "");
+
+    foreach (Dynamicweb.Content.Page page in Dynamicweb.Services.Pages.GetPagesByParentID(pageId))
+    {
+        if (Dynamicweb.Services.Pages.GetPagesByParentID(page.ID).Any())
+        {
+            categoriesList.Add(page.GetDisplayName(), page.ID.ToString());
+        }
+    }
+
+    var articleItemTypeFields = ItemManager.Metadata.GetItemType("DynamicArticle").Fields;
+    string filterOneLabel = articleItemTypeFields.Find("FilterOne") != null ? articleItemTypeFields.Find("FilterOne").Name : "";
+    string filterTwoLabel = articleItemTypeFields.Find("FilterTwo") != null ? articleItemTypeFields.Find("FilterTwo").Name : "";
+    string filterThreeLabel = articleItemTypeFields.Find("FilterThree") != null ? articleItemTypeFields.Find("FilterThree").Name : "";
+
+    var filterOneOptions = articleItemTypeFields.Find("FilterOne") != null ? articleItemTypeFields.Find("FilterOne").Options.Values : null;
+    var filterTwoOptions = articleItemTypeFields.Find("FilterTwo") != null ? articleItemTypeFields.Find("FilterTwo").Options.Values : null;
+    var filterThreeOptions = articleItemTypeFields.Find("FilterThree") != null ? articleItemTypeFields.Find("FilterThree").Options.Values : null;
+
+    Block listPageContainer = new Block
+    {
+        Id = "ArticleListPageContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleListPageHeader",
+                SortId = 20,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleListPageHeaderRow",
+                        SortId = 10,
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Row
+                        },
+                        BlocksList = new List<Block> {
+                            new Block {
+                                Id = "ArticleListFilters",
+                                SortId = 30,
+                                Design = new Design {
+                                    RenderType = RenderType.Column,
+                                    Size = "10",
+                                    CssClass = "grid__cell"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    articleListPage.Add(listPageContainer);
+
+    if (Pageview.Device.ToString() == "Mobile" || Pageview.Device.ToString() == "Tablet") {
+        Block listFilters = articleListPage.GetBlockById("ArticleListFilters");
+        listFilters.Template = RenderMobileFilters(listFilters.BlocksList);
+        listFilters.SkipRenderBlocksList = true;
+    }
+
+    if (showTitle) {
+        Block titleBlock = new Block
+        {
+            Id = "ArticleListTitle",
+            SortId = 10,
+            Component = new Heading { Title = Pageview.Item["Title"].ToString(), Level = 2 },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "2"
+            }
+        };
+        articleListPage.Add("ArticleListPageHeaderRow", titleBlock);
+    }
+
+    if (showSearch)
+    {
+        Block searchFilter = new Block
+        {
+            Id = "ArticleListSearch",
+            SortId = 10,
+            Component = new ArticleListSearch { }
+        };
+        articleListPage.Add("ArticleListFilters", searchFilter);
+    }
+
+    if (showCategoryFilter)
+    {
+        Block categoryFilter = new Block
+        {
+            Id = "ArticleListCategoryFilter",
+            SortId = 20,
+            Component = new ArticleListCategoryFilter { Categories = categoriesList }
+        };
+        articleListPage.Add("ArticleListFilters", categoryFilter);
+    }
+
+    Block listBody = new Block
+    {
+        Id = "ArticleListPageBody",
+        SortId = 30,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = dynamicListWidth
+        }
+    };
+    articleListPage.Add("ArticleListPageContainer", listBody);
+
+    Block listBodyRow = new Block
+    {
+        Id = "ArticleListPageBodyRow",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    articleListPage.Add("ArticleListPageBody", listBodyRow);
+
+    if (enableArticlesInFocus) {
+        Block listInFocus = new Block
+        {
+            Id = "ArticleListInFocus",
+            SortId = 10,
+            Component = new ArticleList { Filter = "InFocus=True", Template = "ItemPublisher/List/FocusList.cshtml", PageSize = Convert.ToInt32(Pageview.Item["ArticlesInFocusListSize"].ToString()), ItemType = itemType },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12",
+                HidePadding = true
+            }
+        };
+        articleListPage.Add("ArticleListPageBodyRow", listInFocus);
+    }
+
+    Block listMain = new Block
+    {
+        Id = "ArticleListMain",
+        SortId = 20,
+        Component = new ArticleList { Template = "ItemPublisher/List/DynamicList.cshtml", PageSize = Convert.ToInt32(Pageview.Item["ArticlesListSize"].ToString()), ItemType = itemType },
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12",
+            HidePadding = true
+        }
+    };
+    articleListPage.Add("ArticleListPageBodyRow", listMain);
+
+    if (enablePopular)
+    {
+        Block listPopular = new Block
+        {
+            Id = "ArticleListPopular",
+            SortId = 30,
+            Component = new ArticleList { Template = "ItemPublisher/List/SimpleList.cshtml", PageSize = Convert.ToInt32(Pageview.Item["PopularArticlesListSize"].ToString()), ItemType = itemType },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "4",
+                CssClass = "u-padding--lg"
+            }
+        };
+        articleListPage.Add("ArticleListPageContainer", listPopular);
+    }
+
+    if (showFilters) {
+        if (filterOneOptions != null)
+        {
+            Block filterOne = new Block
+            {
+                Id = "ArticleListFilterOne",
+                SortId = 30,
+                Component = new ArticleListFilter { Options = filterOneOptions, Label = filterOneLabel, SystemName = "FilterOne" }
+            };
+            articleListPage.Add("ArticleListFilters", filterOne);
+        }
+
+        if (filterTwoOptions != null)
+        {
+            Block filterTwo = new Block
+            {
+                Id = "ArticleListFilterTwo",
+                SortId = 40,
+                Component = new ArticleListFilter { Options = filterTwoOptions, Label = filterTwoLabel, SystemName = "FilterTwo" }
+            };
+            articleListPage.Add("ArticleListFilters", filterTwo);
+        }
+
+        if (filterThreeOptions != null)
+        {
+            Block filterThree = new Block
+            {
+                Id = "ArticleListFilterThree",
+                SortId = 50,
+                Component = new ArticleListFilter { Options = filterThreeOptions, Label = filterThreeLabel, SystemName = "FilterThree" }
+            };
+            articleListPage.Add("ArticleListFilters", filterThree);
+        }
+    }
+}
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articleListPage.BlocksRoot.BlocksList)
+
+
+
+<script>
+    document.getElementById("Page").classList.add("u-color-light-gray--bg");
+</script>

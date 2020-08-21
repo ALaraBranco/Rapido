@@ -1,0 +1,72 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+
+
+@* Component for the articles *@
+
+@helper RenderArticleBanner(dynamic settings) { 
+    string filterClasses = "image-filter image-filter--darken";
+    settings.Layout = ArticleHeaderLayout.Banner;
+
+    if (settings.Image != null)
+    {
+        if (settings.Image.Path != null)
+        {
+            <section class="multiple-paragraphs-container u-color-light paragraph-container--full-width">
+                <div class="background-image @filterClasses dw-mod">
+                    <div class="background-image__wrapper @filterClasses dw-mod">
+                        @{ 
+                            settings.Image.CssClass += "background-image__cover dw-mod";
+                        }
+                        @Render(settings.Image)
+                    </div>
+                </div>
+                <div class="center-container dw-mod">
+                    <div class="grid">
+                        <div class="grid__col-md-8 grid__col-xs-12 paragraph-container paragraph-container--height-lg">
+                            <div class="u-left-middle">
+                                <div>
+                                    @if (!String.IsNullOrEmpty(settings.Heading))
+                                    {
+                                        <h1 class="article__header article__header--giant dw-mod" style="color: @settings.TextColor">@settings.Heading</h1>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Subheading))
+                                    {
+                                        <div class="article__leadtext dw-mod" style="color: @settings.TextColor">@settings.Subheading</div>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Author) || !String.IsNullOrEmpty(settings.Date))
+                                    {
+                                        <small class="article__post-info u-margin-bottom--lg dw-mod" style="color: @settings.TextColor">@settings.Author @settings.Date</small>
+                                    }
+                                    @if (!String.IsNullOrEmpty(settings.Link)) {
+                                        <div class="grid__cell">
+                                            @Render(new Link { Href = settings.Link, Title = settings.LinkText, ButtonLayout = settings.ButtonLayout })
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @if (settings.ExternalParagraphId != 0)
+                        {
+                            <div class="grid__col-md-4 grid__col-sm-12 grid__col-xs-12 paragraph-container paragraph-container--height-auto dw-mod">
+                                <div class="u-color-light-gray--bg u-color-dark dw-mod">
+                                    @RenderParagraphContent(settings.ExternalParagraphId)
+                                </div>
+                            </div> 
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+        else 
+        {
+            settings.Layout = ArticleHeaderLayout.Clean;
+            @RenderArticleCleanHeader(settings);
+        }
+    }
+    else
+    {
+        settings.Layout = ArticleHeaderLayout.Clean;
+        @RenderArticleCleanHeader(settings);
+    }
+}

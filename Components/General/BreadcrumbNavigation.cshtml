@@ -1,0 +1,15 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderBreadcrumbNavigation(BreadcrumbNavigation settings) {
+    settings.Id = String.IsNullOrEmpty(settings.Id) ? "breadcrumb" : settings.Id;
+    settings.Template = String.IsNullOrEmpty(settings.Template) ? "Breadcrumb.xslt" : settings.Template;
+    settings.StartLevel = settings.StartLevel == 0 ? 1 : settings.StartLevel;
+    settings.EndLevel = settings.EndLevel == 10 ? 1 : settings.EndLevel;
+    settings.Expandmode = String.IsNullOrEmpty(settings.Expandmode) ? "all" : settings.Expandmode;
+
+    @RenderNavigation(settings)         
+}

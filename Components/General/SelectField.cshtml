@@ -1,0 +1,71 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderSelectField(SelectField settings)
+{
+    if (!string.IsNullOrEmpty(settings.Label) && string.IsNullOrEmpty(settings.Id))
+    {
+        settings.Id = Guid.NewGuid().ToString("N");
+    }
+
+    <div class="form__field-group u-full-width dw-mod">
+        @if (!string.IsNullOrEmpty(settings.Label))
+        {
+            <label for="@settings.Id">@settings.Label</label>
+        }
+        @if (!string.IsNullOrEmpty(settings.HelpText))
+        {
+            <small class="form__help-text">@settings.HelpText</small>
+        }
+
+        @if (settings.ActionButton != null)
+        {
+            settings.ActionButton.CssClass += " btn--condensed u-no-margin";
+            <div class="form__field-combi u-no-margin dw-mod">
+                @RenderSelectBase(settings)
+                @Render(settings.ActionButton)
+            </div>
+        }
+        else
+        {
+            @RenderSelectBase(settings)
+        }
+
+        @Render(new NotificationMessage { Message = settings.ErrorMessage })
+    </div>
+}
+
+@helper RenderSelectBase(SelectField settings)
+{
+    var attributes = new Dictionary<string, string>();
+
+    /*base settings*/
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (!string.IsNullOrEmpty(settings.OnClick)) { attributes.Add("onclick", settings.OnClick); }
+    if (!string.IsNullOrEmpty(settings.OnChange)) { attributes.Add("onchange", settings.OnChange); }
+    if (settings.Disabled) { attributes.Add("disabled", "true"); }
+    if (settings.Required) { attributes.Add("required", "true"); }
+    if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+    /*end*/
+
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary (d => d.Key, d => d.Last().Value);
+
+    <select @ComponentMethods.AddAttributes(resultAttributes) class="u-full-width @settings.CssClass dw-mod">
+        @if (settings.Default != null)
+        {
+            @Render(settings.Default)
+        }
+
+        @foreach (var item in settings.Options)
+        {
+            if (!string.IsNullOrEmpty(settings.Value)) {
+                item.Checked = item.Value == settings.Value;
+            }
+            @Render(item)
+        }
+    </select>
+}

@@ -1,0 +1,80 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage profileControlsPage = BlocksPage.GetBlockPage("EditProfilePage");
+}
+
+@{
+    bool isManageAddressButtonHidden = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("HideManageAddressButton");
+    bool isEditButtonHidden = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("HideEditButton");
+    bool isChangePasswordButtonVisible = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("ShowChangePasswordButton");
+    string manageAddressesBtnText = Pageview.Device.ToString() != "Mobile" ? Translate("Manage addresses") : Translate("Addresses");
+    string editProfileBtnText = Pageview.Device.ToString() != "Mobile" ? Translate("Edit profile") : Translate("Edit");
+
+    Block profileControls = new Block
+    {
+        Id = "ProfileControls",
+        SortId = 30,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12",
+            CssClass = "grid__cell u-no-padding u-full-width u-margin-top--lg"
+        }
+    };
+
+    if (!isEditButtonHidden)
+    {
+        profileControls.Add(new Block
+        {
+            Id = "EditProfileBtn",
+            SortId = 10,
+            Component = new Button
+            {
+                ButtonType = ButtonType.Button,
+                Title = editProfileBtnText,
+                Icon = new Icon { Prefix = "fas", Name = "fa-pencil" },
+                ButtonLayout = ButtonLayout.Secondary,
+                OnClick = "openProfileInfoEdit();"
+            }
+        });
+    }
+
+    if (isChangePasswordButtonVisible)
+    {
+        profileControls.Add(new Block
+        {
+            Id = "EditPasswordBtn",
+            SortId = 20,
+            Component = new Button
+            {
+                ButtonType = ButtonType.Button,
+                Title = "Change password",
+                Icon = new Icon { Prefix = "fas", Name = "fa-key" },
+                ButtonLayout = ButtonLayout.Secondary,
+                OnClick = "openPasswordEdit();"
+            }
+        });
+    }
+
+    if (!isManageAddressButtonHidden)
+    {
+        profileControls.Add(new Block
+        {
+            Id = "EditProfileBtn",
+            SortId = 30,
+            Component = new Link
+            {
+                Href = "/Default.aspx?ID=" + GetPageIdByNavigationTag("CustomerAddresses"),
+                Title = manageAddressesBtnText,
+                Icon = new Icon { Prefix = "far", Name = "fa-address-book" },
+                ButtonLayout = ButtonLayout.Secondary
+            }
+        });
+    }
+
+    profileControlsPage.Add("MainInfoProfileView", profileControls);
+}

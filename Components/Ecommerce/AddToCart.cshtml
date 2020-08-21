@@ -1,0 +1,91 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+@* Component *@
+
+@helper RenderAddToCart(AddToCart settings)
+{
+    if (!settings.AddButton.HideTitle)
+    {
+        if (string.IsNullOrEmpty(settings.AddButton.Title))
+        {
+            if (settings.BuyForPoints)
+            {
+                settings.AddButton.Title = Translate("Buy with points");
+            }
+            else
+            {
+                settings.AddButton.Title = Translate("Add to cart");
+            }
+        }
+    }
+    else
+    {
+        settings.AddButton.Title = "";
+    }
+
+    if (settings.AddButton.Icon == null) 
+    {
+        settings.AddButton.Icon = new Icon();
+    }
+
+    if (string.IsNullOrEmpty(settings.AddButton.Icon.Name))
+    {
+        settings.AddButton.Icon.Name = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon").SelectedValue;
+    }
+
+    if (settings.Disabled) 
+    {
+        settings.AddButton.Disabled = true;
+    }
+
+    //set Id for quantity selector to get it's value from button
+    if (settings.QuantitySelector != null) 
+    {
+        if (string.IsNullOrEmpty(settings.QuantitySelector.Id)) 
+        {
+            settings.QuantitySelector.Id = Guid.NewGuid().ToString("N");
+        }
+        
+        if (settings.Disabled) 
+        {
+            settings.QuantitySelector.Disabled = true;
+        }
+
+        if (string.IsNullOrEmpty(settings.QuantitySelector.Name)) 
+        {
+            settings.QuantitySelector.Name = settings.QuantitySelector.Id;
+        }
+    }
+
+    settings.AddButton.CssClass += " btn--condensed u-no-margin";
+
+    settings.AddButton.OnClick = "Cart.AddToCart(event, { " + 
+        "id: '" + settings.ProductId + "'," +
+        (!string.IsNullOrEmpty(settings.VariantId) ? "variantId: '" + settings.VariantId + "'," : "") +
+        (!string.IsNullOrEmpty(settings.UnitId) ? "unitId: '" + settings.UnitId + "'," : "") +
+        (settings.BuyForPoints ? "buyForPoints: true," : "") + 
+        (!string.IsNullOrEmpty(settings.ProductInfo) ? "productInfo: " + settings.ProductInfo + "," : "") + 
+        "quantity: " + (settings.QuantitySelector == null ? "1" : "parseFloat(document.getElementById('" + settings.QuantitySelector.Id + "').value)") +
+    "});" + settings.AddButton.OnClick;
+
+    //unitsSelector
+    if (settings.UnitSelector != null)
+    {
+        if (settings.Disabled) 
+        {
+            settings.QuantitySelector.Disabled = true;
+        }
+    }
+
+    <div class="buttons-collection @settings.WrapperCssClass" @ComponentMethods.AddAttributes(settings.ExtraAttributes)>        
+        @if (settings.UnitSelector != null)
+        {
+            @Render(settings.UnitSelector)
+        }
+        @if (settings.QuantitySelector != null)
+        {
+            @Render(settings.QuantitySelector)
+        }
+        @Render(settings.AddButton)
+    </div>
+}

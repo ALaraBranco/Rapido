@@ -1,0 +1,310 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Ecommerce.International;
+@using System.Linq;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage addressesPage = BlocksPage.GetBlockPage("ManageAddresses");
+}
+
+@{
+    var columnsView = Pageview.AreaSettings.GetItem("Settings").GetString("AddressesListView") == "Columns";
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "PageHeader",
+                SortId = 10,
+                Component = new Heading { Title = Translate("My addresses"), Icon = new Icon { Prefix = "far", Name = "fa-address-card" } }
+            },
+            new Block {
+                Id = "PageForm",
+                SortId = 20,
+                Template = RenderPageForm(),
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "AddNewAddress",
+                        SortId = 20,
+                        Design = new Design {
+                            RenderType = RenderType.Column,
+                            Size = columnsView ? "4" : "12"
+                        },
+                        Component = new Button {
+                            Title = Translate("Add new address"),
+                            ButtonLayout = ButtonLayout.None,
+                            CssClass = "media-list-item__add-new" + (columnsView ? " media-list-item__add-new--column" : ""),
+                            OnClick = "addAddress()"
+                        }
+                    },
+                    new Block {
+                        Id = "Addresses",
+                        SortId = 30,
+                        Template = RenderAddresses()
+                    }
+                }
+            }
+        }
+    };
+
+    addressesPage.Add(pageContainer);
+
+    Block mainAddressModal = new Block
+    {
+        Id = "MainAddressModal",
+        SortId = 20
+    };
+
+    Modal mainAddress = new Modal
+    {
+        Id = "MainAddress",
+        Width = ModalWidth.Xs,
+        Heading = new Heading { Title = Translate("Error"), Level = 2 },
+        BodyText = Translate("Main address can not be deleted.")
+    };
+
+    mainAddress.AddAction(new Button
+    {
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.Primary,
+        Title = Translate("Close"),
+        CssClass = "btn--full",
+        OnClick = "document.getElementById('MainAddressModalTrigger').checked = false"
+    });
+
+    mainAddressModal.Component = mainAddress;
+    addressesPage.Add(mainAddressModal);
+
+    Block defaultAddressModal = new Block
+    {
+        Id = "DefaultAddressModal",
+        SortId = 30
+    };
+
+    Modal defaultAddress = new Modal
+    {
+        Id = "DefaultAddress",
+        Width = ModalWidth.Xs,
+        Heading = new Heading { Title = Translate("Error"), Level = 2 },
+        BodyText = Translate("You can’t delete a default address. Set another address as default before delete this address.")
+    };
+
+    defaultAddress.AddAction(new Button
+    {
+        ButtonType = ButtonType.Button,
+        ButtonLayout = ButtonLayout.Primary,
+        Title = Translate("Close"),
+        CssClass = "btn--full",
+        OnClick = "document.getElementById('DefaultAddressModalTrigger').checked = false"
+    });
+
+    defaultAddressModal.Component = defaultAddress;
+    addressesPage.Add(defaultAddressModal);
+
+    Block pageScripts = new Block
+    {
+        Id = "Scripts",
+        SortId = 40,
+        Template = RenderPageScripts()
+    };
+
+    addressesPage.Add(pageScripts);
+}
+
+@helper RenderPageForm()
+{
+    List<Block> subBlocks = this.addressesPage.GetBlockListById("PageForm").OrderBy(item => item.SortId).ToList();
+
+    @GetString("UserManagement:User.ManageAddresses.FormStart")
+
+    <div class="grid grid--external-bleed">
+        @RenderBlockList(subBlocks)
+    </div>
+
+    @GetString("UserManagement:User.ManageAddresses.FormEnd")
+}
+
+@helper RenderAddresses()
+{
+    foreach (LoopItem address in GetLoop("UserManagement:User.UserAddresses").OrderByDescending(address => address.GetString("UserManagement:User.UserAddress.Default")).ToList())
+    {
+        var addressId = address.GetString("UserManagement:User.UserAddress.ID");
+
+        //Get address info
+        var addressInfo = new List<string>();
+        var countryList = GlobalISO.GetGlobalISOs().Cast<GlobalISO>().GroupBy(x => x.Code2).Select(x => x.FirstOrDefault()).ToDictionary(x => x.Code2, y => y.CountryUK);
+        var address1 = address.GetString("UserManagement:User.UserAddress.Address");
+        var address2 = address.GetString("UserManagement:User.UserAddress.Address2");
+        var zip = address.GetString("UserManagement:User.UserAddress.Zip");
+        var city = address.GetString("UserManagement:User.UserAddress.City");
+        var state = address.GetString("UserManagement:User.UserAddress.State");
+        var countryName = address.GetString("UserManagement:User.UserAddress.Country");
+
+        addressInfo.Add(address1);
+        addressInfo.Add(address2);
+        addressInfo.Add(zip + (!string.IsNullOrEmpty(zip) ? " " : "") + city);
+        addressInfo.Add(state);
+
+        if (countryList.ContainsKey(countryName))
+        {
+            addressInfo.Add(countryList[countryName]);
+        }
+        addressInfo = addressInfo.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+        //Get user info
+        var userInfo = new List<string>();
+        var userName = address.GetString("UserManagement:User.UserAddress.AccessUserAddress_UserName");
+        var email = address.GetString("UserManagement:User.UserAddress.Email");
+        var phone = address.GetString("UserManagement:User.UserAddress.Phone");
+        string userIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fas fa-user";
+
+        if (!string.IsNullOrEmpty(userName))
+        {
+            userInfo.Add(Render(new Icon { Prefix = "fas", Name = userIcon, CssClass = "media-list-item__parameter-icon" }) + userName);
+        }
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            userInfo.Add(Render(new Icon { Prefix = "fas", Name = "fa-envelope", CssClass = "media-list-item__parameter-icon" }) + email);
+        }
+
+        if (!string.IsNullOrEmpty(phone))
+        {
+            userInfo.Add(Render(new Icon { Prefix = "fas", Name = "fa-mobile", CssClass = "media-list-item__parameter-icon" }) + phone);
+        }
+        //get user info end
+
+        var manageAdressesItem = new MediaListItem
+        {
+            Title = Render(new Button
+            {
+                ButtonLayout = ButtonLayout.Clean,
+                Title = !string.IsNullOrEmpty(address.GetString("UserManagement:User.UserAddress.Description")) ?
+                        address.GetString("UserManagement:User.UserAddress.Description") :
+                        address.GetString("UserManagement:User.UserAddress.Address"),
+                Icon = new Icon { Prefix = "fas", Name = "fa-map-marker" },
+                CssClass = "u-no-margin u-no-padding u-bold",
+                OnClick = "updateAddress(" + address.GetString("UserManagement:User.UserAddress.ID") + ")"
+            }).ToString(),
+            Status = address.GetBoolean("UserManagement:User.UserAddress.Default") ? Translate("Default") : "",
+            InfoTable = new Table()
+        };
+
+        var deleteButton = new Button
+        {
+            ButtonLayout = ButtonLayout.None,
+            Id = "DeleteWarning_" + address.GetString("UserManagement:User.UserAddress.ID") + "_",
+            Title = Translate("Delete")
+        };
+
+        if (!address.GetBoolean("UserManagement:User.UserAddress.Default")) 
+        {
+            deleteButton.ConfirmTitle = Translate("Warning");
+            deleteButton.ConfirmText = Translate("Are you sure you wish to delete this address?");
+            deleteButton.OnClick = "deleteAddress(" + addressId + ");";
+        } 
+        else 
+        {
+            deleteButton.OnClick = "document.getElementById('MainAddressModalTrigger').checked = true";
+        }
+
+        manageAdressesItem.AddActions(
+            new Button
+            {
+                Title = Translate("Edit"),
+                OnClick = "updateAddress(" + address.GetString("UserManagement:User.UserAddress.ID") + ")"
+            },
+            deleteButton
+        );
+
+        if (!address.GetBoolean("UserManagement:User.UserAddress.Default"))
+        {
+            manageAdressesItem.AddAction(
+                new Button
+                {
+                    Title = Translate("Set default"),
+                    OnClick = "makeDefaultAddress('" + address.GetString("UserManagement:User.UserAddress.ID") + "')"
+                }
+            );
+        }
+
+        if (Pageview.AreaSettings.GetItem("Settings").GetString("AddressesListView") == "Columns")
+        {
+            manageAdressesItem.CssClass = "grid__col-4 media-list-item--compact";
+            manageAdressesItem.InfoTable.CssClass = "media-list-item__parameters-table--three-columns";
+
+            addressInfo.AddRange(userInfo.ToArray());
+
+            foreach (var item in addressInfo)
+            {
+                var row = new TableRow();
+                row.AddCells(item);
+                manageAdressesItem.InfoTable.AddRows(row);
+            }
+        }
+        else
+        {
+            manageAdressesItem.CssClass = "grid__col-12";
+            manageAdressesItem.InfoTable.CssClass = "media-list-item__parameters-table--three-columns";
+
+            int rowCount = Math.Max(addressInfo.Count, userInfo.Count);
+
+            for (var i = 0; i < rowCount; i++)
+            {
+                var row = new TableRow();
+                row.AddCells(
+                    i < addressInfo.Count ? addressInfo[i] : "",
+                    i < userInfo.Count ? userInfo[i] : ""
+                );
+
+                manageAdressesItem.InfoTable.AddRows(row);
+            }
+        }
+
+        @Render(manageAdressesItem);
+    }
+
+}
+
+@helper RenderPageScripts()
+{
+    @GetString("UserManagement:User.ManageAddresses.MakeDefault.Javascript")
+    @GetString("UserManagement:User.ManageAddresses.DeleteAddress.Javascript")
+    @GetString("UserManagement:User.ManageAddresses.AddAddress.Javascript")
+    @GetString("UserManagement:User.ManageAddresses.UpdateAddress.Javascript")
+
+    <script>
+        function removeAddress(addressId) {
+            if (document.getElementById('UserId').value == addressId) {
+                document.getElementById('MainAddressModalTrigger').checked = true;
+                return;
+            } else if (document.getElementById('DefaultAddressId').value == addressId) {
+                document.getElementById('DefaultAddressModalTrigger').checked = true;
+                return;
+            } else {
+                document.getElementById('DeleteWarning_' + addressId + '_ModalTrigger').checked = true;
+            }
+        }
+
+        function deleteAddress(addressId) {
+            document.getElementById('SelectedAddressId').value = addressId;
+            document.getElementById('ManageAddressesFormAction').value = 'Delete';
+            document.getElementById('UserManagementManageAddressesForm').submit();
+        }
+    </script>
+}
+
+@Include("Blocks/ManageAddresses/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(addressesPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+

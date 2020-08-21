@@ -1,0 +1,33 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage usersListPage = BlocksPage.GetBlockPage("UsersListPage");
+}
+
+@{
+    Block usersListPageContainer = new Block
+    {
+        Id = "UsersListContainer",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    usersListPage.Add(usersListPageContainer);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+
+@* Include the Rendering helpers *@
+@Include("Blocks/UserItem.cshtml")
+@Include("Blocks/UsersFilter.cshtml")
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(usersListPage.BlocksRoot.BlocksList)

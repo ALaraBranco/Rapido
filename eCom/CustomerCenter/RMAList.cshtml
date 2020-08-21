@@ -1,0 +1,77 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage rmaListPage = BlocksPage.GetBlockPage("RMAList");
+}
+
+@{
+    bool isEmptyRMAList = !string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.EmptyList"));
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 10,
+        Component = new Heading
+        {
+            Title = GetGlobalValue("Global:Page.Name"),
+            Icon = new Icon { Prefix = "fas", Name = "fa-undo" }
+        },
+        BlocksList = new List<Block> {
+            new Block
+            {
+                Id = "NewRma",
+                SortId = 10,
+                Component = new Link {
+                    Href = GetString("Ecom:CustomerCenter.RMA.AddURL"),
+                    ButtonLayout = ButtonLayout.None,
+                    Title = Translate("Create new request"),
+                    CssClass = "media-list-item__add-new"
+                }
+            },
+            new Block
+            {
+                Id = "Pagination",
+                SortId = 60,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                },
+                Component = new Pagination
+                {
+                    PagingTag = "Ecom:CustomerCenter",
+                    ShowNextAndPrevControls = true
+                }
+            },
+        }
+    };
+
+    rmaListPage.Add(pageContainer);
+
+    if (isEmptyRMAList)
+    {
+        pageContainer.Add(new Block
+        {
+            Id = "EmptyListMessage",
+            SortId = 20,
+            Component = new Text { Content = Translate("No RMAs list found") }
+        });
+    }
+}
+
+@Include("Blocks/RMAList/RMAItems.cshtml")
+@Include("Blocks/RMAList/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(rmaListPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")

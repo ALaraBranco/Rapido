@@ -1,0 +1,40 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleList(ArticleList settings)
+{
+    if (Pageview != null)
+    {
+        bool isParagraph = Pageview.CurrentParagraph != null ? true : false;
+        string[] sortArticlesListBy = new string[2];
+
+        if (isParagraph) {
+            sortArticlesListBy = Pageview.CurrentParagraph.Item["SortArticlesListBy"] != null && !string.IsNullOrEmpty(Pageview.CurrentParagraph.Item["SortArticlesListBy"].ToString()) ? Pageview.CurrentParagraph.Item["SortArticlesListBy"].ToString().Split('+') : new string[] { "Date", "ASC" };
+        }
+        else {
+            sortArticlesListBy = Pageview.Item["SortArticlesListBy"] != null && !string.IsNullOrEmpty(Pageview.Item["SortArticlesListBy"].ToString()) ? Pageview.Item["SortArticlesListBy"].ToString().Split('+') : new string[] { "Date", "ASC" };
+        }
+
+        string sourcePage = settings.SourcePage != null ? settings.SourcePage : Pageview.ID.ToString();
+
+        @RenderItemList(new
+        {
+            ItemType = !String.IsNullOrEmpty(settings.ItemType) ? settings.ItemType : "DynamicArticle",
+            ListSourceType = settings.SourceType,
+            ListSourcePage = sourcePage,
+            ItemFieldsList = "*",
+            Filter = settings.Filter,
+            ListOrderBy = sortArticlesListBy[0],
+            ListOrderByDirection = sortArticlesListBy[1],
+            ListSecondOrderBy = sortArticlesListBy[0] == "Date" ? "InFocusSortId" : "Date",
+            ListSecondOrderByDirection = "ASC",
+            IncludeAllChildItems = true,
+            ListTemplate = settings.Template,
+            ListPageSize = settings.PageSize.ToString()
+        });
+    }
+}

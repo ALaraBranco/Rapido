@@ -1,0 +1,33 @@
+@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using System
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using System.Linq
+@using System.Web
+@using Dynamicweb.Core
+@using RazorEngine.Compilation.ImpromptuInterface.Dynamic
+
+
+@functions {
+    BlocksPage masterPageCustom = BlocksPage.GetBlockPage("Master");
+}
+@{
+    masterPageCustom.GetBlockById("Body").Template = RizzoRenderMasterBody();
+}
+@* new *@
+@helper RizzoRenderMasterBody() { 
+    var pdfClass = !string.IsNullOrEmpty(HttpContext.Current.Request["pdf"]) ? "u-pdf" : String.Empty;
+    List<Block> subBlocks = this.masterPageCustom.GetBlockListById("Body").OrderBy(item => item.SortId).ToList();
+    var designLayout = Model.PropertyItem.GetItem("CustomSettings") != null ? Model.PropertyItem.GetItem("CustomSettings").GetString("DesignLayout") != null ? Model.PropertyItem.GetItem("CustomSettings").GetList("DesignLayout").SelectedValue : "" : "";
+    var designLayoutAttribute = "";
+    if (designLayout.IsNotNullOrEmpty()) {
+        designLayoutAttribute = "class=\"" + designLayout +" "+pdfClass+ "\"";
+    }
+    else if(pdfClass.IsNotNullOrEmpty())
+    {
+        designLayoutAttribute = "class=\"" + pdfClass+ "\"";
+    }
+    <body @designLayoutAttribute>
+    @RenderBlockList(subBlocks)
+    </body>   
+}

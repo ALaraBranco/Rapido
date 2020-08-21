@@ -1,0 +1,23 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+@using System.Text.RegularExpressions
+
+
+@* Component *@
+
+@helper RenderSticker(Sticker settings) {
+    if (!String.IsNullOrEmpty(settings.Title)) {
+        string size = settings.Size.ToString() != "None" ? "" + "stickers-container__tag--" + settings.Size.ToString().ToLower() : "";
+        string style = settings.Style.ToString() != "None" ? "" + "stickers-container__tag--" + settings.Style.ToString().ToLower() : "";
+
+        Dictionary<String, String> optionalAttributes = new Dictionary<string, string>();
+        if (!String.IsNullOrEmpty(settings.Color) || !String.IsNullOrEmpty(settings.BackgroundColor)) {
+            string styleTag = !String.IsNullOrEmpty(settings.Color) ? "color: " + settings.Color + "; " : "";
+            styleTag += !String.IsNullOrEmpty(settings.BackgroundColor) ? "background-color: " + settings.BackgroundColor + "; " : "";
+            optionalAttributes.Add("style", styleTag);
+        }
+
+        <div class="stickers-container__tag @size @style @settings.CssClass dw-mod" @ComponentMethods.AddAttributes(optionalAttributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>@settings.Title</div>   
+    }
+}

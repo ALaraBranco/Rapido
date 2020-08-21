@@ -1,0 +1,118 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+@functions {
+    BlocksPage referencesPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+    Block styles = new Block
+    {
+        Id = "Styles",
+        SortId = 10,
+        Template = RenderStyles()
+    };
+
+    referencesPage.Add(styles);
+
+    Block scripts = new Block
+    {
+        Id = "Scripts",
+        SortId = 30,
+        Template = RenderScripts()
+    };
+
+    referencesPage.Add(scripts);
+}
+
+@helper RenderStyles()
+{
+    string autoCssLink = "/Files/Templates/Designs/Rapido/css/rapido/rapido_" + GetGlobalValue("Global:Area.ID") + ".min.css";
+    bool useFontAwesomePro = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetBoolean("UseFontAwesomePro");
+
+    <!-- Font awesome -->
+    if (useFontAwesomePro)
+    {
+        <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/fonts/FontAwesomePro/css/fontawesome-all.min.css" type="text/css">
+    }
+    else
+    {
+        <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/fonts/FontAwesomeFree/css/fontawesome-all.min.css" type="text/css">
+    }
+
+    <!-- Base (Default, wireframe) styles -->
+    <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/base/base.css" type="text/css">
+
+    <!-- Rapido Css from Website Settings -->
+    <link id="rapidoCss" rel="stylesheet" href="@autoCssLink" type="text/css">
+
+    <!-- Ignite Css (Custom site specific styles) -->
+    <link id="igniteCss" type="text/css" href="/Files/Templates/Designs/Rapido/css/ignite/ignite.min.css" rel="stylesheet">
+
+    <style>
+        @@media print {
+            body {
+                font-family: sans-serif;
+            }
+        }
+
+        /* fixes for PDF */
+        .grid__col-4 {
+            float: left;
+            width: 33%;
+        }
+
+        .grid__col-6 {
+            float: left;
+            width: 50%;
+        }
+
+        .grid__col-md-8 {
+            float: left;
+            width: 66.5%;
+        }
+
+        .grid__col-md-4 {
+            float: left;
+            width: 33%;
+        }
+
+        .pdf-column {
+            padding: 10px;
+        }
+
+        @@media (min-width: 768px) {
+            .grid__col-sm-7 {
+                width: 58.33333333%;
+            }
+
+            .grid__col-sm-5 {
+                width: 41.66666667%;
+            }
+        }
+        /* end */
+
+        body {
+            -webkit-print-color-adjust: exact;
+        }
+    </style>
+}
+
+@helper RenderScripts()
+{
+    <script src="/Files/Templates/Designs/Rapido/js/source/WireframeConfig.js"></script>
+    <script src="/Files/Templates/Designs/Rapido/js/source/Wireframe.js"></script>
+    <script src="/Files/Templates/Designs/Rapido/js/source/blazy.js"></script>
+
+    bool isWireframeMode = Pageview.AreaSettings.GetItem("Settings").GetBoolean("WireframeMode");
+
+    if (isWireframeMode)
+    {
+        <script>
+            Wireframe.Init(true);
+        </script>
+    }
+}

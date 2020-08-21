@@ -1,0 +1,70 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Core
+
+@* Component *@
+
+@helper RenderDateTimeField(DateTimeField settings)
+{
+    if (string.IsNullOrEmpty(settings.Id)) 
+    {
+        settings.Id = Guid.NewGuid().ToString("N");
+    }
+
+    var textField = new TextField {
+        Name = settings.Name,
+        Id = settings.Id,
+        Label = settings.Label,
+        HelpText = settings.HelpText,
+        Value = settings.Value,
+        Disabled = settings.Disabled,
+        Required = settings.Required,
+        ErrorMessage = settings.ErrorMessage,
+        CssClass = settings.CssClass,
+        OnChange = settings.OnChange,
+        OnClick = settings.OnClick,
+        ExtraAttributes = settings.ExtraAttributes,
+        //
+        Placeholder = settings.Placeholder
+    };
+
+    @Render(textField)
+
+    List<string> jsAttributes = new List<string>();
+
+    jsAttributes.Add("mode: '" + Enum.GetName(typeof(DateTimeFieldMode), settings.Mode).ToLower() + "'");
+
+    if (!string.IsNullOrEmpty(settings.DateFormat))
+    {
+        jsAttributes.Add("dateFormat: '" + settings.DateFormat + "'");
+    }
+    if (!string.IsNullOrEmpty(settings.MinDate))
+    {
+        jsAttributes.Add("minDate: '" + settings.MinDate + "'");
+    }
+    if (!string.IsNullOrEmpty(settings.MaxDate))
+    {
+        jsAttributes.Add("maxDate: '" + settings.MaxDate + "'");
+    }
+    if (settings.IsInline)
+    {
+        jsAttributes.Add("inline: " + Converter.ToString(settings.IsInline).ToLower());
+    }
+    if (settings.EnableTime)
+    {
+        jsAttributes.Add("enableTime: " + Converter.ToString(settings.EnableTime).ToLower());
+    }
+    if (settings.EnableWeekNumbers)
+    {
+        jsAttributes.Add("weekNumbers: " + Converter.ToString(settings.EnableWeekNumbers).ToLower());
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            flatpickr("#@textField.Id", {
+                @string.Join(",", jsAttributes)
+            });
+        });
+    </script>
+}

@@ -1,0 +1,248 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.Collections.Generic
+@using System
+@using System.Text.RegularExpressions
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    public string GenerateRgba(string color, double opacity)
+    {
+        color = color.Replace("#", "");
+        if (color.Length == 6) {
+            return "rgba(" + Convert.ToInt32(color.Substring(0, 2), 16) + ", " + Convert.ToInt32(color.Substring(2, 2), 16) + ", " + Convert.ToInt32(color.Substring(4, 2), 16) + ", " + opacity + ");";
+        } else {
+            return Convert.ToInt16(color).ToString();
+        }
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml")
+
+@* Include the basic, re-used, paragraph initializer *@
+@Include("ParagraphRender.cshtml")
+
+
+@{
+    string fontColor = !string.IsNullOrEmpty(Model.Item.GetString("FontColor")) && !Model.Item.GetString("FontColor").StartsWith("#") ? "u-" + Model.Item.GetString("FontColor").Replace(" ", "-").ToLower() : "";
+    string backgroundColor = !string.IsNullOrEmpty(Model.Item.GetString("BackgroundColor")) && !Model.Item.GetString("BackgroundColor").StartsWith("#") ? "u-" + Model.Item.GetString("BackgroundColor").Replace(" ", "-").ToLower() + "--bg" : "";
+    string colorSettings = Model.Item.GetString("FontColor").StartsWith("#") || Model.Item.GetString("BackgroundColor").StartsWith("#") ? "style=\"" : "";
+    string fontColorHex = Model.Item.GetString("FontColor").StartsWith("#") ? "color: " + Model.Item.GetString("FontColor") + ";" : "";
+    string backgroundColorHex = Model.Item.GetString("BackgroundColor").StartsWith("#") ? "background-color: " + Model.Item.GetString("BackgroundColor") + ";" : "";
+    colorSettings += fontColorHex;
+    colorSettings += backgroundColorHex;
+    colorSettings += Model.Item.GetString("FontColor").StartsWith("#") || Model.Item.GetString("BackgroundColor").StartsWith("#") ? "\"" : "";
+
+    string paragraphContainerClasses = "";
+    string containerClasses = "";
+    string gridClasses = "";
+
+    string spacingSize = Model.Item.GetList("Spacing") != null && Model.Item.GetList("Spacing").SelectedValue != "" ? Model.Item.GetList("Spacing").SelectedValue : "lg";
+
+    switch (Model.Item.GetList("Width").SelectedValue)
+    {
+        case "center":
+            containerClasses += "center-container  paragraph-container ";
+            paragraphContainerClasses += " " + fontColor + " " + backgroundColor;
+            break;
+        case "full":
+            containerClasses += fontColor + " " + backgroundColor + " ";
+            paragraphContainerClasses += "paragraph-container--full-width ";
+            break;
+        case "combi":
+            paragraphContainerClasses += "paragraph-container--full-width " + fontColor + " " + backgroundColor + " ";
+            containerClasses += "center-container paragraph-container ";
+            break;
+        default:
+            paragraphContainerClasses += "center-container ";
+            break;
+    }
+
+    //Background
+    string focalPointParameters = Model.Item.GetFile("BackgroundImage") != null ? "&" + Model.Item.GetFile("BackgroundImage").GetFocalPointParameters() : "";
+
+    string containerBackgroundImageFilterColor = Model.Item.GetList("ColorForTheFilter") != null ? Model.Item.GetString("ColorForTheFilter").Replace(" ", "-").ToLower() : "none";
+    string containerBackgroundImageFilterPrimary = Model.Item.GetList("ImageFilterPrimary") != null ? Model.Item.GetList("ImageFilterPrimary").SelectedValue : "none";
+    string containerBackgroundImageFilterSecondary = Model.Item.GetList("ImageFilterSecondary") != null ? Model.Item.GetList("ImageFilterSecondary").SelectedValue : "none";
+    string containerBackgroundImageFilterColorCode = Model.Item.GetString("ColorForTheFilter").StartsWith("#") && containerBackgroundImageFilterPrimary == "colorize" ? "style=\"background-color: " + GenerateRgba(Model.Item.GetString("ColorForTheFilter"), 0.3) + "\"" : "";
+
+    if (containerBackgroundImageFilterPrimary == "colorize" && !containerBackgroundImageFilterPrimary.StartsWith("#"))
+    {
+        containerBackgroundImageFilterPrimary = containerBackgroundImageFilterColor;
+    }
+
+    if (Model.Item.GetFile("BackgroundImage") == null) {
+        backgroundColor = "u-color-light--bg";
+    }
+
+    //Separation line
+    bool hasSeparationLine = Model.Item.GetBoolean("SeperationLineAfter");
+    if (hasSeparationLine && Model.Item.GetList("Width").SelectedValue != "center")
+    {
+        paragraphContainerClasses += "multiple-paragraphs-container--seperation-line-after ";
+    }
+    else if (hasSeparationLine)
+    {
+        containerClasses += "multiple-paragraphs-container--seperation-line-after ";
+    }
+    
+    var designLayout = Model.Item.GetItem("CustomSettings") != null ? Model.Item.GetItem("CustomSettings").GetString("DesignLayout") != null ? Model.Item.GetItem("CustomSettings").GetList("DesignLayout").SelectedValue : "" : "";
+    paragraphContainerClasses += !String.IsNullOrEmpty(designLayout) ? (" " + designLayout) : "";
+
+    var paragraphHeight = Model.Item.GetList("Height").SelectedValue;
+    //Height
+    if (!string.IsNullOrEmpty(paragraphHeight))
+    {
+        gridClasses += "paragraph-container--height-" + paragraphHeight + " " + (paragraphHeight == "screen" ? "screen-height " : "");
+    }
+
+    if (Model.Item.GetString("MakeParagraphsCenterAligned") != null && Model.Item.GetBoolean("MakeParagraphsCenterAligned"))
+    {
+        gridClasses += "grid--justify-center ";
+    }
+
+    //Set as carousel
+    if (Model.Item.GetBoolean("EnableCarousel"))
+    {
+        containerClasses.Replace(" paragraph-container ", "");
+    }
+
+    //getting video ID from youtube URL
+    string videoCode = Model.Item.GetString("VideoURL");
+    Regex regex = new Regex(@".be\/(.[^?]*)");
+    Match match = regex.Match(videoCode);
+    string videoId = "";
+    if (match.Success)
+    {
+        videoId = match.Groups[1].Value;
+    }
+    else
+    {
+        regex = new Regex(@"v=([^&]+)");
+        match = regex.Match(videoCode);
+        if (match.Success)
+        {
+            videoId = match.Groups[1].Value;
+        }
+    }
+}
+
+<div class="grid__col-md-12 grid__col--bleed">
+    <section class="multiple-paragraphs-container @paragraphContainerClasses multiple-paragraphs-container--spacing-@spacingSize dw-mod" @colorSettings>
+        <div class="background-image image-filter image-filter--@containerBackgroundImageFilterPrimary dw-mod" @containerBackgroundImageFilterColorCode>
+            <div class="background-image__wrapper image-filter image-filter--@containerBackgroundImageFilterSecondary dw-mod">
+                @if (!String.IsNullOrEmpty(Model.Item.GetString("BackgroundImage"))) { 
+                    @Render(new Image {
+                       Path = Model.Item.GetFile("BackgroundImage").PathUrlEncoded + focalPointParameters,
+                       CssClass = "background-image__cover",
+                       ImageDefault = new ImageSettings {
+                           Width = 1920,
+                           Height = 845,
+                           Crop = 0,
+                           FillCanvas = true
+                       },
+                       ImageMedium = new ImageSettings
+                       {
+                           Width = 1024,
+                           Height = 450,
+                           Crop = 0,
+                           FillCanvas = true
+                       },
+                       ImageSmall = new ImageSettings
+                       {
+                           Width = 640,
+                           Height = 544,
+                           Crop = 0,
+                           FillCanvas = true
+                       }
+                   })
+                }
+
+                @if (!string.IsNullOrEmpty(videoId))
+                {
+                    <div class="video-background">
+                        <div class="video-background__container">
+                            <div class="js-youtube-video" data-video="@videoId" id="ytPlayer@(Model.ID)"></div>
+                        </div> 
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (!Model.Item.GetBoolean("EnableCarousel"))
+        {
+            <div class="@containerClasses dw-mod">
+                <div class="grid @gridClasses dw-mod">
+                    @foreach (var paragraph in Model.Item.GetItems("Paragraph"))
+                    {
+                        @RenderParagraph(paragraph)
+                    }
+                </div>
+            </div>
+        } else {
+            int columnCount = 0;
+            int paragraphCount = 0;
+            int totalParagraphs = Model.Item.GetItems("Paragraph").Count;
+            int totalSlides = 1;
+
+            <div class="@containerClasses carousel dw-mod" id="Paragraph_@(Model.ID)">
+                <div class="carousel__container js-carousel-slides dw-mod">
+                    <div class="carousel__slide dw-mod">
+                        <div class="grid @gridClasses dw-mod">
+                            @foreach (var paragraph in Model.Item.GetItems("Paragraph"))
+                            {
+                                int columnWidth = 12;
+                                if (paragraph.GetList("Width").SelectedValue != "auto")
+                                {
+                                    columnWidth = Pageview.Device.ToString() != "Mobile" ? Int32.Parse(paragraph.GetList("Width").SelectedValue) : 12;
+
+                                    if (columnCount < 12)
+                                    {
+                                        columnCount += columnWidth;
+                                    }
+                                    else
+                                    {
+                                        columnCount = columnWidth;
+                                    }
+                                }
+
+                                @RenderParagraph(paragraph)
+
+                                paragraphCount++;
+                                if (paragraphCount != totalParagraphs)
+                                {
+                                    string breakMarkup = string.Empty;
+                                    if (columnCount == 12)
+                                    {
+                                        breakMarkup = "</div></div><div class=\"carousel__slide dw-mod\"><div class=\"grid " + gridClasses + " dw-mod\">";
+                                        totalSlides++;
+                                    }
+                                    @breakMarkup
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            if (totalSlides > 1)
+            {
+                bool enableDots = Model.Item.GetBoolean("ShowDots");
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        new CarouselModule("#Paragraph_@(Model.ID)", {
+                            slideTime: @Model.Item.GetString("SlideTime"),
+                            dots: @(Model.Item.GetBoolean("ShowDots").ToString().ToLower())
+                        });
+                    })
+                </script>
+            }
+        }
+    </section>
+</div>

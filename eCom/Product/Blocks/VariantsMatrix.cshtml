@@ -1,0 +1,134 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+@functions { 
+    BlocksPage productVariantsMatrixPage = BlocksPage.GetBlockPage("Product");
+}
+
+@{ 
+    string variantsMatrixLayout = Pageview.AreaSettings.GetItem("ProductPage").GetList("VariantsMatrixLayout") != null ? Pageview.AreaSettings.GetItem("ProductPage").GetList("VariantsMatrixLayout").SelectedValue : "Section";
+    variantsMatrixLayout = variantsMatrixLayout == "Ribbon" ? "Section" : variantsMatrixLayout;
+    bool renderVariantsAsMatrix = GetInteger("Ecom:Product.VariantCount") > 1 && variantsMatrixLayout.ToLower() != "hide";
+
+    if (renderVariantsAsMatrix)
+    {
+        Block variantsMatrix = new Block()
+        {
+            Name = Translate("Variants"),
+            Id = "VariantsMatrix",
+            SortId = 20,
+            Template = RenderVariantsMatrixSection(variantsMatrixLayout),
+            Design = new Design
+            {
+                Size = "12",
+                RenderType = RenderType.Column,
+                HidePadding = true
+            }
+        };
+        productVariantsMatrixPage.Add(variantsMatrixLayout, variantsMatrix);
+    }
+}
+
+@helper RenderVariantsMatrixSection(string layout)
+{
+    string cartIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon").SelectedValue : "fas fa-shopping-cart";
+    string ribbonClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("VariantsListLayout").SelectedValue == "Ribbon" ? "product__section--ribbon paragraph-container paragraph-container--full-width" : "";
+    ribbonClasses = layout == "Tabs" ? "u-no-padding" : ribbonClasses;
+    string ribbonSubClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("VariantsListLayout").SelectedValue == "Ribbon" ? "center-container--ribbon" : "";
+
+    VariantMatrix variantMatrix = new VariantMatrix {
+        ProductId = GetString("Ecom:Product.ID"),
+        EnableCounters = true
+    };
+    
+    foreach (LoopItem variantGroup in GetLoop("VariantGroups"))
+    {
+        VariantGroup group = new VariantGroup {
+            Name = variantGroup.GetString("Ecom:VariantGroup.Name")
+        };
+
+        foreach (LoopItem variantOption in variantGroup.GetLoop("VariantAvailableOptions"))
+        {
+            VariantOption option = new VariantOption {
+                Name = variantOption.GetString("Ecom:VariantOption.Name"),
+                Id = variantOption.GetString("Ecom:VariantOption.ID")
+            };
+            group.AddVariantOption(option);
+        }
+        variantMatrix.AddVariantGroup(group);
+    }
+
+    foreach (LoopItem variantcomb in GetLoop("VariantCombinations"))
+    {
+        VariantProduct variantProduct = new VariantProduct {
+            VariantId = variantcomb.GetString("Ecom:VariantCombination.VariantID"),
+            ProductId = GetString("Ecom:Product.ID"),
+            Stock = variantcomb.GetDouble("Ecom:Product.Stock"),
+            Quantity = 0
+        };
+        variantMatrix.AddVariantProduct(variantcomb.GetString("Ecom:VariantCombination.VariantID"), variantProduct);
+    }
+
+    <div class="product__section @ribbonClasses dw-mod">
+        <div class="center-container @ribbonSubClasses dw-mod">
+            <form name="multiForm" id="multiForm" method="post">
+                @Render(new HiddenField { Name="CartCmd", Id="CartCmd", Value="AddMulti" })
+
+                @Render(variantMatrix)
+
+                <div class="collection collection--right">
+                    @Render(new Button { 
+                        ButtonType = ButtonType.Submit,
+                        ButtonLayout = ButtonLayout.Primary,
+                        CssClass = "u-pull--right",
+                        Title = Translate("Add all to cart"),
+                        Icon = new Icon {
+                            Name = cartIcon,
+                            LabelPosition = IconLabelPosition.Before
+                        }
+                    })
+
+                    @if (!Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HidePrice"))
+                    {
+                        bool showVATPrice = Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("ShowBothPricesWithWithoutVAT");
+                        bool isPricesWithVATEnabled = Converter.ToBoolean(Pageview.Area.EcomPricesWithVat);
+                        string price = GetString("Ecom:Product.Discount.Price.PriceFormatted") != GetString("Ecom:Product.Price.PriceFormatted") ? GetString("Ecom:Product.Discount.Price.PriceFormatted") : GetString("Ecom:Product.Price.PriceFormatted");
+                        string priceWithVAT = GetString("Ecom:Product.Discount.Price.PriceWithVATFormatted");
+                        string priceWithoutVAT = GetString("Ecom:Product.Discount.Price.PriceWithoutVATFormatted");
+
+                        <div class="u-pull--right u-padding-right">
+                            @if (GetString("Ecom:Product.Discount.Price.PriceFormatted") != GetString("Ecom:Product.Price.PriceFormatted"))
+                            {
+                                <div class="before-price dw-mod">@GetString("Ecom:Product.Price.PriceFormatted")</div>
+                            }
+                            <div class="price price--product-page dw-mod">@price</div>
+                            @if (showVATPrice)
+                            {
+                                <small class="vat-price vat-price--product-page u-margin-top dw-mod">
+                                    @if (isPricesWithVATEnabled)
+                                    {
+                                        <span>@Translate("excl. VAT") @priceWithoutVAT</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@Translate("incl. VAT") @priceWithVAT</span>
+                                    }
+                                </small>
+                            }
+                            @if (!String.IsNullOrEmpty(GetString("Ecom:Product.InformativePrice")))
+                            {
+                                <div><small>@Translate("RRP") @GetString("Ecom:Product.InformativePrice") </small></div>
+                            }
+                        </div>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+}

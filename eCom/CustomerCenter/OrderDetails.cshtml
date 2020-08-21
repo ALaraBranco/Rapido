@@ -1,0 +1,71 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Collections.Generic
+@using System.Web;
+@using Dynamicweb.Core;
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage orderDetailsPage = BlocksPage.GetBlockPage("Details");
+}
+
+@Include("../../GetProductImage.cshtml")
+
+@{
+
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 20,
+        BlocksList = new List<Block> {
+            new Block
+            {
+                Id = "Order",
+                SortId = 20,
+                Design = new Design
+                {
+                    CssClass = "grid--border"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "MainContent",
+                        SortId = 10
+                    },
+                    new Block {
+                        Id = "FooterContent",
+                        SortId = 20,
+                        Design = new Design {
+                            RenderType = RenderType.Row,
+                            CssClass = "u-color-light-gray--bg u-no-padding"
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    orderDetailsPage.Add(pageContainer);
+}
+
+@Include("Blocks/Shared/Details/Header.cshtml")
+@Include("Blocks/Shared/Details/Comment.cshtml")
+@Include("Blocks/Shared/Details/GiftCards.cshtml")
+@Include("Blocks/Shared/Details/GiftCardsUsed.cshtml")
+@Include("Blocks/Shared/Details/References.cshtml")
+
+@Include("Blocks/OrderDetails/MainData.cshtml")
+@Include("Blocks/OrderDetails/BillingAddress.cshtml")
+@Include("Blocks/OrderDetails/Recurring.cshtml")
+@Include("Blocks/OrderDetails/Payment.cshtml")
+@Include("Blocks/OrderDetails/ShopInfo.cshtml")
+@Include("Blocks/OrderDetails/ShippingAddress.cshtml")
+@Include("Blocks/OrderDetails/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(orderDetailsPage.BlocksRoot.BlocksList)
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

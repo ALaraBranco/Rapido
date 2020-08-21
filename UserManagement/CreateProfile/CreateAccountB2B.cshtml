@@ -1,0 +1,74 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage createAccountPage = BlocksPage.GetBlockPage("CreateAccountB2B");
+}
+
+@{
+    Block createAccountContainer = new Block
+    {
+        Id = "CreateAccountContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--justify-center"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "CreateAccountB2BForm",
+                Template = RenderCreateAccountForm(),
+                SortId = 20,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "6",
+                    CssClass = "grid__col--bleed"
+                }
+            }
+        }
+    };
+
+    createAccountPage.Add(createAccountContainer);
+}
+
+@helper RenderCreateAccountForm()
+{
+
+    string pageId = GetGlobalValue("Global:Page.ID");
+    SelectField countries = new SelectField { Id = "UserManagement_Form_Country", Name = "UserManagement_Form_Country", Label = Translate("Country"), ErrorMessage = GetString("UserManagement:User.Country.Input.Error") };
+    Form form = new Form { Name = "UserManagementEditForm", Action = "/Default.aspx?ID=" + pageId, Method = FormMethod.Post };
+
+    @RenderHeading(new Heading { Title = Translate("Create user account"), Level = 2 });
+
+    form.Add(new HiddenField { Name = "UserManagementForm", Value = "1" });
+    form.Add(new TextField { Id = "UserManagement_Form_Name", Name = "UserManagement_Form_Name", Type = TextFieldType.Text, Label = Translate("Name"), Value = GetString("UserManagement:User.Name"), Required = true, ErrorMessage = GetString("UserManagement:User.Name.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_Email", Name = "UserManagement_Form_Email", Type = TextFieldType.Email, Label = Translate("Email"), Value = GetString("UserManagement:User.Email"), Required = true, ErrorMessage = GetString("UserManagement:User.Email.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_NewPassword", Name = "UserManagement_Form_NewPassword", Type = TextFieldType.Password, Label = Translate("Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPassword.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_NewPasswordConfirm", Name = "UserManagement_Form_NewPasswordConfirm", Type = TextFieldType.Password, Label = Translate("Confirm Password"), CssClass = "u-full-width", ErrorMessage = GetString("UserManagement:User.NewPasswordConfirm.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_Address", Name = "UserManagement_Form_Address", Type = TextFieldType.Text, Label = Translate("Address"), Value = GetString("UserManagement:User.Address"), ErrorMessage = GetString("UserManagement:User.Address.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_Zip", Name = "UserManagement_Form_Zip", Type = TextFieldType.Text, Label = Translate("Zip"), Value = GetString("UserManagement:User.Zip"), ErrorMessage = GetString("UserManagement:User.Zip.Input.Error") });
+    form.Add(new TextField { Id = "UserManagement_Form_City", Name = "UserManagement_Form_City", Type = TextFieldType.Text, Label = Translate("City"), Value = GetString("UserManagement:User.City"), ErrorMessage = GetString("UserManagement:User.City.Input.Error") });
+
+    foreach (LoopItem country in GetLoop("UserManagement.CountryList"))
+    {
+        bool selected = GetString("UserManagement:User.Country") == country.GetString("Country.Code2") ? true : false;
+        countries.Options.Add(new SelectFieldOption { Label = country.GetString("Country.Name"), Value = country.GetString("Country.Code2"), Checked = selected });
+    }
+
+    form.Add(countries);
+    form.Add(new TextField { Id = "UserManagement_Form_Phone", Name = "UserManagement_Form_Phone", Type = TextFieldType.Tel, Label = Translate("Phone"), Value = GetString("UserManagement:User.Phone"), ErrorMessage = GetString("UserManagement:User.Phone.Input.Error") });
+    form.Add(new Button { Id = "submitter", ButtonType = ButtonType.Submit, Title = Translate("Create your new account"), OnClick = "Buttons.LockButton(event)" });
+
+    @Render(form)
+}
+
+@Include("Blocks/CreateAccount/Custom__Blocks.cshtml")
+
+@RenderBlockList(createAccountPage.BlocksRoot.BlocksList)
+
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

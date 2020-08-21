@@ -1,0 +1,93 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Core
+
+@* Component *@
+
+@helper RenderButton(Button settings)
+{
+    if (settings != null && (!string.IsNullOrEmpty(settings.Title) || settings.Icon != null))
+    {
+        Dictionary<string, string> attributes = new Dictionary<string, string>();
+        List<string> classList = settings.CssClass != null ? settings.CssClass.Split(' ').ToList() : new List<string>();
+        if (settings.Disabled) {
+            attributes.Add("disabled", "true");
+            classList.Add("disabled");
+        }
+        
+        if (!string.IsNullOrEmpty(settings.ConfirmText) || !string.IsNullOrEmpty(settings.ConfirmTitle))
+        {
+            settings.Id = !string.IsNullOrEmpty(settings.Id) ? settings.Id : Guid.NewGuid().ToString("N");
+            @RenderConfirmDialog(settings);
+        settings.OnClick = "document.getElementById('" + settings.Id + "ModalTrigger').checked = true";
+    }
+
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+    if (!string.IsNullOrEmpty(settings.AltText))
+    {
+        attributes.Add("title", settings.AltText);
+    }
+    else if (!string.IsNullOrEmpty(settings.Title))
+    {
+        attributes.Add("title", settings.Title);
+    }
+
+    var onClickEvents = new List<string>();
+    if (!string.IsNullOrEmpty(settings.OnClick))
+    {
+        onClickEvents.Add(settings.OnClick);
+    }
+    if (!string.IsNullOrEmpty(settings.Href))
+    {
+        onClickEvents.Add("location.href='" + settings.Href + "'");
+    }
+    if (onClickEvents.Count > 0)
+    {
+        attributes.Add("onClick", string.Join(";", onClickEvents));
+    }
+
+    if (settings.ButtonLayout != ButtonLayout.None)
+    {
+        classList.Add("btn");
+        string btnLayout = Enum.GetName(typeof(ButtonLayout), settings.ButtonLayout).ToLower();
+        if (btnLayout == "linkclean")
+        {
+            btnLayout = "link-clean"; //fix
+        }
+        classList.Add("btn--" + btnLayout);
+    }
+
+    string content = settings.Title;
+    if (settings.Icon != null)
+    {
+        content = settings.Icon.LabelPosition == IconLabelPosition.Before ?
+                  Converter.ToString(Render(settings.Icon)) + content :
+                  content + Converter.ToString(Render(settings.Icon));
+    }
+
+    attributes.Add("type", Enum.GetName(typeof(ButtonType), settings.ButtonType).ToLower());
+
+        <button class="@string.Join(" ", classList) dw-mod" @ComponentMethods.AddAttributes(attributes) @ComponentMethods.AddAttributes(settings.ExtraAttributes)>@content</button>
+    }
+}
+
+@helper RenderConfirmDialog(Button settings)
+{
+    Modal confirmDialog = new Modal {
+        Id = settings.Id,
+        Width = ModalWidth.Sm,
+        Heading = new Heading
+        {
+            Level = 2,
+            Title = settings.ConfirmTitle
+        },
+        BodyText = settings.ConfirmText
+    };
+
+    confirmDialog.AddAction(new Button { Title = Translate("Cancel"), ButtonLayout = ButtonLayout.Secondary, OnClick = "document.getElementById('" + settings.Id + "ModalTrigger').checked = false"});
+    confirmDialog.AddAction(new Button { Title = Translate("OK"), ButtonLayout = ButtonLayout.Primary, OnClick = "document.getElementById('" + settings.Id + "ModalTrigger').checked = false;" + settings.OnClick });
+
+    @Render(confirmDialog)
+}

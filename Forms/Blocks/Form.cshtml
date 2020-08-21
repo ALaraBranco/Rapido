@@ -1,0 +1,198 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@functions {
+    BlocksPage formPage = BlocksPage.GetBlockPage("FormPage");
+}
+
+@{
+    Form form = new Form
+    {
+        FormStartMarkup = GetString("Form.FormStart") + GetString("Form.SystemFields")
+    };
+
+    foreach (LoopItem field in GetLoop("Fields"))
+    {
+        string fieldType = field.GetString("Field.Type");
+        bool required = field.GetBoolean("Field.Required");
+        string systemName = field.GetString("Field.SystemName");
+        string value = field.GetString("Field.Value");
+        string placeholder = Translate(field.GetString("Field.Placeholder"));
+        string label = Translate(field.GetString("Field.Name"));
+        string description = Translate(field.GetString("Field.Description"));
+        string control = field.GetString("Field.Control");
+
+        switch (fieldType)
+        {
+            case "TextInput":
+            case "Email":
+            case "Password":
+                TextFieldType type = TextFieldType.Text;
+                type = fieldType == "Email" ? TextFieldType.Email : type;
+                type = fieldType == "Password" ? TextFieldType.Password : type;
+
+                form.Add(new TextField
+                {
+                    Id = systemName,
+                    Type = type,
+                    Name = systemName,
+                    Label = label,
+                    Placeholder = placeholder,
+                    Value = value,
+                    HelpText = description,
+                    Required = required
+                });
+                break;
+
+            case "Textarea":
+                form.Add(new TextareaField
+                {
+                    Id = systemName,
+                    Name = systemName,
+                    Label = label,
+                    Placeholder = placeholder,
+                    Value = value,
+                    HelpText = description,
+                    Required = required
+                });
+                break;
+
+            case "Hidden":
+                form.Add(new HiddenField { Id = systemName, Name = systemName, Value = value }); //??? event
+                break;
+
+            case "CheckBox":
+                form.Add(new CheckboxField
+                {
+                    Id = systemName,
+                    Name = systemName,
+                    Label = label,
+                    Value = value,
+                    HelpText = description,
+                    Required = required
+                });
+                break;
+
+            case "Radio":
+                RadioButtonListField radioButtonsList = new RadioButtonListField
+                {
+                    Id = systemName,
+                    Name = systemName,
+                    Label = label,
+                    HelpText = description
+                };
+
+                foreach (LoopItem option in field.GetLoop("Options"))
+                {
+                    bool isChecked = option.GetBoolean("Option.DefaultSelected");
+                    string id = systemName + option.GetString("Option.ID");
+                    string optionValue = option.GetString("Option.Value");
+                    string optionText = Translate(option.GetString("Option.Text"));
+
+                    radioButtonsList.Options.Add(new RadioButtonField
+                    {
+                        Id = id,
+                        Value = optionValue,
+                        Label = optionText,
+                        Checked = isChecked
+                    });
+                }
+                form.Add(radioButtonsList);
+                break;
+
+            case "CheckBoxList":
+                CheckboxListField checkboxList = new CheckboxListField
+                {
+                    Id = systemName,
+                    Name = systemName,
+                    Label = label,
+                    HelpText = description
+                };
+
+                foreach (LoopItem option in field.GetLoop("Options"))
+                {
+                    bool isChecked = option.GetBoolean("Option.DefaultSelected");
+                    string id = systemName + option.GetString("Option.ID");
+                    string optionValue = option.GetString("Option.Value");
+                    string optionText = Translate(option.GetString("Option.Text"));
+
+                    checkboxList.Options.Add(new CheckboxField
+                    {
+                        Id = id,
+                        Value = optionValue,
+                        Label = optionText,
+                        Checked = isChecked
+                    });
+                }
+
+                form.Add(checkboxList);
+                break;
+
+            case "Select":
+
+                SelectField select = new SelectField
+                {
+                    Id = systemName,
+                    Name = systemName,
+                    Label = label,
+                    Value = value,
+                    HelpText = description,
+                    Required = required
+                };
+
+                foreach (var option in field.GetLoop("Options"))
+                {
+                    select.Options.Add(new SelectFieldOption
+                    {
+                        Label = option.GetString("Option.Text"),
+                        Value = option.GetString("Option.Value"),
+                        Checked = option.GetBoolean("Option.DefaultSelected")
+                    });
+                }
+
+                form.Add(select);
+                break;
+
+            case "Submit":
+                form.Add(new Button
+                {
+                    ButtonType = ButtonType.Submit,
+                    Id = systemName,
+                    Title = label,
+                    OnClick = "Buttons.LockButton(event)"
+                });
+
+                form.Add(new Text { Content = description });
+                break;
+
+            case "Reset":
+                form.Add(new Button
+                {
+                    ButtonType = ButtonType.Reset,
+                    Id = systemName,
+                    Title = label
+                });
+
+                form.Add(new Text { Content = description });
+                break;
+
+            case "PageShift":
+                form.Add(new Text { Content = "<label for=" + systemName + ">" + label + "</label><span class='formPageShift'></span>" });
+                break;
+        }
+    }
+
+    Block formBlock = new Block
+    {
+        Id = "FormComponent",
+        SortId = 10,
+        Component = form
+    };
+
+    formPage.Add("Form", formBlock);
+}

@@ -1,0 +1,78 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks;
+@using Dynamicweb.Rapido.Blocks.Components.General;
+@using Dynamicweb.Rapido.Blocks.Components;
+
+
+@functions {
+    BlocksPage recurringPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+
+    if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.PaymentMethod.RecurringSupport")) && !string.IsNullOrWhiteSpace(GetString("Ecom:Order.Recurring.IntervalUnit")))
+    {
+        Block recurring = new Block
+        {
+            Id = "Recurring",
+            SortId = 30,
+            Template = RenderRecurring()
+        };
+
+        recurringPage.Add("MainContent", recurring);
+    }
+}
+
+@helper RenderRecurring()
+{
+    <table class="table table-cart">
+        <tr>
+            <td colspan="2">
+                @Render(new Heading { Title = Translate("Recurring order settings") })
+            </td>
+        </tr>
+        <tr>
+            <td>
+                @Translate("Recurring every")
+            </td>
+            <td>
+                @GetString("Ecom:Order.Recurring.Interval")
+
+                @switch (GetInteger("Ecom:Order.Recurring.IntervalUnit"))
+                {
+                    case 0:
+                        <text>@Translate("Days")</text>
+                        break;
+                    case 1:
+                        <text>@Translate("Weeks")</text>
+                        break;
+                    case 2:
+                        <text>@Translate("Months")</text>
+                        break;
+                }
+            </td>
+        </tr>
+        <tr>
+            <td>
+                @Translate("Recurring start date")
+            </td>
+            <td>
+                @GetDate("Ecom:Order.Recurring.StartDate.Clean").ToString(Dynamicweb.Core.Helpers.DateHelper.DateFormatStringShort)
+            </td>
+        </tr>
+
+        @if (!string.IsNullOrWhiteSpace(GetString("Ecom:Order.Recurring.EndDate.Clean")))
+        {
+            <tr>
+                <td>
+                    @Translate("Recurring end date")
+                </td>
+                <td>
+                    @GetDate("Ecom:Order.Recurring.EndDate.Clean").ToString(Dynamicweb.Core.Helpers.DateHelper.DateFormatStringShort)
+                </td>
+            </tr>
+        }
+    </table>
+}
+

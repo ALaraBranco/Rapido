@@ -1,0 +1,55 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@using System.Web
+
+@functions {
+    BlocksPage eventFormPage = BlocksPage.GetBlockPage("FormPage");
+}
+
+@{
+    Block formPlaceholder = new Block
+    {
+        Id = "Form",
+        SortId = 10,
+        Template = RenderSignUpForm(),
+        SkipRenderBlocksList = true
+    };
+    
+    eventFormPage.Add(formPlaceholder);
+}
+
+@Include("../Blocks/Form.cshtml")
+@Include("../Blocks/Custom__Blocks.cshtml")
+
+@helper RenderCheckboxFieldCustom(CheckboxField settings) {
+    int termsPageId = GetPageIdByNavigationTag("TermsAndConditions");
+
+    if (settings.Id == "TermsAccept")
+    {
+        settings.Label += " <a href='/Default.aspx?Id=" + termsPageId + "' target='_blank' rel='noopener'>" + Translate("the terms and conditions of this website") + "</a>";
+    }
+    @RenderCheckboxField(settings)
+}
+
+@helper RenderSignUpForm()
+{
+    string eventName = HttpContext.Current.Request.QueryString.Get("eventName");
+
+    @Render(new Heading { Title = Translate("Sign up form"), Level = 2, CssClass = "u-margin-bottom" })
+    @Render(new Heading { Title = eventName, Level = 3, CssClass = "u-margin-bottom" })
+
+    List<Block> subBlocks = this.eventFormPage.GetBlockListById("Form").OrderBy(item => item.SortId).ToList();
+
+    // Render Content
+    @RenderBlockList(subBlocks)
+}
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(eventFormPage.BlocksRoot.BlocksList)
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

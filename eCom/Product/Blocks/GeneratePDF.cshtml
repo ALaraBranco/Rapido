@@ -1,0 +1,105 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage productGeneratePDFPage = BlocksPage.GetBlockPage("Product");
+}
+
+@{
+    string generatePDFLayout = !String.IsNullOrEmpty(Pageview.AreaSettings.GetItem("ProductPage").GetString("GeneratePDFLayout")) ? Pageview.AreaSettings.GetItem("ProductPage").GetList("GeneratePDFLayout").SelectedValue : "Section";
+    generatePDFLayout = generatePDFLayout == "Ribbon" ? "Section" : generatePDFLayout;
+
+    if (GetPageIdByNavigationTag("PdfFolder") > 0 && generatePDFLayout != "hide")
+    {
+        Block generatePDFBlock = new Block()
+        {
+            Name = generatePDFLayout != "MainInformation" ? Translate("Generate PDF") : "",
+            Id = "GeneratePDF",
+            SortId = 10,
+            Template = RenderGeneratePDF(generatePDFLayout),
+            Design = new Design
+            {
+                Size = "12",
+                RenderType = RenderType.Column,
+                HidePadding = true
+            }
+        };
+
+        productGeneratePDFPage.Add(generatePDFLayout, generatePDFBlock);
+    }
+}
+
+@helper RenderGeneratePDF(string layout)
+{
+    string ribbonClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("GeneratePDFLayout").SelectedValue == "Ribbon" ? "product__section--ribbon paragraph-container paragraph-container--full-width" : "";
+    ribbonClasses = layout == "Tabs" ? "u-no-padding" : ribbonClasses;
+    string ribbonSubClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("GeneratePDFLayout").SelectedValue == "Ribbon" ? "center-container--ribbon" : "";
+    string exportPageId = GetPageIdByNavigationTag("ProductExportFeed").ToString();
+    int pdfFolderId = GetPageIdByNavigationTag("PdfFolder");
+
+    Form form = new Form { Action = "/Default.aspx?ID=" + exportPageId + "&ProductID=" + System.Web.HttpContext.Current.Request.QueryString.Get("ProductID") + "&VariantID=" + System.Web.HttpContext.Current.Request.QueryString.Get("VariantID") + "&GeneratePdf=true", Method = FormMethod.Post, CssClass = "u-no-margin" };
+    form.Add(new HiddenField { Name = "siteUrl", Value = string.Format("{0}://{1}", GetGlobalValue("Global:Request.Scheme"), GetGlobalValue("Global:Request.Host")) });
+
+    //Select languages
+    SelectField languagesList = new SelectField
+    {
+        Id = "PdfLanguageId",
+        Name = "PdfLanguageId",
+        Label = Translate("Language"),
+        CssClass = "u-full-width"
+    };
+
+    foreach (var lang in Services.Languages.GetLanguages().OrderBy(l => l.Name))
+    {
+        languagesList.Options.Add(new SelectFieldOption
+        {
+            Label = lang.Name,
+            Value = lang.LanguageId,
+            Checked = lang.IsDefault ? true : false
+        });
+    }
+    form.Add(languagesList);
+
+    //Select pages
+    SelectField pagesList = new SelectField
+    {
+        Id = "PdfPageId",
+        Name = "PdfPageId",
+        Label = Translate("Generate PDF"),
+        CssClass = "u-full-width"
+    };
+
+    pagesList.Options.Add(new SelectFieldOption
+    {
+        Label = Translate("Select type"),
+        Value = "",
+        Checked = true
+    });
+
+    foreach (Dynamicweb.Content.Page page in ServiceLocator.Current.GetPageService().GetPagesByParentID(pdfFolderId))
+    {
+        pagesList.Options.Add(new SelectFieldOption
+        {
+            Label = page.MenuText,
+            Value = Converter.ToString(page.ID)
+        });
+    }
+    form.Add(pagesList);
+
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Generate PDF"), CssClass = "btn--full u-no-margin" });
+
+    <div class="product__section @ribbonClasses grid dw-mod">
+        <div class="dw-mod grid__col-md-4 @ribbonSubClasses">
+            @if (layout == "Section")
+            {
+                @Render(new Heading { Title = Translate("Generate PDF"), Level = 2 })
+            }
+            @Render(form)
+        </div>
+    </div>
+}

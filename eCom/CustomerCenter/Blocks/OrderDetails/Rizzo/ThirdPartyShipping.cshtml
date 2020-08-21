@@ -1,0 +1,51 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Linq
+@using System.Text
+@using Dynamicweb.Content.Items
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Security.UserManagement
+@using Newtonsoft.Json
+@{
+    BlocksPage orderDetailsThirdPartyShippingFields = BlocksPage.GetBlockPage("Details");
+    
+    Block rizzoRenderThirdPartyShippingFields = new Block
+    {
+        Id = "RenderThirdPartyShippingFields",
+        SortId = 30,
+        Design = new Design
+        {
+            CssClass = "grid__cell"
+        },
+        Template = RizzoRenderThirdPartyShippingFields()
+    };
+    orderDetailsThirdPartyShippingFields.GetBlockById("Payment").BlocksList.Add(rizzoRenderThirdPartyShippingFields);
+}
+@{
+    @helper RizzoRenderThirdPartyShippingFields()
+    {
+        if (GetString("OrderShippingAgent.Clean").IsNotNullOrEmpty())
+        {
+            <div>
+                @GetString("OrderShippingAgent.Name") <span>:</span> @GetString("OrderShippingAgent.Clean")
+            </div>
+        }
+        if (GetString("OrderShippingAgentService.Clean").IsNotNullOrEmpty())
+        {
+            <div>
+                @GetString("OrderShippingAgentService.Name") <span>:</span> @GetString("OrderShippingAgentService.Clean")
+            </div>
+        }
+        if (GetString("OrderShippingAccountNumber.Clean").IsNotNullOrEmpty())
+        {
+            <div>
+                @GetString("OrderShippingAccountNumber.Name") <span>:</span> @GetString("OrderShippingAccountNumber.Clean")
+            </div>
+        }
+    }
+}

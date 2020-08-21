@@ -1,0 +1,313 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+
+@* Component *@
+
+@helper RenderVariantMatrix(VariantMatrix settings) {
+    if (settings != null)
+    {
+        int productLoopCounter = 0;
+        int groupCount = 0;
+        List<VariantOption> firstDimension = new List<VariantOption>();
+        List<VariantOption> secondDimension = new List<VariantOption>();
+        List<VariantOption> thirdDimension = new List<VariantOption>();
+
+        foreach (VariantGroup variantGroup in settings.GetVariantGroups())
+        {
+            foreach (VariantOption variantOptions in variantGroup.GetVariantOptions())
+            {
+                if (groupCount == 0) {
+                    firstDimension.Add(variantOptions);
+                }
+                if (groupCount == 1)
+                {
+                    secondDimension.Add(variantOptions);
+                }
+                if (groupCount == 2)
+                {
+                    thirdDimension.Add(variantOptions);
+                }
+            }
+            groupCount++;
+        }
+
+        int rowCount = 0;
+        int columnCount = 0;
+
+        <script>
+            var variantsCollection = [];
+        </script>
+
+        <table class="table table--compact js-variants-matrix dw-mod" id="VariantMatrixTable_@settings.ProductId">
+            @if (groupCount == 1)
+            {
+                <tbody>
+                    @foreach (VariantOption firstVariantOption in firstDimension)
+                    {
+                        var variantId = firstVariantOption.Id;
+                        <tr>
+                            <td class="u-bold">
+                                @firstVariantOption.Name
+                            </td>
+                            <td>
+                                @RenderVariantMatrixQuantityField(variantId, settings, productLoopCounter, rowCount, columnCount)
+                            </td>
+                        </tr>
+                        productLoopCounter++;
+                    }
+
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>
+                            <div class="qty-field js-total-qty-column-@columnCount dw-mod">0</div>
+                        </td>
+                    </tr>
+                </tbody>
+            }
+            @if (groupCount == 2)
+            {
+                <thead>
+                    <tr>
+                        <td>&nbsp;</td>
+                        @foreach (VariantOption variant in secondDimension)
+                        {
+                            <td>@variant.Name</td>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (VariantOption firstVariantOption in firstDimension)
+                    {
+                        string variantId = "";
+                        columnCount = 0;
+
+                        <tr>
+                            <td class="u-min-w120px">@firstVariantOption.Name</td>
+
+                            @foreach (VariantOption secondVariantOption in secondDimension)
+                            {
+                                variantId = firstVariantOption.Id + "." + secondVariantOption.Id;
+                                <td>
+                                    @RenderVariantMatrixQuantityField(variantId, settings, productLoopCounter, rowCount, columnCount)
+                                </td>
+
+                                columnCount++;
+
+                                productLoopCounter++;
+                            }
+
+                            <td>
+                                <div class="qty-field js-total-qty-row-@rowCount dw-mod">0</div>
+                            </td>
+                        </tr>
+
+                        rowCount++;
+                    }
+
+                    @{
+                        columnCount = 0;
+                    }
+
+                    <tr>
+                        <td>&nbsp;</td>
+                        @foreach (VariantOption secondVariantOption in secondDimension)
+                        {
+                            <td>
+                                <div class="qty-field js-total-qty-column-@columnCount dw-mod">0</div>
+                            </td>
+
+                            columnCount++;
+                        }
+                        <td>&nbsp;</td>
+                    </tr>
+                </tbody>
+            }
+            @if (groupCount == 3)
+            {
+                <thead>
+                    <tr>
+                        <td>&nbsp;</td>
+                        @foreach (VariantOption thirdVariantOption in thirdDimension)
+                        {
+                            <td>@thirdVariantOption.Name</td>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (VariantOption firstVariantOption in firstDimension)
+                    {
+                        int colspan = (thirdDimension.Count + 1);
+
+                        <tr>
+                            <td colspan="@colspan" class="u-color-light-gray--bg u-bold">@firstVariantOption.Name</td>
+                        </tr>
+
+                        foreach (VariantOption secondVariantOption in secondDimension)
+                        {
+                            string variantId = "";
+                            columnCount = 0;
+
+                            <tr>
+                                <td class="u-min-w120px">@secondVariantOption.Name</td>
+
+                                @foreach (VariantOption thirdVariantOption in thirdDimension)
+                                {
+                                    variantId = firstVariantOption.Id + "." + secondVariantOption.Id + "." + thirdVariantOption.Id;
+
+                                    <td>
+                                        @RenderVariantMatrixQuantityField(variantId, settings, productLoopCounter, rowCount, columnCount)
+                                    </td>
+
+                                    columnCount++;
+                                    productLoopCounter++;
+                                }
+
+                                <td>
+                                    <div class="qty-field js-total-qty-row-@rowCount dw-mod">0</div>
+                                </td>
+                            </tr>
+                            rowCount++;
+                        }
+                    }
+
+                    @{
+                        columnCount = 0;
+                    }
+
+                    <tr>
+                        <td>&nbsp;</td>
+                        @foreach (VariantOption thirdVariantOption in thirdDimension)
+                        {
+                            <td>
+                                <div class="qty-field js-total-qty-column-@columnCount dw-mod">0</div>
+                            </td>
+
+                            columnCount++;
+                        }
+                        <td>&nbsp;</td>
+                    </tr>
+                </tbody>
+            }
+        </table>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function (event) {
+                VariantMatrix.MatrixUpdateQuantity("@settings.ProductId");
+            });
+
+            MatrixUpdateQuantity = function (productId) {
+                var currentMatrix = document.getElementById("VariantMatrixTable_" + productId);
+                var allQtyFields = currentMatrix.getElementsByClassName("js-qty");
+
+                var qtyRowArr = [];
+                var qtyColumnArr = [];
+
+                var totalQty = 0;
+
+                for (var i = 0; i < allQtyFields.length; i++) {
+                    qtyRowArr[allQtyFields[i].getAttribute("data-qty-row-group")] = 0;
+                    qtyColumnArr[allQtyFields[i].getAttribute("data-qty-column-group")] = 0;
+                }
+
+                for (var i = 0; i < allQtyFields.length; i++) {
+                    qtyRowArr[allQtyFields[i].getAttribute("data-qty-row-group")] += parseFloat(allQtyFields[i].value);
+                    qtyColumnArr[allQtyFields[i].getAttribute("data-qty-column-group")] += parseFloat(allQtyFields[i].value);
+                    totalQty += parseFloat(allQtyFields[i].value);
+                }
+
+                //Update row counters
+                for (var i = 0; i < qtyRowArr.length; i++) {
+                    var qtyCounter = currentMatrix.getElementsByClassName("js-total-qty-row-" + i)[0];
+
+                    if (qtyRowArr[i] != undefined && qtyCounter != null) {
+                        var currentCount = qtyCounter.innerHTML;
+                        qtyCounter.innerHTML = qtyRowArr[i];
+
+                        if (currentCount != qtyCounter.innerHTML) {
+                            qtyCounter.classList.add("qty-field--active");
+                        }
+                    }
+        
+                }
+
+                //Update column counters
+                for (var i = 0; i < qtyColumnArr.length; i++) {
+                    var qtyCounter = currentMatrix.getElementsByClassName("js-total-qty-column-" + i)[0];
+
+                    if (qtyColumnArr[i] != undefined && qtyCounter != null) {
+                        var currentCount = qtyCounter.innerHTML;
+                        qtyCounter.innerHTML = qtyColumnArr[i];
+
+                        if (currentCount != qtyCounter.innerHTML) {
+                            qtyCounter.classList.add("qty-field--active");
+                        }
+                    }
+                }
+
+                if (document.getElementById("TotalQtyCount_" + productId)) {
+                    document.getElementById("TotalQtyCount_" + productId).innerHTML = totalQty;
+                }
+
+                //Clean up animations
+                setTimeout(function () {
+                    for (var i = 0; i < qtyRowArr.length; i++) {
+                        var qtyCounter = currentMatrix.getElementsByClassName("js-total-qty-row-" + i)[0];
+                        if (qtyCounter != null) {
+                            qtyCounter.classList.remove("qty-field--active");
+                        }
+                    }
+                    for (var i = 0; i < qtyColumnArr.length; i++) {
+                        var qtyCounter = currentMatrix.getElementsByClassName("js-total-qty-column-" + i)[0];
+                        if (qtyCounter != null) {
+                            qtyCounter.classList.remove("qty-field--active");
+                        }
+                    }
+                }, 1000);
+            }
+        </script>
+    }
+}
+
+@helper RenderVariantMatrixQuantityField(string variantId, VariantMatrix settings, int productLoopCounter, int rowCount, int columnCount)
+{
+    string loopCount = productLoopCounter.ToString();
+
+    bool combinationFound = false;
+    double stock = 0;
+    double quantityValue = 0;
+    string note = "";
+
+    VariantProduct variantProduct = null;
+
+    if (settings.GetVariantProducts().TryGetValue(variantId, out variantProduct))
+    {
+        stock = variantProduct.Stock;
+        quantityValue = variantProduct.Quantity;
+        combinationFound = true;
+    }
+
+    if (combinationFound)
+    {
+        <input type="hidden" name="ProductLoopCounter@(loopCount)" value="@loopCount" />
+        <input type="hidden" name="ProductID@(loopCount)" value="@settings.ProductId" />
+        <input type="hidden" name="VariantID@(loopCount)" value="@variantId" />
+        <input type="hidden" name="CurrentNote@(loopCount)" id="CurrentNote_@(settings.ProductId)_@variantId" value="@note" />
+        <input type="number" name="Quantity@(loopCount)" id="Quantity_@(settings.ProductId)_@variantId" value="@quantityValue" min="0" class="js-qty u-no-margin use-btn-primary-height u-full-max-width" style="width: 100%; max-width: 100%" onkeyup="MatrixUpdateQuantity('@settings.ProductId')" onmouseup="MatrixUpdateQuantity('@settings.ProductId')" data-qty-row-group="@rowCount" data-qty-column-group="@columnCount">
+
+        if (stock != 0)
+        {
+            <small>@Translate("Stock") @stock</small>
+        }
+
+        <script>
+            var variants = '{ "ProductId" :' + '"@settings.ProductId"' + ', "VariantId": ' + '"@variantId"' +'}';
+            variantsCollection.push(variants);
+            document.getElementById("Quantity_@(settings.ProductId)_@variantId").closest(".js-variants-matrix").setAttribute("data-variants-collection", "[" + variantsCollection + "]" );
+        </script>
+    }
+    else
+    {
+        <div class="use-btn-primary-height" style="background-color: #a8a8a8"></div>
+    }
+}

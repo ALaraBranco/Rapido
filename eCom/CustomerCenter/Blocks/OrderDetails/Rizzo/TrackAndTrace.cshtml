@@ -1,0 +1,67 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Linq
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@{
+    BlocksPage shopInfoPageTrackAndTrace = BlocksPage.GetBlockPage("Details");
+    if (GetLoop("TrackTraceParameters").Where(p => !String.IsNullOrEmpty(p.GetString("Ecom:Order.TrackTraceParameter.Value"))).ToList().Any())
+    {
+        Block rizzoTrackAndTraceTitle = new Block
+        {
+            Id = "DisplayTrackAndTraceTitle",
+            SortId = 40,
+            Component = new Heading
+            {
+                Title = Translate("Track and Trace"),
+                Level = 3, Icon = new Icon {Prefix = "fas", Name = "fa-plane"},
+                CssClass = "u-no-margin"
+            }
+        };
+        Block rizzoTrackAndTraceNumbers = new Block
+        {
+            Id = "DisplayTrackAndTraceNumbers",
+            SortId = 50,
+            Design = new Design
+            {
+                CssClass = "grid__cell"
+            },
+            Template = DisplayTrackAndTraceNumbers()
+        };
+        shopInfoPageTrackAndTrace.GetBlockById("Payment").BlocksList.Add(rizzoTrackAndTraceTitle);
+        shopInfoPageTrackAndTrace.GetBlockById("Payment").BlocksList.Add(rizzoTrackAndTraceNumbers);
+    }
+    
+}
+
+@helper DisplayTrackAndTraceNumbers()
+{
+    var trackAndTraceUrl = GetString("Ecom:Order.TrackTraceURL");
+    var trackAndTraceParameters = GetLoop("TrackTraceParameters").Where(p => !String.IsNullOrEmpty(p.GetString("Ecom:Order.TrackTraceParameter.Value"))).ToList();
+    //only has output if url and params exist
+    if (trackAndTraceUrl.IsNotNullOrEmpty() && trackAndTraceParameters.Any())
+    {
+        var rebuildLink = string.Concat(string.Format(GetString("Ecom:Order.TrackTraceURL"), trackAndTraceParameters.ToArray()).Split(new string[] { trackAndTraceParameters.Last().GetString("Ecom:Order.TrackTraceParameter.Value")},StringSplitOptions.None)[0].Replace(",,",""),
+                                        trackAndTraceParameters.Last().GetString("Ecom:Order.TrackTraceParameter.Value"));
+        var trackAndTraceUrlParts = trackAndTraceUrl.Split('?');
+        var showLink = trackAndTraceUrlParts[0].ToLower().StartsWith("http");
+       
+        foreach (var trackAndTraceParameter in trackAndTraceParameters)
+        {
+            var trackAndTraceParameterCurated = string.Concat(trackAndTraceParameter.GetString("Ecom:Order.TrackTraceParameter.Value"), trackAndTraceParameter.Index < trackAndTraceParameters.Count ? "," : string.Empty);
+            if (showLink)
+            {
+                <a href="@rebuildLink" target="_blank" class="">
+                  @trackAndTraceParameterCurated
+                </a>
+            }
+            else
+            {
+                <span>@trackAndTraceParameterCurated</span>
+            }
+        }
+    }
+}

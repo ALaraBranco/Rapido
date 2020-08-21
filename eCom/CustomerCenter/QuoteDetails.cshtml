@@ -1,0 +1,54 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using Dynamicweb.Core;
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@Include("../../GetProductImage.cshtml")
+
+@functions {
+    BlocksPage quoteDetailsPage = BlocksPage.GetBlockPage("Details");
+}
+
+@{
+    Block pageContainer = new Block
+    {
+        Id = "PageContainer",
+        SortId = 20,
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "Quotes",
+                SortId = 20,
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "MainContent",
+                        SortId = 10
+                    }
+                }
+
+            }
+        }
+    };
+
+    quoteDetailsPage.Add(pageContainer);
+}
+
+@Include("Blocks/Shared/Details/Header.cshtml")
+@Include("Blocks/Shared/Details/Comment.cshtml")
+@Include("Blocks/Shared/Details/GiftCards.cshtml")
+@Include("Blocks/Shared/Details/GiftCardsUsed.cshtml")
+@Include("Blocks/Shared/Details/References.cshtml")
+
+@Include("Blocks/QuoteDetails/MainData.cshtml")
+@Include("Blocks/QuoteDetails/Footer.cshtml")
+@Include("Blocks/QuoteDetails/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(quoteDetailsPage.BlocksRoot.BlocksList)
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

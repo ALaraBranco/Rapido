@@ -1,0 +1,210 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System.Web;
+@using Dynamicweb.Frontend
+@using Dynamicweb.Frontend.Devices
+@using Dynamicweb.Extensibility
+@using Dynamicweb.Content
+@using Dynamicweb.Security
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.IO
+@using Dynamicweb.Rapido.Blocks
+@using System.Net
+
+@functions {
+    BlocksPage masterPage = BlocksPage.GetBlockPage("Master");
+
+    string getFontFamily(params string[] items)
+    {
+        var itemParent = Pageview.AreaSettings;
+        foreach (var item in items)
+        {
+            itemParent = itemParent.GetItem(item);
+            if (itemParent == null)
+            {
+                return null;
+            }
+        }
+
+        var googleFont = itemParent.GetGoogleFont("FontFamily");
+        if (googleFont == null)
+        {
+            return null;
+        }
+        return googleFont.Family.Replace(" ", "+");
+    }
+}
+
+@{
+    //Font settings
+    var fonts = new string[] {
+        getFontFamily("Layout", "HeaderFont"),
+        getFontFamily("Layout", "SubheaderFont"),
+        getFontFamily("Layout", "TertiaryHeaderFont"),
+        getFontFamily("Layout", "Header", "ToolsFont"),
+        getFontFamily("Layout", "Header", "NavigationFont"),
+        getFontFamily("Layout", "MobileNavigation", "Font"),
+        getFontFamily("ProductList", "Facets", "HeaderFont"),
+        getFontFamily("ProductPage", "PriceFontDesign"),
+        getFontFamily("Ecommerce", "SaleSticker", "Font"),
+        getFontFamily("Ecommerce", "NewSticker", "Font"),
+        getFontFamily("Ecommerce", "CustomSticker", "Font")
+    };
+
+    string autoCssLink = "/Files/Templates/Designs/Rapido/css/rapido/rapido_" + Model.Area.ID.ToString() + ".min.css?ticks=" + Model.Area.UpdatedDate.Ticks;
+    string favicon = Model.Area.Item.GetItem("Layout").GetFile("LogoFavicon") != null ? Model.Area.Item.GetItem("Layout").GetFile("LogoFavicon").Path : "/Files/Images/favicon.png";
+    bool useFontAwesomePro = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetBoolean("UseFontAwesomePro");
+    
+    /* Optimizer variables */
+    var minify = Model.Area.Item.GetItem("Rizzo").GetBoolean("MinifyCss");
+    var folderName = "";
+    var rizzoBundle = "";
+    var rizzoPackagesBundle = "";
+    var variablesFile = "/Files/Templates/Designs/Rapido/css/rapido/_variables_" + Model.Area.ID + ".auto.less";
+}
+
+@{
+    Block master = new Block()
+    {
+        Id = "Master",
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "MasterTopSnippets",
+                SortId = 10
+            },
+            new Block {
+                Id = "MasterMain",
+                SortId = 20,
+                Template = RenderMain(),
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "MasterPageContent",
+                        SortId = 10,
+                        Template = RenderPageContent()
+                    }
+                }
+            },
+            new Block {
+                Id = "MasterFooter",
+                SortId = 30
+            },
+            new Block {
+                Id = "MasterReferences",
+                SortId = 40
+            },
+            new Block {
+                Id = "MasterBottomSnippets",
+                SortId = 50
+            }
+        }
+    };
+    masterPage.Add(master);
+
+    Block footer = new Block
+    {
+        Id = "Footer",
+        SortId = 20,
+        Template = RenderNoLayoutFooter()
+    };
+    masterPage.Add("MasterFooter", footer);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("Components/GridBuilder.cshtml")
+
+@* Include the components that makes it possible to render articles *@
+@Include("Components/GeneralComponents.cshtml")
+@Include("Components/ArticleComponents.cshtml")
+@Include("Components/DocumentationComponents.cshtml")
+
+@Include("MasterBlocks/References.cshtml")
+@Include("MasterBlocks/BottomSnippets.cshtml")
+
+
+<!DOCTYPE html>
+
+<html lang="@Pageview.Area.CultureInfo.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <title>@Pageview.Page.MetaTitle</title>
+
+    <!-- Mobile specific meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Base (Default, wireframe) styles -->
+    <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/base/base.min.css" type="text/css">
+
+    <!-- Rapido Css from Website Settings -->
+    <link rel="stylesheet" href="@autoCssLink" type="text/css">
+
+    @if (Model.Area.Item.GetItem("Rizzo").GetBoolean("UseRizzoCss"))
+    {
+        <!-- Rizzo Layer Css (DWNA layer specific styles) -->
+        folderName = "rizzo";
+        rizzoBundle = Dna.Optimizer.Renderer.RenderStyles($"/Files/Templates/Designs/Rapido/css/{folderName}", $"-{folderName}-styles", new [] {variablesFile},  new[] { $"{folderName}.css", $"{folderName}.min.css" }, minify, false, false);
+        <link id="rizzoCss" type="text/css" rel="stylesheet" href="@rizzoBundle" />
+    }
+    @if (Model.Area.Item.GetItem("RizzoPackages").GetBoolean("UseRizzoCss"))
+    {
+        <!-- Rizzo Packages Css (DWNA packages specific styles) -->
+        folderName = "rizzoPackages";
+        rizzoPackagesBundle = Dna.Optimizer.Renderer.RenderStyles($"/Files/Templates/Designs/Rapido/css/{folderName}", $"-{folderName}-styles", new [] {variablesFile},  new[] { $"{folderName}.css", $"{folderName}.min.css" }, minify, false, false);
+        <link id="rizzoPackagesCss" type="text/css" rel="stylesheet" href="@rizzoPackagesBundle" />
+    }
+
+    <!-- Ignite Css (Custom site specific styles) -->
+    @{
+        folderName = "ignite";
+        var igniteBundle = Dna.Optimizer.Renderer.RenderStyles($"/Files/Templates/Designs/Rapido/css/{folderName}", $"-{folderName}-styles", new [] {variablesFile},  new[] { $"{folderName}.css", $"{folderName}.min.css" }, minify, false, false);
+        <link id="igniteCss" type="text/css" rel="stylesheet" href="@igniteBundle" />
+    }
+
+    <!-- Font awesome -->
+    <link rel="stylesheet" href="/Files/Templates/Designs/Rapido/css/fonts/FontAwesomePro/css/fontawesome-all.min.css" type="text/css">
+
+    <!-- Google fonts -->
+    @{
+        var family = string.Join("%7C", fonts.Where(x => !string.IsNullOrEmpty(x)).Distinct().Select(x => string.Format("{0}:100,200,300,400,500,600,700,800,900", x)));
+    }
+    <link href="https://fonts.googleapis.com/css?family=@family" rel="stylesheet">
+</head>
+
+<body>
+    @* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+    @RenderBlockList(masterPage.BlocksRoot.BlocksList)
+
+
+
+    @helper RenderMain()
+    {
+        List<Block> subBlocks = this.masterPage.GetBlockListById("MasterMain").OrderBy(item => item.SortId).ToList();
+
+        <main class="site dw-mod">
+            @RenderBlockList(subBlocks)
+        </main>
+    }
+
+    @helper RenderPageContent()
+    {
+        bool isNavigationStickyMenu = Pageview.Device.ToString() != "Mobile" && Pageview.Device.ToString() != "Tablet" && Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("StickyTop");
+        string pagePos = isNavigationStickyMenu ? "js-page-pos" : "";
+
+        <div id="Page" class="page @pagePos">
+            <section class="center-container content-container dw-mod" id="content">
+                @ContentPlaceholder()
+            </section>
+        </div>
+    }
+
+    @helper RenderNoLayoutFooter() {
+        <footer class="footer dw-mod">
+            <div class="grid__col-12 footer__copyright dw-mod">
+                <p>@Model.Area.Item.GetItem("Layout").GetString("FooterCopyrightText")</p>
+            </div>
+        </footer>
+    }
+</body>
+</html>

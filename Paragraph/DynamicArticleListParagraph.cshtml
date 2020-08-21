@@ -1,0 +1,114 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.IO
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@{ 
+    string blocksPageName = "ArticleListParagraph" + Pageview.CurrentParagraph.ID.ToString();
+    BlocksPage articleListParagraph = BlocksPage.GetBlockPage(blocksPageName);
+
+
+    int pageId = Model.PageID;
+    bool showTitle = Model.Item.GetBoolean("ShowTitle");
+    string dynamicListWidth = "12";
+    string itemType = Model.Item.GetString("ItemTypeName") != null ? Model.Item.GetString("ItemTypeName") : "DynamicArticle";
+
+    Block listPageContainer = new Block
+    {
+        Id = "ArticleListParagraphContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ArticleListParagraphHeader",
+                SortId = 20,
+                Design = new Design
+                {
+                    RenderType = RenderType.Column,
+                    Size = "12"
+                },
+                BlocksList = new List<Block> {
+                    new Block {
+                        Id = "ArticleListParagraphHeaderRow",
+                        SortId = 10,
+                        Design = new Design
+                        {
+                            RenderType = RenderType.Row,
+                            HidePadding = true
+                        }
+                    }
+                }
+            }
+        }
+    };
+    articleListParagraph.Add(listPageContainer);
+
+    if (showTitle) {
+        Block titleBlock = new Block
+        {
+            Id = "ArticleListTitle",
+            SortId = 10,
+            Component = new Heading { Title = Model.Item.GetString("Title"), Level = 2, CssClass = "u-no-margin" },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        articleListParagraph.Add("ArticleListParagraphHeaderRow", titleBlock);
+    }
+
+    Block listBody = new Block
+    {
+        Id = "ArticleListParagraphBody",
+        SortId = 30,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = dynamicListWidth
+        }
+    };
+    articleListParagraph.Add("ArticleListParagraphContainer", listBody);
+
+    Block listBodyRow = new Block
+    {
+        Id = "ArticleListParagraphBodyRow",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    articleListParagraph.Add("ArticleListParagraphBody", listBodyRow);
+
+    Block listMain = new Block
+    {
+        Id = "ArticleListMain",
+        SortId = 20,
+        Component = new ArticleList { Template = "../ItemPublisher/List/DynamicList.cshtml", PageSize = Model.Item.GetInt32("ArticlesListSize"), SourcePage = Model.Item.GetItem("GetArticlesFrom").PageID.ToString(), SourceType = "Page", ItemType = itemType },
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12",
+            HidePadding = true
+        }
+    };
+    articleListParagraph.Add("ArticleListParagraphBodyRow", listMain);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml")
+@Include("../Components/ArticleComponents.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(articleListParagraph.BlocksRoot.BlocksList)

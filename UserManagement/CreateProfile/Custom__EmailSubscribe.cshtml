@@ -1,0 +1,86 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Collections.Generic
+@using System.Net.Mime
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage emailSubscribePage = BlocksPage.GetBlockPage("EmailSubcribe");
+}
+
+@{
+    string emailAdress = HttpContext.Current.Request.QueryString.Get("NewsletterEmail");
+
+    if (string.IsNullOrEmpty(emailAdress))
+    {
+        emailAdress = GetString("UserManagement:User.Email");
+    }
+
+    var form = new Form
+    {
+        FormStartMarkup = GetString("UserManagement:User.FormStart")
+    };
+
+    Block emailSubscribePageContainer = new Block
+    {
+        Id = "EmailSubscribeForm",
+        SortId = 10,
+        Component = form
+    };
+
+    form.Add(new Heading { Title = Translate("Sign up for the newsletter"), Level = 2 });
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_Name", Name = "UserManagement_Form_Name", Label = Translate("Name"), Value = GetString("UserManagement:User.Name"), Placeholder= Translate("Name"),
+        Required = true, ErrorMessage = GetString("UserManagement:User.Name.Input.Error")
+    });
+    form.Add(new TextField
+    {
+        Id = "UserManagement_Form_Email", Name = "UserManagement_Form_Email", Label = Translate("Email"), Value = emailAdress, Placeholder = Translate("Email"),
+        Type = TextFieldType.Email, Required = true
+    });
+    form.Add(new SelectField
+    {
+        Id = "CustomField.AccessUser_AccessUser_ServiceType",
+        Name = "CustomField.AccessUser_AccessUser_ServiceType", 
+        Label = Translate("Service"), 
+        Value = string.Empty,
+        Required = true,
+        Options = new List<SelectFieldOption> {
+            new SelectFieldOption {
+                Value = "", /* rapido is removing empty value, that is why extra value is added */
+                Label = Translate("Select"),
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    {"value", ""}
+                }
+            },
+            new SelectFieldOption {
+                Value = "Law Enforcement Office/Agency",
+                Label = Translate("Law Enforcement Office/Agency")
+            },
+            new SelectFieldOption {
+                Value = "FFL Dealer",
+                Label = Translate("FFL Dealer")
+            },
+            new SelectFieldOption {
+                Value = "Military",
+                Label = Translate("Military")
+            }
+        }
+    });
+    
+    form.Add(new CheckboxField { Id = "UserManagement_Form_EmailAllowed", Name = "UserManagement_Form_EmailAllowed", Label = Translate("I want to sign up"), Required = true, Value = "True" });
+    form.Add(new HiddenField { Id = "UserManagement_Form_EmailAllowed_ApplyValue", Name = "UserManagement_Form_EmailAllowed_ApplyValue", Value = "AllowEmail" });
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Subscribe"), OnClick = "Buttons.LockButton(event)" });
+
+    emailSubscribePage.Add(emailSubscribePageContainer);
+}
+
+@Include("Blocks/EmailSubscribe/Custom__Blocks.cshtml")
+
+@RenderBlockList(emailSubscribePage.BlocksRoot.BlocksList)
+
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

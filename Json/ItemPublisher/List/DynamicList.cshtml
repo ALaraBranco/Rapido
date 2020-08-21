@@ -1,0 +1,53 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.Collections.Specialized;
+
+@{
+    string excludeCaseID = HttpContext.Current.Request.QueryString.Get("ExcludeCaseID");
+}
+
+@functions {
+
+    public class Item
+    {
+        public string id { get; set; }
+        public string title { get; set; }
+        public string image { get; set; }
+        public string summary { get; set; }
+        public string link { get; set; }
+    }
+
+    public class Root
+    {
+        public List<Item> Cases { get; set; }
+
+    }
+}
+
+@{
+    List<Root> feedObject = new List<Root>();
+
+    Root feedRoot = new Root();
+    feedRoot.Cases = new List<Item>();
+
+    foreach (LoopItem item in GetLoop("ItemPublisher:Items.List"))
+    {
+        if (item.GetString("ItemPublisher:Item.Field.PageId") != excludeCaseID)
+        {
+            Item itemObejct = new Item();
+            itemObejct.id = item.GetString("ItemPublisher:Item.Field.Id");
+            itemObejct.title = item.GetString("ItemPublisher:Item.Title");
+            itemObejct.image = item.GetString("ItemPublisher:Item.Image");
+            itemObejct.summary = item.GetString("ItemPublisher:Item.Summary");
+            itemObejct.link = "/Default.aspx?ID=" + item.GetString("ItemPublisher:Item.Field.PageId");
+
+            feedRoot.Cases.Add(itemObejct);
+        }
+    }
+
+    feedObject.Add(feedRoot);
+
+    string jsonFeed = Newtonsoft.Json.JsonConvert.SerializeObject(feedObject);
+}
+
+@jsonFeed

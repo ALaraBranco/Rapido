@@ -1,0 +1,66 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+   BlocksPage viewDetailsPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block detailsViewTemplate = new Block()
+    {
+        Id = "DetailsViewTemplate",
+        Template = RenderDetailsViewTemplate()
+    };
+
+    viewDetailsPage.Add("ScriptTemplates", detailsViewTemplate);
+}
+
+@helper RenderDetailsViewTemplate()
+{
+    @* Details view *@
+
+    <script id="FileDetailsItemContainer" type="text/x-template">
+        {{#.}}
+            <div id="File{{id}}" class="grid__col-12 u-no-padding-y">
+                <div class="product-list__details-item grid__col-12 grid--direction-row grid--align-center dw-mod">
+                    <div class="product-list__details-item__left grid__cell dw-mod">
+
+                        <div class="lightbox u-hidden-xxs">
+                            <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')">
+                                {{#if icon}}
+                                    @Render(new Image { Path = "{{icon}}", Title = "{{name}}", CssClass = "u-w50px u-margin-right" })
+                                {{else}}
+                                    @Render(new Image { Path = "{{path}}", Title = "{{name}}", CssClass = "lightbox__image", ImageDefault = new ImageSettings { Width = 220, Height = 222, Crop = 5, FillCanvas = true }, DisableLazyLoad = true })
+                                    @Render(new Image { Path = "{{path}}", Title = "{{name}}", CssClass = "u-margin-right", ImageDefault = new ImageSettings { Width = 50, Height = 50, Crop = 5, FillCanvas = true } })
+                                {{/if}}
+                            </label>
+                        </div>
+
+                        <div class="u-margin-left u-margin-right">
+                            <h6 class="u-no-margin">
+                                <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')">{{name}}</label>
+                            </h6>
+                            <div class="item-number dw-mod">{{path}}</div>
+                        </div>
+                    </div>
+                    <div class="product-list__details-item__right grid__cell dw-mod">
+                        @if (Pageview.User != null)
+                        {
+                            @Render(new Button { 
+                                ButtonType = ButtonType.Button, 
+                                ButtonLayout = ButtonLayout.Primary,
+                                OnClick = "addFileToDownloads('{{path}}');",
+                                CssClass = "u-no-margin btn--condensed u-margin-left u-margin-right",
+                                Icon = new Icon {
+                                    Prefix = "fas",
+                                    Name = "fa-download"
+                                } 
+                            })
+                        }
+                    </div>
+                </div>
+            </div>
+        {{/.}}
+    </script>
+}

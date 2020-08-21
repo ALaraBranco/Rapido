@@ -1,0 +1,50 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component for the articles *@
+
+@helper RenderArticleRelated(ArticleRelated settings)
+{
+    string cardClass = Pageview.Device.ToString() != "Tablet" ? "card u-color-light--bg u-full-height" : "";
+    string cardFooterClass = Pageview.Device.ToString() != "Tablet" ? "card-footer u-color-light--bg" : "";
+
+    <section class="multiple-paragraphs-container u-color-light-gray--bg paragraph-container--full-width">
+        <div class="center-container dw-mod">
+            <div class="grid u-padding">
+                <div class="grid__col-md-12 grid__col-xs-12">
+                    <h2 class="article__header u-no-margin u-margin-top">@settings.Title</h2>
+                </div>
+            </div>
+
+            <div class="js-handlebars-root u-padding" id="@settings.Title.Replace("  ", String.Empty)" data-template="RelatedSimpleTemplate" data-json-feed="/Default.aspx?ID=@settings.FeedPageId&@settings.Query&ExcludeItemID=@settings.CurrentPageId&PageSize=@settings.PageSize"></div>
+
+            <script id="RelatedSimpleTemplate" type="text/x-template">
+                {{#.}}
+                <div class="grid u-padding-bottom--lg">
+                    {{#Cases}}
+                    <div class="grid__col-3 image-hover--zoom dw-mod">
+                        <a href="{{link}}" class="u-full-height u-color-light--bg">
+                            {{#if image}}
+                            <div class="u-color-light--bg u-no-padding dw-mod">
+                                <div class="flex-img image-hover__wrapper">
+                                    <img class="b-lazy" src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=680&height=314&amp;crop=1&amp;DoNotUpscale=True&amp;Compression=75&amp;image={{image}}" alt="{{title}}" />
+                                </div>
+                            </div>
+                            {{/if}}
+
+                            <div class="card u-color-light--bg dw-mod">
+                                <h3 class="article-list__item-header u-truncate-text dw-mod">{{title}}</h3>
+                                <p class="article__short-summary dw-mod">{{summary}}</p>
+                            </div>
+                        </a>
+                    </div>
+                    {{/Cases}}
+                </div>
+                {{/.}}
+            </script>
+        </div>
+    </section>
+}

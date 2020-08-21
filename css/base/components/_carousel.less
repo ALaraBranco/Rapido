@@ -1,0 +1,189 @@
+.carousel {
+    position: relative;
+    overflow: hidden;
+    min-height: 55px;
+}
+
+.carousel--hidden,
+.carousel__container--hidden {
+    height: 0;
+    visibility: hidden;
+}
+
+.carousel__container {
+    position: relative;
+    left: 0;
+    z-index: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+    transition: all 0.7s ease-out;
+}
+
+.carousel--horizontal .carousel__container {
+    display: flex;
+}
+
+.carousel__slide {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    vertical-align: top;
+    box-sizing: border-box;
+    white-space: normal;
+    display: inline-block;
+}
+
+.carousel__slide--horizontal {
+    display: flex;
+    float: left;
+}
+
+.carousel__slide--vertical {
+    display: block;
+}
+
+.carousel-prev-btn {
+    position: absolute;
+    top: ~"calc(50% - 21px)";
+    left: @reflex-cell-spacing-lg;
+    z-index: 9;
+    color: @white;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 200px;
+    border: none;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:before {
+        font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free";
+        font-weight: 900;
+        content: '\f053';
+        font-size: 22px;
+        width: 18px;
+        text-align: center;
+    }
+}
+
+.carousel-next-btn {
+    position: absolute;
+    top: ~"calc(50% - 21px)";
+    right: @reflex-cell-spacing-lg;
+    z-index: 9;
+    color: @white;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 200px;
+    border: none;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 4px;
+    
+    &:before {
+        font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free";
+        font-weight: 900;
+        content: '\f054';
+        position: relative;
+        font-size: 22px;
+    }
+}
+
+.carousel--vertical .carousel-prev-btn,
+.carousel-prev-btn--vertical {
+    top: @reflex-cell-spacing-md;
+    left: ~"calc(50% - 19px)";
+    width: 32px;
+    height: 32px;
+    margin: @reflex-cell-spacing-sm;
+    
+    &:before {
+        content: '\f077';
+        font-size: 16px;
+        line-height: 16px;
+        height: 18px;
+    }
+}
+
+.carousel--vertical .carousel-next-btn,
+.carousel-next-btn--vertical {
+    top: auto;
+    bottom: @reflex-cell-spacing-md;
+    right: ~"calc(50% - 19px)";
+    width: 32px;
+    height: 32px;
+    margin: @reflex-cell-spacing-sm;
+    padding-left: 0;
+    
+    &:before {
+        content: '\f078';
+        font-size: 16px;
+        line-height: 16px;
+        height: 15px;
+    }
+}
+
+.carousel__dots {
+    width: 100%;
+    position: absolute;
+    bottom: 15px;
+    z-index: 1;
+    text-align: center;
+}
+
+.carousel__dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 99px;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.4);
+    margin: 0 7px;
+    box-shadow: -1px 1px 5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.25ms ease;
+
+    &:hover, &:focus, &:active {
+        background: rgba(255, 255, 255, 0.7);
+    }
+    
+    &.carousel__dot--active {
+        background: white;
+    }
+}
+
+.carousel__preloader {
+    color: @white;
+}
+
+.carousel__preloader-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.3);
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 55px;
+}
+
+.carousel__counter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: @white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: @font-size--md;
+    font-weight: bold;
+    margin: @reflex-cell-spacing-lg;
+    padding: 5px;
+    background: rgba(0,0,0,0.5);
+    z-index: 1;
+}

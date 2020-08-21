@@ -1,0 +1,57 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage rmaItemsPage = BlocksPage.GetBlockPage("RMAList");
+}
+
+@{
+    if (string.IsNullOrWhiteSpace(GetString("Ecom:CustomerCenter.RMA.EmptyList")))
+    {
+        Block rmaItems = new Block
+        {
+            Id = "RmaItems",
+            SortId = 50,
+            Template = RenderRMAItems()
+        };
+
+        rmaItemsPage.Add("PageContainer", rmaItems);
+    }
+}
+
+@helper RenderRMAItems() {
+    foreach (LoopItem rma in GetLoop("RMAs"))
+    {
+        MediaListItem listItem = new MediaListItem
+        {
+            Title = rma.GetString("Ecom:RMA.ID"),
+            Link = rma.GetString("Ecom:RMA.DetailsURL"),
+            Label = rma.GetDate("Ecom:RMA.Date").ToString("dd/MM yyyy"),
+        };
+
+        listItem.AddAction(new Link
+        {
+            Href = rma.GetString("Ecom:RMA.DetailsURL"),
+            Title = Translate("View"),
+            AltText = Translate("View RMA")
+        });
+
+        if (!string.IsNullOrWhiteSpace(rma.GetString("Ecom:RMA.HasCancel")))
+        {
+            listItem.AddAction(new Link
+            {
+                Href = rma.GetString("Ecom:RMA.CancelURL"),
+                Title = Translate("Cancel"),
+                AltText = Translate("Cancel RMA")
+            });
+        }
+
+        listItem.AddInfoRow(Translate("Order ID"), @Render(new Link { Title = Translate("No.")  + rma.GetString("Ecom:RMA.OrderID"), Href = rma.GetString("Ecom:RMA.DetailsURL"), ButtonLayout = ButtonLayout.None }).ToString());
+        listItem.AddInfoRow(Translate("State"), rma.GetString("Ecom:RMA.Status"));
+
+        @Render(listItem)
+    } 
+}

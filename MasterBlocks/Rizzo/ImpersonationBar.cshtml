@@ -1,0 +1,87 @@
+@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@using Dynamicweb.Core
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@{
+    BlocksPage.GetBlockPage("Master").RemoveBlockById("ImpersonationBar");
+    
+    if (Model.CurrentUser.ID > 0 && Dna.AutoImpersonate.Helpers.AmountOfUserICanSetAsSecondary > 1)
+    {
+        BlocksPage.GetBlockPage("Master").Add(MasterBlockId.MasterDesktopNavigation, new Block()
+        {
+            Id = "ImpersonationBarRizzo",
+            SortId = 5,
+            Design = new Design()
+            {
+                Size = "12",
+                CssClass = "grid--justify-end",
+                RenderType = RenderType.Column
+            },
+            Template = RenderImpersonationBarRizzo()
+        });
+        
+        if (!string.IsNullOrEmpty(Dynamicweb.Context.Current.Request[Dna.AutoImpersonate.Constants.Parameters.RequireManaging]))
+        {
+            BlocksPage.GetBlockPage("Master").Add(MasterBlockId.MasterMain, new Block()
+            {
+                Id = "RequireManageAccount",
+                SortId = 15,
+                Design = new Design()
+                {
+                    Size = "width-auto",
+                    HidePadding = true,
+                    CssClass = "u-color-warning--bg",
+                    RenderType = RenderType.Column
+                },
+                Template = RenderRequireManageAccount()
+            });
+        }
+    }
+}
+@helper RenderImpersonationBarRizzo()
+{
+    var switchAccountUrl = string.Format("Default.aspx?Id={0}", GetPageIdByNavigationTag(Dna.AutoImpersonate.Constants.PageProperties.NavigationTags.Impersonation));
+    var isManagingAccount = Model.CurrentSecondaryUser.ID > 0;
+    var userName = Model.CurrentUser.Name.IsNotNullOrEmpty() ? Model.CurrentUser.Name : Model.CurrentUser.FirstName.IsNotNullOrEmpty() || Model.CurrentUser.LastName.IsNotNullOrEmpty() ? string.Format("{0}{1}", Model.CurrentUser.FirstName, Model.CurrentUser.LastName) : Model.CurrentUser.UserName;
+    
+    <div class="u-font-size--sm">
+        @string.Format("{0}: {1}", isManagingAccount ? Translate("Managing Account") : Translate("Welcome Back"), userName)
+        <a class="u-margin-left" href="@switchAccountUrl">
+            @RenderIcon(new Icon()
+            {
+                Prefix = "fas",
+                Name = "fa-address-book",
+                Label = Translate("Manage Account"),
+                LabelPosition = IconLabelPosition.After
+            })
+        </a>
+        <a class="u-margin-left" href="/Admin/Public/ExtranetLogoff.aspx">
+            @RenderIcon(new Icon()
+            {
+                Prefix = "fas",
+                Name = "fa-sign-out",
+                Label = Translate("Logout"),
+                LabelPosition = IconLabelPosition.After
+            })
+        </a>
+    </div>
+}
+
+@helper RenderRequireManageAccount()
+{
+    <div class="center-container">
+        <div class="grid">
+            <div class="grid--align-self-center grid__col-x">
+                <div class="grid-cell u-bold">
+                    @RenderIcon(new Icon
+                    {
+                        Prefix = "fas",
+                        Name = "fa-exclamation-triangle",
+                        Label = Translate("Please select an account to manage before continuing"),
+                        LabelPosition = IconLabelPosition.After
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+}

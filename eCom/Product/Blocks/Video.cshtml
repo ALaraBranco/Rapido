@@ -1,0 +1,78 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions{ 
+    BlocksPage productVideoPage = BlocksPage.GetBlockPage("Product");
+}
+
+@{ 
+    string videosLayout = Pageview.AreaSettings.GetItem("ProductPage").GetList("VideosLayout") != null ? Pageview.AreaSettings.GetItem("ProductPage").GetList("VideosLayout").SelectedValue : "Section";
+    videosLayout = videosLayout == "Ribbon" || string.IsNullOrEmpty(videosLayout) ? "Section" : videosLayout;
+
+    int videosCount = 0;
+
+    foreach (LoopItem detailField in GetLoop("Details"))
+    {
+        if (detailField.GetString("Ecom:Product:Detail.Text").IndexOf("iframe") != -1 && detailField.GetString("Ecom:Product:Detail.Text").IndexOf("youtube.com/embed") != -1)
+        {
+            videosCount++;
+        }
+        if (detailField.GetString("Ecom:Product:Detail.Text").IndexOf("iframe") != -1 && detailField.GetString("Ecom:Product:Detail.Text").IndexOf("vimeo.com") != -1)
+        {
+            videosCount++;
+        }
+    }
+
+    if (videosCount > 0 && videosLayout != "hide")
+    {
+        Block detailsVideos = new Block()
+        {
+            Name = videosLayout != "MainInformation" ? Translate("Videos") : "",
+            Id = "Videos",
+            SortId = 60,
+            Template = RenderProductVideos(videosCount, videosLayout),
+            Design = new Design
+            {
+                Size = "12",
+                RenderType = RenderType.Column
+            }
+        };
+        productVideoPage.Add(videosLayout, detailsVideos);
+    }
+}
+
+@helper RenderProductVideos(int videosCount, string layout) { 
+    string videoColumn = "12";
+    videoColumn = videosCount == 2 ? "6" : videoColumn;
+    videoColumn = videosCount > 2 ? "4" : videoColumn;
+    string ribbonClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("VideosLayout").SelectedValue == "Ribbon" ? "product__section--ribbon paragraph-container paragraph-container--full-width" : "";
+    ribbonClasses = layout == "Tabs" ? "u-no-padding" : ribbonClasses;
+    string ribbonSubClasses = Pageview.AreaSettings.GetItem("ProductPage").GetList("VideosLayout").SelectedValue == "Ribbon" ? "center-container--ribbon" : "";
+
+    <div class="product__section @ribbonClasses dw-mod">
+        <div class="center-container @ribbonSubClasses dw-mod">
+            @if (layout == "Section") {
+               @Render(new Heading { Title = Translate("Videos"), Level = 2 })
+            }
+
+            <div class="grid grid--external-bleed-x u-margin-bottom--lg">
+                @foreach (LoopItem detailField in GetLoop("Details"))
+                {
+                    if (detailField.GetString("Ecom:Product:Detail.Text").IndexOf("iframe") != -1 && detailField.GetString("Ecom:Product:Detail.Text").IndexOf("youtube.com/embed") != -1 || detailField.GetString("Ecom:Product:Detail.Text").IndexOf("iframe") != -1 && detailField.GetString("Ecom:Product:Detail.Text").IndexOf("vimeo.com") != -1)
+                    {
+                        <div class="grid__col-md-@videoColumn grid__col-lg-@videoColumn">
+                            <div class="video-wrapper">
+                                @detailField.GetString("Ecom:Product:Detail.Text")
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}

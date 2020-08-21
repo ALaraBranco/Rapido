@@ -1,0 +1,169 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage imageModalPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block imageModal = new Block()
+    {
+        Id = "ImageModal",
+        Template = RenderImageModal()
+    };
+
+    imageModalPage.Add(imageModal);
+
+    Block imageModalTemplates = new Block()
+    {
+        Id = "imageModalTemplates",
+        Template = RenderImageModalTemplates()
+    };
+
+    imageModalPage.Add("ScriptTemplates", imageModalTemplates);
+
+    Block imageModalScripts = new Block()
+    {
+        Id = "imageModalScripts",
+        Template = RenderImageModalScripts()
+    };
+
+    imageModalPage.Add("ScriptTemplates", imageModalScripts);
+}
+
+@helper RenderImageModal()
+{
+    <!-- Trigger for the gallery modal -->
+    <input type="checkbox" id="PreviewModalTrigger" class="modal-trigger" />
+
+    <!-- Gallery modal -->
+    <div class="modal-container">
+        <label for="PreviewModalTrigger" id="PreviewModalOverlay" class="modal-overlay"></label>
+        <div class="modal modal--full-width" id="PreviewModal">
+            <div class="modal__body modal__body--file-preview">
+                <div class="grid">
+                    <div class="grid__col-md-6 grid--align-center">
+                        @Render(new Image { Id = "PreviewImage", CssClass = "js-gallery-image modal__image--file-preview", DisableLazyLoad = true, Path = "" })
+                    </div>
+                    <div class="grid__col-md-6">
+                        <div id="ImageMetadataContainer" data-template="FileInformationTemplate"></div>
+                    </div>
+                </div>
+                <label class="modal__close-btn" for="PreviewModalTrigger"></label>
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderImageModalTemplates()
+{
+    <script id="ImageMetadataItemTemplate" type="text/x-template">
+        {{#.}}
+            <tr>
+                <th width="160">{{Key}}</th>
+                <td class="u-ta-left"><span id="Value">{{Value}}</span></td>
+            </tr>
+        {{/.}}
+    </script>
+
+    <script id="FileInformationTemplate" type="text/x-template">
+        <div class="tabs dw-mod">
+            <input type="radio" class="tabs__trigger" name="imageInfoTabs" id="FileInformation" checked="">
+            {{#if IPTC.length}}
+                <input type="radio" class="tabs__trigger" name="imageInfoTabs" id="IPTC">
+            {{/if}}
+            {{#if XMP.length}}
+                <input type="radio" class="tabs__trigger" name="imageInfoTabs" id="XMP">
+            {{/if}}
+            {{#if EXIF.length}}
+                <input type="radio" class="tabs__trigger" name="imageInfoTabs" id="EXIF">
+            {{/if}}
+            <div class="tabs__list dw-mod">
+                <label for="FileInformation" class="tabs__label dw-mod">File information</label>
+                {{#if IPTC.length}}
+                    <label for="IPTC" class="tabs__label dw-mod">IPTC</label>
+                {{/if}}
+                {{#if XMP.length}}
+                    <label for="XMP" class="tabs__label dw-mod">XMP</label>
+                {{/if}}
+                {{#if EXIF.length}}
+                    <label for="EXIF" class="tabs__label dw-mod">EXIF</label>
+                {{/if}}
+            </div>
+
+            <div class="tabs__blocks dw-mod">
+                <div class="tabs__block dw-mod" data-title="File information">
+                    <div class="u-padding u-border-top">
+                        <table class="table table--clean table--compact">
+                            {{#ImageData}}
+                                {{>ImageMetadataItemTemplate}}
+                            {{/ImageData}}
+                        </table>
+
+                        {{#if DynamicwebMetadata.length}}
+                            <h3>Custom metadata (Dynamicweb metadata)</h3>
+                            <table class="table table--clean table--compact">
+                                {{#DynamicwebMetadata}}
+                                    {{>ImageMetadataItemTemplate}}
+                                {{/DynamicwebMetadata}}
+                            </table>
+                        {{/if}}
+                    </div>
+                </div>
+                {{#if IPTC.length}}
+                    <div class="tabs__block dw-mod" data-title="IPTC">
+                        <div class="u-padding u-border-top">
+                            <table class="table table--clean table--compact">
+                                {{#IPTC}}
+                                    {{>ImageMetadataItemTemplate}}
+                                {{/IPTC}}
+                            </table>
+                        </div>
+                    </div>
+                {{/if}}
+                {{#if XMP.length}}
+                    <div class="tabs__block dw-mod" data-title="XMP">
+                        <div class="u-padding u-border-top">
+                            <table class="table table--clean table--compact">
+                                {{#XMP}}
+                                    {{>ImageMetadataItemTemplate}}
+                                {{/XMP}}
+                            </table>
+                        </div>
+                    </div>
+                {{/if}}
+                {{#if EXIF.length}}
+                    <div class="tabs__block dw-mod" data-title="EXIF">
+                        <div class="u-padding u-border-top">
+                            <table class="table table--clean table--compact">
+                                {{#EXIF}}
+                                    {{>ImageMetadataItemTemplate}}
+                                {{/EXIF}}
+                            </table>
+                        </div>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </script>
+}
+
+@helper RenderImageModalScripts()
+{
+    <script>
+        function getPreview(fileId) {
+            let file = handlebarsBoltCache.Files.find((file) => (file.id == fileId));
+            var previewImage = document.getElementById("PreviewImage");
+            previewImage.classList.remove('u-w220px');
+            if (file.icon) {
+                previewImage.src = file.icon;
+                previewImage.classList.add('u-w220px');
+            } else {
+                previewImage.src = "/Admin/Public/GetImage.ashx?Width=900&Compression=75&image=/" + file.path;
+            }
+            previewImage.alt = file.name;
+            HandlebarsBolt.CreateItemsFromJson(JSON.parse(file.fileInfo), 'ImageMetadataContainer');
+        }
+    </script>
+}

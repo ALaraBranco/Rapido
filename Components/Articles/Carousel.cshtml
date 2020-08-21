@@ -1,0 +1,80 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+
+@* Component for the articles *@
+
+@helper RenderArticleCarousel(ArticleCarousel settings)
+{
+    <div class="grid">
+        <div class="grid__col-12">
+            <div class="carousel" id="carousel_@settings.Id">
+                <div class="carousel__container js-carousel-slides dw-mod">
+                    @RenderBlockList(settings.SubBlocks)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new CarouselModule("#carousel_@settings.Id", {
+                slideTime: 0,
+                dots: true
+            });
+        });
+    </script>
+}
+
+@helper RenderArticleCarouselSlide(ArticleCarouselSlide settings)
+{
+    string imageEngine = "/Admin/Public/GetImage.ashx?";
+
+    string defaultImage = settings.ImageSettings != null ? imageEngine : settings.Image;
+    if (settings.ImageSettings != null)
+    {
+        defaultImage += settings.ImageSettings.Width != 0 ? "Width=" + settings.ImageSettings.Width + "&" : "";
+        defaultImage += settings.ImageSettings.Height != 0 ? "Height=" + settings.ImageSettings.Height + "&" : "";
+        defaultImage += "Crop=" + settings.ImageSettings.Crop + "&";
+        defaultImage += "Compression=" + settings.ImageSettings.Compression + "&";
+        defaultImage += "DoNotUpscale=" + settings.ImageSettings.DoNotUpscale.ToString() + "&";
+        defaultImage += "FillCanvas=" + settings.ImageSettings.FillCanvas.ToString() + "&";
+    }
+    defaultImage += "&Image=" + settings.Image;
+
+    <div class="carousel__slide u-min-h300px u-flex dw-mod" style="background-size:cover; background-image:url('@defaultImage')">
+        <a class="article-carousel-item__wrap" href="@settings.Link" title="@settings.Title">
+            <h2 class="article-list__item-header u-truncate-text u-color-light dw-mod">@settings.Title</h2>
+            <div class="article-list__item-info">
+                @if (settings.Stickers != null)
+                {
+                    settings.Stickers.Position = StickersListPosition.Custom;
+                    @Render(settings.Stickers);
+                }
+
+                <small class="u-margin-top--lg u-color-light">
+                    @if (!(string.IsNullOrWhiteSpace(settings.Author) && string.IsNullOrWhiteSpace(settings.Date)))
+                    {
+                    <text>@Translate("Written")</text>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(settings.Author))
+                    {
+                    <text>@Translate("by") @settings.Author</text>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(settings.Date))
+                    {
+                    <text>@Translate("on") @settings.Date</text>
+                    }
+                </small>
+            </div>
+
+            <h3 class="article__short-summary u-color-light">@settings.Summary</h3>
+        </a>
+        @if (settings.UseFilters == true)
+        {
+            <div class="background-image image-filter image-filter--darken dw-mod"></div>
+        }
+    </div>
+}

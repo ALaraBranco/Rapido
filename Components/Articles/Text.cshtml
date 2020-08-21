@@ -1,0 +1,19 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+
+@* Component for the articles *@
+
+@helper RenderArticleText(ArticleText settings)
+{
+    if (!String.IsNullOrEmpty(settings.Text))
+    {
+        string greatTextClass = settings.EnableLargeText == true ? "article__paragraph--great-text" : "";
+
+        <div class="article__paragraph @greatTextClass">
+            @settings.Text
+        </div>
+    }
+}

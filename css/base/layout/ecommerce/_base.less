@@ -1,0 +1,379 @@
+//Base classes for Ecommerce
+//Product
+.product {
+
+}
+
+.product__thumbs {
+    background-color: @gray-lightest;
+    padding: @reflex-cell-spacing-md;
+}
+
+.product__title {
+    width:  ~"calc(100% - 60px)";
+}
+
+.product__image-container__image {
+
+}
+
+.product__top {
+
+}
+
+.product__info {
+
+}
+
+.product__info--tabs {
+    padding: @reflex-cell-spacing-lg;
+    padding-bottom: 0;
+}
+
+.product__section {
+    padding: @reflex-cell-spacing-lg;
+
+    &.product__section--bordered {
+        border-top: 1px @gray-light solid;
+        border-bottom: 1px @gray-light solid;
+    }
+
+    &.product__section--ribbon {
+        background: @gray-lightest;
+    }
+}
+
+.product__document {
+    display: inline-block;
+}
+
+.product__document-info {
+    display: inline-block;
+    margin-left: @reflex-cell-spacing-lg;
+}
+
+.product__document-img {
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.3);
+    display: inline-block;
+}
+
+.product__document-icon {
+    font-size: 70px;
+}
+
+.product__price-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+}
+
+.product__price-actions__price {
+    margin-bottom: @reflex-cell-spacing-md;
+    text-align: left;
+}
+
+@media (max-width: @reflex-sm) {
+    .product__price-actions {
+        display: block;
+    }
+
+    .product__price-actions__price {
+        margin-right: 0;
+    }
+}
+
+.product__price-actions__actions {
+
+}
+
+.product__description {
+
+}
+
+.product__quantity-selector {
+    vertical-align: top;
+}
+
+//Item number
+.item-number {
+    color: @gray;
+    margin-bottom: @reflex-cell-spacing-md;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: @font-size--sm;
+}
+
+.item-number--compressed {
+    line-height: 1.2;
+    margin-bottom: 0;
+}
+
+
+//Prices
+.price {
+    font-weight: 500;
+    font-size: @font-size--xl;
+}
+
+.price--condensed {
+    font-size: @font-size--sm;
+}
+
+.price--micro {
+    padding: 0;
+    font-size: @font-size--sm !important;
+}
+
+.before-price {
+    color: @gray;
+    font-size: @font-size--md;
+    text-decoration: line-through;
+    line-height: 1.4;
+}
+
+.before-price--micro {
+    font-size: @font-size--sm !important;
+}
+
+.vat-price {
+    color: @gray;
+    font-size: @font-size--md;
+    line-height: 1.4;
+    display: block;
+}
+
+.vat-price--micro {
+    font-size: @font-size--sm !important;
+}
+
+//Stock and delivery
+
+.product__stock-delivery {
+    margin-top: @reflex-cell-spacing-md;
+    margin-bottom: @reflex-cell-spacing-lg;
+}
+
+
+//Favorites
+
+.favorites--md {
+    padding: @reflex-cell-spacing-md;
+}
+
+.favorites--lg {
+    padding: @reflex-cell-spacing-md;
+    margin-top: @reflex-cell-spacing-md;
+}
+
+.favorites--for-grid-view {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+.favorites-list {
+    position: relative;
+}
+
+.favorites.disabled i {
+    color: @gray-light;
+}
+
+
+//Sticker
+.stickers-container {
+    position: absolute;
+    z-index: 1;
+    flex-direction: column;
+    display: flex;
+
+    &.stickers-container--top-left {
+        top: 0;
+        left: 0;
+        align-items: flex-start;
+    }
+
+    &.stickers-container--top-right {
+        top: 0;
+        right: 0;
+        align-items: flex-start;
+    }
+
+    &.stickers-container--bottom-left {
+        bottom: 0;
+        left: 0;
+        align-items: flex-start;
+    }
+
+    &.stickers-container--bottom-right {
+        bottom: 0;
+        right: 0;
+        align-items: flex-end;
+    }
+
+    &.stickers-container--block {
+        position: relative;
+        display: block;
+    }
+
+    &.stickers-container--custom {
+        position: relative;
+        display: block;
+    }
+
+    &.stickers-container--row {
+        position: relative;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+.stickers-container__tag {
+    position: relative;
+    margin: @reflex-cell-spacing-md 0; 
+    width: auto;
+    display: table;
+    padding: @reflex-cell-spacing-sm @reflex-cell-spacing-md;
+    line-height: 18px; 
+}
+
+.stickers-container__tag--sale {
+    background-color: @color-sticker-sale;
+    color: @white;
+}
+
+.stickers-container__tag--custom {
+    background-color: @color-sticker-custom;
+    color: @white;
+}
+
+.stickers-container__tag--new {
+    background-color: @color-sticker-new;
+    color: @white;
+}
+
+.stickers-container__tag--ball {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: @gray;
+    text-align: center;
+    border-radius: 200px;
+    margin: @reflex-cell-spacing-md;
+}
+
+.stickers-container__tag--rounded {
+    border-radius: 5px 5px 5px 5px;
+}
+
+.stickers-container--right {
+    right: @reflex-cell-spacing-md;
+    left: inherit;
+}
+
+.product .stickers-container {
+    margin-left: @reflex-cell-spacing-md / 2;
+}
+
+.stickers-container__tag--micro {
+    margin: @reflex-cell-spacing-sm;
+    padding: 0 @reflex-cell-spacing-md;
+    border-radius: 0;
+    height: 18px;
+    line-height: 18px !important;
+    color: @white;
+    font-size: 0.8em !important;
+    text-align: center;
+}
+
+
+//Stock icon
+.stock-icon {
+    width: 8px;
+    height: 8px;
+    margin-left: @reflex-cell-spacing-md;
+    margin-right: @reflex-cell-spacing-md;
+    border-radius: 100px;
+    background-color: @gray;
+    display: inline-block;
+}
+
+.stock-icon--in {
+    background-color: @color-stock-in;
+}
+
+.stock-icon--not {
+    background-color: @color-stock-not;
+}
+
+.stock-icon--comming {
+    background-color: @color-stock-comming;
+}
+
+.delivery-and-stock-info {
+    width: 100%;
+    margin-bottom: @reflex-cell-spacing-lg;
+}
+
+.parcel-shop-address {
+    margin-left: 0;
+    margin-bottom: @reflex-cell-spacing-md;
+}
+
+
+//Variants
+.static-variant {
+    color: @gray-light;
+    font-size: @font-size--xs;
+    display: inline-block;
+}
+
+.static-variant--color {
+    width: 8px;
+    height: 8px;
+    margin-right: @reflex-cell-spacing-md;
+    background-color: @gray;
+    border: 1px solid @gray-light;
+    
+    &:last-child {
+        margin-right: 0;
+    } 
+}
+
+.qty-field {
+    max-width: 80px;
+    border-radius: 200px;
+    background-color: @gray-light;
+    padding-right: 12px;
+    height: 32px;
+    transition: 0.2s all ease-out;
+    z-index: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.qty-field--bordered {
+    background-color: @white;
+    border: 1px solid @gray-light; 
+}
+
+.qty-field--active {
+    animation: active-qty 1s 1;
+}
+
+@keyframes active-qty {
+    from {
+    }
+    50% {
+        background-color: @color-info;
+        color: @white;
+    }
+    to {
+        background-color: @gray-light;
+        color: black;
+    }
+}

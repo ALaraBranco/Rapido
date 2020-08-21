@@ -1,0 +1,58 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.Web
+@using System.IO
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks  
+
+@functions {
+    BlocksPage paragraphVideo = BlocksPage.GetBlockPage("ParagraphVideo");
+}
+
+@{ 
+    string columnSize = Model.Item.GetList("Width") != null ? Model.Item.GetList("Width").SelectedValue.ToString() : "12";
+
+    Block videoContainer = new Block
+    {
+        Id = "ParagraphVideoContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = columnSize,
+            CssClass = "paragraph-container"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "ParagraphVideoRow",
+                SortId = 10,
+                Design = new Design {
+                    RenderType = RenderType.Row,
+                    CssClass = "grid--external-bleed-x"
+                }
+            }
+        }
+    };
+    paragraphVideo.Add(videoContainer);
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../Components/GridBuilder.cshtml")
+                              
+@* Include the components *@
+@Include("../Components/GeneralComponents.cshtml")
+
+@* Include the custom blocks *@
+@Include("Blocks/Video/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(paragraphVideo.BlocksRoot.BlocksList)
+
+
+@helper RenderVideoWrapper () {
+    <div class="grid__cell">
+        <div class="video-wrapper">
+            @Model.Item.GetString("VideoHTML")
+        </div>
+    </div>
+}

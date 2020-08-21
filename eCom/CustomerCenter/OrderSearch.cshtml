@@ -1,0 +1,171 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@functions {
+    BlocksPage orderSearchPage = BlocksPage.GetBlockPage("OrderSearch");
+}
+
+@{
+    Block orderSearchForm = new Block
+    {
+        Id = "OrderSearchForm",
+        SortId = 10,
+        Template = RenderOrderSearchForm()
+    };
+
+    orderSearchPage.Add(orderSearchForm);
+}
+
+@helper RenderOrderSearchForm() {
+
+    string pid = GetString("Ecom:CustomerCenter.PID");
+    string freeTextName = "CCFilterFreetext" + pid;
+    string productId = "CCFilterProductID" + pid;
+    string monthFromName = "CCFilterFromMonth" + pid;
+    string monthToName = "CCFilterToMonth" + pid;
+    string yearFromName = "CCFilterFromYear" + pid;
+    string yearToName = "CCFilterToYear" + pid;
+    string amountFromName = "CCFilterFromAmount" + pid;
+    string amountToName = "CCFilterToAmount" + pid;
+        
+    @GetString("Ecom:CustomerCenter.SearchForm.Begin")
+        <div class="form card dw-mod">
+            <div class="form__header dw-mod">@Translate("Search")</div>
+            <div class="form__fields-collection">
+                @Render(new TextField { Name = freeTextName, Value = GetString("Ecom:CustomerCenter.Search.Freetext"), Placeholder = Translate("Free text")  })
+                @{
+                    var productsSelect = new SelectField {
+                        Name = productId,
+                        Default = new SelectFieldOption
+                        {
+                            Label = Translate("Any product")
+                        }
+                    };
+                    foreach (LoopItem product in GetLoop("Products"))
+                    {
+                        productsSelect.Options.Add(new SelectFieldOption
+                        {
+                            Label = product.GetString("Label"),
+                            Value = product.GetString("Value"),
+                            Checked = product.GetBoolean("IsSelected")
+                        });
+                    }
+                }
+                @Render(productsSelect)
+            </div>
+
+            <div class="form__header dw-mod">@Translate("Date interval")</div>
+            
+            <label for="from_month">@Translate("From")</label>
+            <div class="form__fields-collection">
+                @{
+                    var monthFromSelect = new SelectField {
+                        Name = monthFromName,
+                        Id = "from_month",
+                        Default = new SelectFieldOption
+                        {
+                            Label = Translate("Any month")
+                        }
+                    };
+                    foreach (LoopItem month in GetLoop("MonthNamesFrom"))
+                    {
+                        monthFromSelect.Options.Add(new SelectFieldOption
+                        {
+                            Label = month.GetString("Label"),
+                            Value = month.GetString("Value"),
+                            Checked = month.GetBoolean("IsSelected")
+                        });
+                    }
+                }
+                @Render(monthFromSelect)
+
+                @{
+                    var yearFromSelect = new SelectField {
+                        Name = yearFromName,
+                        Default = new SelectFieldOption
+                        {
+                            Label = Translate("Any year")
+                        }
+                    };
+                    foreach (LoopItem year in GetLoop("YearsFrom"))
+                    {
+                        yearFromSelect.Options.Add(new SelectFieldOption
+                        {
+                            Label = year.GetString("Label"),
+                            Value = year.GetString("Value"),
+                            Checked = year.GetBoolean("IsSelected")
+                        });
+                    }
+                }
+                @Render(yearFromSelect)
+            </div>
+
+            <label for="to_month">@Translate("To")</label>
+            <div class="form__fields-collection">
+                @{
+                    var monthToSelect = new SelectField {
+                        Name = monthToName,
+                        Id = "to_month",
+                        Default = new SelectFieldOption
+                        {
+                            Label = Translate("Any month")
+                        }
+                    };
+                    foreach (LoopItem month in GetLoop("MonthNamesTo"))
+                    {
+                        monthToSelect.Options.Add(new SelectFieldOption
+                        {
+                            Label = month.GetString("Label"),
+                            Value = month.GetString("Value"),
+                            Checked = month.GetBoolean("IsSelected")
+                        });
+                    }
+                }
+                @Render(monthToSelect)
+
+                @{
+                    var yearToSelect = new SelectField {
+                        Name = yearToName,
+                        Default = new SelectFieldOption
+                        {
+                            Label = Translate("Any year")
+                        }
+                    };
+                    foreach (LoopItem year in GetLoop("YearsTo"))
+                    {
+                        yearToSelect.Options.Add(new SelectFieldOption
+                        {
+                            Label = year.GetString("Label"),
+                            Value = year.GetString("Value"),
+                            Checked = year.GetBoolean("IsSelected")
+                        });
+                    }
+                }
+                @Render(yearToSelect)
+            </div>
+            <div class="form__header dw-mod">@Translate("Order amount")</div>
+
+            <div class="form__fields-collection">
+                @Render(new NumberField { Id = "order_amount_from", Name = amountFromName, Label = Translate("From"), Value = GetString("Ecom:CustomerCenter.Search.FromAmount"), Min = 1 })
+                @Render(new NumberField { Id = "order_amount_to", Name = amountToName, Label = Translate("To"), Value = GetString("Ecom:CustomerCenter.Search.ToAmount"), Min = 1 })
+            </div>
+
+            <div class="form__footer dw-mod">
+                @Render(new Button { ButtonType = ButtonType.Submit, Title = Translate("Search") })
+            </div>
+        </div>
+    @GetString("Ecom:CustomerCenter.SearchForm.End")
+}
+
+@Include("Blocks/OrderSearch/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(orderSearchPage.BlocksRoot.BlocksList)
+
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

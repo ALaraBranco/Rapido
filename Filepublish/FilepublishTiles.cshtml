@@ -1,0 +1,116 @@
+@using System.Text.RegularExpressions
+@using System.IO
+
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    string GetIcon(string fileName, string defaultIcon)
+    {
+        string ext = Path.GetExtension(fileName);
+        switch (ext.ToLower())
+        {
+            case ".jpg":
+            case ".jpeg":
+            case ".png":
+            case ".gif":
+            case ".pdf":
+               return "/Admin/Public/GetImage.ashx?crop=5&height=130&width=140&Compression=75&DoNotUpscale=true&image=" + fileName;
+            default:
+                return defaultIcon;
+        }
+    }
+
+    BlocksPage fileTilesPage = BlocksPage.GetBlockPage("FilepublishTiles");
+}
+
+@{
+    Block fileTilesContainer = new Block
+    {
+        Id = "FileTilesContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block>
+        {
+            new Block {
+                Id = "Folders",
+                SortId = 10,
+                Template = RenderFolders()
+            },
+            new Block {
+                Id = "Files",
+                SortId = 20,
+                Template = RenderFiles()
+            }
+        }
+    };
+
+    fileTilesPage.Add(fileTilesContainer);
+}
+
+@helper RenderFolders()
+{
+    foreach (LoopItem item in GetLoop("FoldersLoop"))
+    {
+
+        if (!string.IsNullOrEmpty(item.GetString("FilepublishFileDatemodified")))
+        {          
+            <div class="grid__col-md-2 grid__col-sm-3 grid__col-xs-4 grid__col-6 grid--justify-space-between">
+                 @RenderTileTemplate(item)
+             </div>
+        }
+        else
+        {
+           <div class="grid__col-12">
+               @RenderTileTemplateSmall(item)
+           </div>
+        }
+    }
+}
+
+@helper RenderFiles()
+{
+    foreach (LoopItem item in GetLoop("FilesLoop"))
+    {
+       <div class="grid__col-md-2 grid__col-sm-3 grid__col-xs-4 grid__col-6 grid--justify-space-between">
+          @RenderTileTemplate(item)
+       </div>
+    }
+}
+
+@helper RenderTileTemplate(LoopItem item)
+{
+    Match match = Regex.Match(item.GetString("FilepublishFileIcon"), "src=\\\"(.*?)\\\"");
+
+    <a href="@item.GetString("FilepublishFileLink")" class="filepublish__image-wrap">
+        <img src="@GetIcon(item.GetString("FilepublishFileLinkClean"), match.Groups[1].ToString())" class="filepublish__image grid--align-self-center" title="@item.GetString("FilepublishFileName")" alt="@item.GetString("FilepublishFileName")" />
+    </a>
+    <div class="grid--justify-center filepublish__info">
+        @Render(new Link { Href = item.GetString("FilepublishFileLink"), CssClass = "filepublish__name u-color-inherit", Title = item.GetString("FilepublishFileName"), ButtonLayout = ButtonLayout.None })
+        <span class="filepublish__date">@item.GetString("FilepublishFileDatemodified")</span>
+        <span class="filepublish__filesize">@item.GetString("FilepublishFileSizeKB")</span>
+    </div>
+}
+
+@helper RenderTileTemplateSmall(LoopItem item)
+{
+    <div class="grid__cell u-border-bottom u-border-top">
+        @Render(new Link { Href = item.GetString("FilepublishFileLink"), CssClass = "btn btn--link btn--condensed dw-mod filepublish__back-btn u-no-margin", Title = item.GetString("FilepublishFileName"), ButtonLayout = ButtonLayout.None, Icon = new Icon { Prefix = "fas", Name = "fa-arrow-left" } })
+    </div>
+}
+
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(fileTilesPage.BlocksRoot.BlocksList)
+
+<div class="u-margin-top--lg">
+    @GetValue("FilepublishUpload")
+</div>
+
+@* Include the Rendering helpers *@
+@Include("../Components/GridBuilder.cshtml")
+@Include("../Components/GeneralComponents.cshtml")

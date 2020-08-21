@@ -1,0 +1,14 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+
+@* Component *@
+
+@helper RenderNotificationMessage(NotificationMessage settings) {
+    if (!string.IsNullOrEmpty(settings.Message))
+    {
+        string messageTypeClass = Enum.GetName(typeof(NotificationMessageType), settings.MessageType).ToLower();
+        <div class="field-@messageTypeClass @settings.CssClass u-full-width dw-mod">@settings.Message</div>
+    }
+}

@@ -1,0 +1,149 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    bool hideSearch = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideSearch");
+
+    BlocksPage headerConfigurationPage = BlocksPage.GetBlockPage("Master");
+
+    Block configDesktopLogo = headerConfigurationPage.GetBlockById("MasterDesktopLogo");
+    headerConfigurationPage.RemoveBlock(configDesktopLogo);
+
+    Block configDesktopMenu = headerConfigurationPage.GetBlockById("MasterDesktopMenu");
+    headerConfigurationPage.RemoveBlock(configDesktopMenu);
+
+    Block configSearchBar = headerConfigurationPage.GetBlockById("MasterSearchBar");
+    headerConfigurationPage.RemoveBlock(configSearchBar);
+
+    Block configSearchAction = headerConfigurationPage.GetBlockById("MasterDesktopActionsMenuSearch");
+    headerConfigurationPage.RemoveBlock(configSearchAction);
+
+    Block configDesktopActionsMenu = headerConfigurationPage.GetBlockById("MasterDesktopActionsMenu");
+    headerConfigurationPage.RemoveBlock(configDesktopActionsMenu);
+
+    Block configDesktopExtra = headerConfigurationPage.GetBlockById("MasterDesktopExtra");
+
+    switch (topLayout)
+    {
+        case "condensed": //2
+            configDesktopLogo.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopLogo);
+
+            configDesktopMenu.SortId = 20;
+            configDesktopMenu.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 30;
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+
+            if (!hideSearch)
+            {
+                configSearchBar.SortId = 40;
+                configSearchBar.Design.Size = "12";
+                configDesktopExtra.SortId = 50;
+                headerConfigurationPage.Add("MasterDesktopExtra", configSearchBar);
+            }
+            break;
+        case "splitted": //3
+            configDesktopLogo.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopExtra", configDesktopLogo);
+
+            if (!hideSearch)
+            {
+                configSearchBar.SortId = 20;
+                configSearchBar.Design.Size = "auto";
+                headerConfigurationPage.Add("MasterDesktopExtra", configSearchBar);
+            }
+
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 20;
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+            break;
+        case "minimal": //4
+            configDesktopLogo.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopLogo);
+
+            configDesktopMenu.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 20;
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+
+            if (!hideSearch)
+            {
+                headerConfigurationPage.Add("MasterDesktopActionsMenu", configSearchAction);
+            }
+            break;
+        case "minimal-right": //5
+            configDesktopLogo.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopLogo);
+
+            configDesktopMenu.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 20;
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+
+            if (!hideSearch)
+            {
+                headerConfigurationPage.Add("MasterDesktopActionsMenu", configSearchAction);
+            }
+            break;
+        case "two-lines": //6
+            configDesktopLogo.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopExtra", configDesktopLogo);
+
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 20;
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+
+            if (!hideSearch)
+            {
+                headerConfigurationPage.Add("MasterDesktopActionsMenu", configSearchAction);
+            }
+            break;
+        case "two-lines-centered": //7
+            configDesktopLogo.Design.Size = "auto";
+            headerConfigurationPage.Add("MasterDesktopExtra", configDesktopLogo);
+
+            configDesktopMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+
+            configDesktopActionsMenu.SortId = 20;
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopActionsMenu);
+
+            if (!hideSearch)
+            {
+                headerConfigurationPage.Add("MasterDesktopActionsMenu", configSearchAction);
+            }
+            break;
+        case "normal": //1
+        default:
+            headerConfigurationPage.Add("MasterDesktopExtra", configDesktopLogo);
+
+            if (!hideSearch)
+            {
+                configSearchBar.SortId = 20;
+                headerConfigurationPage.Add("MasterDesktopExtra", configSearchBar);
+            }
+
+            configDesktopActionsMenu.SortId = 30;
+            headerConfigurationPage.Add("MasterDesktopExtra", configDesktopActionsMenu);
+
+            configDesktopActionsMenu.Design.Size = "auto-width";
+            headerConfigurationPage.Add("MasterDesktopNavigation", configDesktopMenu);
+            break;
+    }
+}

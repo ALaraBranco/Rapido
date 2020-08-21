@@ -1,0 +1,79 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Text.RegularExpressions
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage editProfilePage = BlocksPage.GetBlockPage("EditProfilePage");
+}
+
+@{
+    Block editProfileContainer = new Block
+    {
+        Id = "MainContainer",
+        SortId = 10,
+        Template = RenderMainContainer(),
+        SkipRenderBlocksList = true,
+        BlocksList = new List<Block>
+        {
+            new Block
+            {
+                Id = "ViewsSwitcher",
+                SortId = 20,
+                Template = RenderViewsSwitcher(),
+                SkipRenderBlocksList = true,
+                BlocksList = new List<Block>
+                {
+                    new Block
+                    {
+                        Id = "MainInfoProfileView",
+                        SortId = 10,
+                        Template = RenderMainInfoProfileView(),
+                        SkipRenderBlocksList = true
+                    }
+                }
+            }
+        }
+    };
+
+    editProfilePage.Add(editProfileContainer);
+}
+
+@Include("Blocks/EditProfile/MainProfileInfo.cshtml")
+@Include("Blocks/EditProfile/EditProfileInfo.cshtml")
+@Include("Blocks/EditProfile/ProfileControls.cshtml")
+@Include("Blocks/EditProfile/Custom__Blocks.cshtml")
+
+@RenderBlockList(editProfilePage.BlocksRoot.BlocksList)
+
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+
+@helper RenderMainContainer()
+{
+    List<Block> subBlocks = this.editProfilePage.GetBlockListById("MainContainer").OrderBy(item => item.SortId).ToList();
+    string userIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fas fa-user";
+
+    @Render(new Heading { Title = Translate("My profile"), Icon = new Icon { Name = userIcon }, Level = 2 })
+    @RenderBlockList(subBlocks)
+}
+
+@helper RenderViewsSwitcher()
+{
+    List<Block> subBlocks = this.editProfilePage.GetBlockListById("ViewsSwitcher").OrderBy(item => item.SortId).ToList();
+
+    <input type="checkbox" id="editProfileContentTrigger" class="u-hidden" data-expand="editProfileContentTrigger" />
+
+    <div class="grid__cell">
+        @RenderBlockList(subBlocks)
+    </div>
+}
+
+@helper RenderMainInfoProfileView()
+{
+    List<Block> subBlocks = this.editProfilePage.GetBlockListById("MainInfoProfileView").OrderBy(item => item.SortId).ToList();
+
+    <div class="js-expand-hide grid" data-trigger="editProfileContentTrigger">
+        @RenderBlockList(subBlocks)
+    </div>
+}

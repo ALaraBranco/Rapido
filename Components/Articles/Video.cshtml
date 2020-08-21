@@ -1,0 +1,38 @@
+﻿@using System.Text.RegularExpressions
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleVideo(ArticleVideo settings)
+{
+    if (settings.Url != null)
+    {
+        //getting video ID from youtube URL
+        string videoCode = settings.Url;
+        Regex regex = new Regex(@".be\/(.[^?]*)");
+        Match match = regex.Match(videoCode);
+        string videoId = "";
+        if (match.Success)
+        {
+            videoId = match.Groups[1].Value;
+        }
+        else
+        {
+            regex = new Regex(@"v=([^&]+)");
+            match = regex.Match(videoCode);
+            if (match.Success)
+            {
+                videoId = match.Groups[1].Value;
+            }
+        }
+
+        int autoPlay = settings.AutoPlay == "true" ? 1 : 0;
+
+        <div class="video-wrapper">
+            <div class="js-youtube-video" data-video="@videoId" id="ytPlayer@(Guid.NewGuid().ToString("N"))" data-auto-play="@autoPlay" data-enable-controls="1"></div>
+        </div> 
+    }
+}

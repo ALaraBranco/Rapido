@@ -1,0 +1,81 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage mapLocationsPage = BlocksPage.GetBlockPage("MapPage");
+}
+
+@{
+
+    Block mapLocations = new Block
+    {
+        Id = "MapLocations",
+        SortId = 20,
+        Template = RenderLocations()
+    };
+
+    mapLocationsPage.Add("MapContainer", mapLocations);
+}
+
+@helper RenderLocation(LoopItem location)
+{
+    string lat = location.GetString("Lat");
+    string lng = location.GetString("Lng");
+    string name = location.GetString("Name");
+    string groupId = location.GetString("GroupID");
+    string parentGroupId = location.GetString("ParentGroupID");
+    string groupIdList = location.GetString("GroupIDList");
+    string icon = location.GetString("Icon");
+    string address = location.GetString("Address");
+    string address2 = location.GetString("Address2");
+    string zip = location.GetString("Zip");
+    string city = location.GetString("City");
+    string country = location.GetString("Country");
+    string phone = location.GetString("Phone");
+    string email = location.GetString("Email");
+
+    <div class="grid__col-md-3" data-lat="@lat" data-lng="@lng" data-title="@name" data-filter-values="@groupId,@parentGroupId,@groupIdList" data-icon="@icon" data-sort-value="@name">
+        <div class="grid__cell u-color-light--bg">
+            <div class="card u-color-light--bg dw-mod">
+                @Render(new Heading { Title = name, Level = 3, CssClass = "article-list__item-header u-truncate-text js-location-search-item dw-mod" })
+                <div class="dynamicweb-map__location-info">
+                    <div class="js-location-search-item">@address</div>
+                    <div class="js-location-search-item">@address2</div>
+                    <span class="js-location-search-item">@zip</span>
+                    <span class="js-location-search-item">@city</span>
+                    <div class="js-location-search-item">@country</div>
+                </div>
+            </div>
+        </div>
+        <div class="grid__cell-footer u-color-light--bg dw-mod">
+            <div class="card-footer u-color-light--bg dw-mod">
+                @if (!string.IsNullOrEmpty(phone))
+                {
+                    <div><span class="u-bold">@Translate("Phone"):</span> <span class="dynamicweb-map__location-contact js-location-search-item">@phone</span></div>
+                }
+                @if (!string.IsNullOrEmpty(email))
+                {
+                    <div><span class="u-bold">@Translate("Email"):</span> <span class="dynamicweb-map__location-contact js-location-search-item">@email</span></div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderLocations()
+{
+    <div class="dynamicweb-map__locations dw-mod">
+        @Render(new Heading { Title = Translate("No matches"), Level = 2, CssClass = "u-hidden js-no-matches u-ta-center" })
+        <div id="@GetString("ListElementID")" data-sort-order="desc" class="grid">
+            @foreach (LoopItem location in GetLoop("Locations"))
+            {
+                RenderLocation(location);
+            }
+        </div>
+    </div>
+}

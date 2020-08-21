@@ -1,0 +1,44 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+@MasterPageFile("PrintablePapers.cshtml")
+
+@functions{ 
+    public string GetParentSettingsItem(string systemName)
+    {
+        string item = null;
+
+        Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Model.ID);
+        while (current != null && current.Parent != current)
+        {
+            var temp = current.Item != null ? current.Item[systemName] : "";
+
+            if (temp != null)
+            {
+                item = temp.ToString();
+
+                if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+            }
+
+            current = current.Parent;
+        }
+
+        return item;
+    }
+}
+
+@{ 
+    string size = GetParentSettingsItem("PageSize").ToLower();
+    string orientation = GetParentSettingsItem("PageOrientation").ToLower();
+}
+
+<body class="@size @orientation">
+    <style>
+        @@page {
+            size: @size @orientation;
+        }
+    </style>
+
+    @Model.Placeholder("dwcontent", "content", "default:true;sort:1")
+</body>

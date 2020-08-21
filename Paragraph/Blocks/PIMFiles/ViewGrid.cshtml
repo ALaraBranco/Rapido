@@ -1,0 +1,62 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+   BlocksPage viewGridPage = BlocksPage.GetBlockPage("FilesList");
+}
+
+@{
+    Block gridViewTemplate = new Block()
+    {
+        Id = "GridViewTemplate",
+        Template = RenderGridViewTemplate()
+    };
+
+    viewGridPage.Add("ScriptTemplates", gridViewTemplate);
+}
+
+@helper RenderGridViewTemplate()
+{
+    @* Grid view *@
+    <script id="FileGridItemContainer" type="text/x-template">
+        {{#.}}
+            <div id="File{{id}}" class="grid__col-lg-4 grid__col-md-4 grid__col-sm-4 grid__col-xs-6 product-list__grid-item dw-mod">
+                <div class="grid__cell product-list__grid-item__image dw-mod">
+                    <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')" {{#if icon}}class="u-padding--lg"{{/if}}>
+                        {{#if icon}}
+                            @Render(new Image { Path = "{{icon}}", Title = "{{name}}", CssClass = "grid__cell-img--centered u-padding--lg" })
+                        {{else}}
+                            @Render(new Image { Path = "{{path}}", Title = "{{name}}", CssClass = "grid__cell-img--centered u-padding", ImageDefault = new ImageSettings { Width = 300, Height = 300, Crop = 5, FillCanvas = true } })
+                        {{/if}}
+                    </label>
+                </div>
+
+                <div class="grid__cell product-list__grid-item__price-info product-list__grid-item__price-info--short dw-mod">
+                    <h6 class="u-condensed-text">
+                        <label for="PreviewModalTrigger" onclick="getPreview('{{id}}')">{{name}}</label>
+                    </h6>
+                    <div class="item-number u-margin-bottom dw-mod">{{path}}</div>
+                </div>
+
+                @if (Pageview.User != null)
+                {
+                    <div class="product-list__grid-item__footer dw-mod">
+                        @Render(new Button
+                           {
+                               ButtonType = ButtonType.Button,
+                               ButtonLayout = ButtonLayout.Primary,
+                               OnClick = "addFileToDownloads('{{path}}');",
+                               CssClass = "u-no-margin btn--condensed u-no-margin u-pull--right",
+                               Icon = new Icon
+                               {
+                                   Prefix = "fas",
+                                   Name = "fa-download"
+                               }
+                           })
+                    </div>
+                }
+            </div>
+        {{/.}}
+    </script>
+}

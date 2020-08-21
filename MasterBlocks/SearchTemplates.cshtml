@@ -1,0 +1,209 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Ecommerce
+
+@{
+    BlocksPage searchBlocksPage = BlocksPage.GetBlockPage("Master");
+    bool navigationItemsHideSearch = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideSearch");
+    bool isFavoriteList = !string.IsNullOrEmpty(HttpContext.Current.Request.QueryString.Get("ListID"));
+
+    if (!navigationItemsHideSearch || isFavoriteList)
+    {
+        Block masterSearchScriptTemplates = new Block()
+        {
+            Id = "MasterSearchScriptTemplates",
+            SortId = 1,
+            Template = RenderSearchScriptTemplates()
+        };
+
+        searchBlocksPage.Add(MasterBlockId.MasterBottomSnippets, masterSearchScriptTemplates);
+    }
+}
+
+@helper RenderSearchScriptTemplates()
+{
+    int productsPageId = GetPageIdByNavigationTag("ProductsPage");
+    string contentSearchPageLink = GetPageIdByNavigationTag("ContentSearchResults") + "&Areaid=" + Model.Area.ID;
+    bool useFacebookPixel = !string.IsNullOrWhiteSpace(Pageview.AreaSettings.GetItem("Settings").GetString("FacebookPixelID"));
+    bool onlyPreview = Model.Area.Item.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Model.CurrentUser.ID == 0;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+    bool useGoogleTagManager = !string.IsNullOrEmpty(Model.Area.Item.GetItem("Settings").GetString("GoogleTagManagerID"));
+    bool showPrice = !Pageview.AreaSettings.GetItem("Layout").GetBoolean("HidePriceInSearchResults");
+    bool showAddToCartButton = !Pageview.AreaSettings.GetItem("Layout").GetBoolean("HideAddToCartButton");
+    bool showViewButton = !Pageview.AreaSettings.GetItem("Layout").GetBoolean("HideViewButton");
+    bool showAddToDownloadButton = Pageview.AreaSettings.GetItem("Layout").GetBoolean("ShowAddToDownloadButton");
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    
+    <script id="SearchGroupsTemplate" type="text/x-template">
+        {{#.}}
+            <li class="dropdown__item dw-mod" onclick="Search.UpdateGroupSelection(this)" data-group-id="{{id}}">{{name}}</li>
+        {{/.}}
+    </script>
+
+    <script id="SearchProductsTemplate" type="text/x-template">
+        {{#each .}}
+            {{#Product}}
+                {{#ifCond template "!==" "SearchMore"}}
+                    <li class="dropdown__item dropdown__item--seperator dw-mod">
+                        @if (useFacebookPixel)
+                        {
+                            <text>{{{facebookPixelSearch name number priceDouble currency searchParameter}}}</text>
+                        }
+                        @if (useGoogleTagManager)
+                        {
+                            <text>{{{googleEnchantImpression 'Search results' currency googleImpression}}}</text>
+                        }
+                        <div>
+                            <a href="{{link}}" class="js-typeahead-link u-color-inherit u-pull--left" onclick="{{googleImpressionClick}}" title="{{name}}">
+                                <div class="u-margin-right u-pull--left {{noimage}} u-hidden-xs u-hidden-xxs"><img class="b-lazy" src="/Files/Images/placeholder.gif" data-src="/Admin/Public/GetImage.ashx?width=45&height=36&crop=5&FillCanvas=True&Compression=75&image={{image}}" alt="{{name}}"></div>
+                                <div class="u-pull--left">
+                                    <div class="u-bold u-max-w220px u-truncate-text js-typeahead-name">{{name}}</div>
+                                    @if (showPrice && !onlyPreview)
+                                    {
+                                        if (pointShopOnly)
+                                        {
+                                            <text>
+                                                {{#if havePointPrice}}
+                                                    <div>
+                                                        <span class="u-color--loyalty-points">{{points}}</span> @Translate("points")
+                                                    </div>
+                                                {{else}}
+                                                    <small class="help-text u-no-margin">@Translate("Not available")</small>
+                                                {{/if}}
+                                                {{#unless canBePurchasedWithPoints}}
+                                                    {{#if havePointPrice}}
+                                                        <small class="help-text u-no-margin">@Translate("Not enough points to buy this")</small>
+                                                    {{/if}}
+                                                {{/unless}}
+                                            </text>
+                                        }
+                                        else
+                                        {
+                                            <div>{{price}}</div>
+                                        }
+                                    }
+                                </div>
+                            </a>
+                            <div class="u-margin-left u-pull--right">
+                                @{
+                                    var viewBtn = new Link
+                                    {
+                                        Href = "{{link}}",
+                                        OnClick = "{{googleImpressionClick}}",
+                                        ButtonLayout = ButtonLayout.Secondary,
+                                        CssClass = "btn--condensed u-no-margin js-ignore-click-outside",
+                                        Title = Translate("View")
+                                    };
+                                }
+                                @if (showAddToCartButton && !onlyPreview)
+                                {
+                                    <text>{{#if hideAddToCartButton}}</text>
+                                        @Render(viewBtn)
+                                    <text>{{else}}</text>
+                                        AddToCart btn = new AddToCart {
+                                            ProductId = "{{productId}}",
+                                            ProductInfo = "{{productInfo}}",
+                                            BuyForPoints = pointShopOnly,
+                                            AddButton = new AddToCartButton 
+                                            {
+                                                HideTitle = true,
+                                                OnClick = "{{facebookPixelAction}}",
+                                                CssClass = "js-ignore-click-outside",
+                                                Icon = new Icon {
+                                                    CssClass = "js-ignore-click-outside"
+                                                },
+                                                ExtraAttributes = new Dictionary<string, string> 
+                                                {
+                                                    { "{{disabledBuyButton}}", "" }
+                                                }
+                                            }
+                                        };
+                                        @Render(btn)
+                                    <text>{{/if}}</text>
+                                }
+                                else if (showViewButton)
+                                {
+                                    @Render(viewBtn)
+                                }
+                                @if (showAddToDownloadButton)
+                                {
+                                    <button type="button" class="btn btn--primary u-no-margin btn--condensed dw-mod js-add-to-downloads" title="@Translate("Add")" data-product-id="{{productId}}">
+                                        <i class="fas fa-plus js-button-icon"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </li>
+                {{/ifCond}}
+                {{#ifCond template "===" "SearchMore"}}
+                    {{>SearchMoreProducts}}
+                {{/ifCond}}
+            {{/Product}}
+        {{else}}
+            <li class="dropdown__item dropdown__item--seperator dropdown__item--not-selectable js-no-result dw-mod">
+                @Translate("Your search gave 0 results")
+            </li>
+        {{/each}}
+    </script>
+
+    <script id="SearchMoreProducts" type="text/x-template">
+        <li class="dropdown__item dropdown__item--not-selectable {{stickToBottom}} dw-mod">
+            <a href="/Default.aspx?ID=@productsPageId&Search={{searchParameter}}&GroupID={{groupId}}" class="btn btn--primary btn--full u-no-margin dw-mod js-typeahead-link">
+                @Translate("View all")
+            </a>
+        </li>
+    </script>
+
+    <script id="SearchMorePages" type="text/x-template">
+        <li class="dropdown__item dropdown__item--not-selectable {{stickToBottom}} dw-mod">
+            <a href="/Default.aspx?ID=@contentSearchPageLink&Search={{searchParameter}}" class="btn btn--primary btn--full u-no-margin dw-mod js-typeahead-link">
+                @Translate("View all")
+            </a>
+        </li>
+    </script>
+
+    <script id="SearchPagesTemplate" type="text/x-template">
+        {{#each .}}
+            {{#ifCond template "!==" "SearchMore"}}
+                <li class="dropdown__item dropdown__item--seperator dw-mod">
+                    <div>
+                        <a href="/Default.aspx?ID={{id}}" class="js-typeahead-link u-pull--left u-color-inherit">
+                            <div class="u-margin-right u-pull--left"><i class="fa {{icon}} u-w20px u-ta-center"></i></div>
+                            <div class="u-pull--left">
+                                <div class="u-bold u-truncate-text u-max-w220px js-typeahead-name">{{name}}</div>
+                            </div>
+                        </a>
+                    </div>
+                </li>
+                {{/ifCond}}
+            {{#ifCond template "===" "SearchMore"}}
+                {{>SearchMorePages}}
+            {{/ifCond}}
+        {{else}}
+            <li class="dropdown__item dropdown__item--seperator dropdown__item--not-selectable js-no-result dw-mod">
+                @Translate("Your search gave 0 results")
+            </li>
+        {{/each}}
+    </script>
+
+    <script id="SearchPagesTemplateWrap" type="text/x-template">
+        <div class="dropdown__column-header">@Translate("Pages")</div>
+        <ul class="dropdown__list u-min-w220px u-full-width u-margin-bottom dw-mod">
+            {{>SearchPagesTemplate}}
+        </ul>
+    </script>
+
+    <script id="SearchProductsTemplateWrap" type="text/x-template">
+        <div class="dropdown__column-header">@Translate("Products")</div>
+        <ul class="dropdown__list u-min-w220px u-full-width u-margin-bottom dw-mod">
+            {{>SearchProductsTemplate}}
+        </ul>
+    </script>
+}
+
+@Include("../Components/EcommerceComponents.cshtml")

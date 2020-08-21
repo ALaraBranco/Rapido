@@ -1,0 +1,49 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    Block masterDesktopLogo = new Block
+    {
+        Id = "MasterDesktopLogo",
+        SortId = 10,
+        Template = RenderDesktopLogo(),
+        Design = new Design
+        {
+            Size = "auto-width",
+            HidePadding = true,
+            RenderType = RenderType.Column,
+            CssClass = "grid--align-self-center"
+        }
+    };
+
+    BlocksPage.GetBlockPage("Master").Add("MasterHeader", masterDesktopLogo);
+}
+
+
+@helper RenderDesktopLogo()
+{
+    string firstPageId = Model.Area.FirstActivePage.ID.ToString();
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string alignClass = topLayout == "two-lines-centered" || topLayout == "two-lines" ? "grid--align-self-center" : "";
+    string logo = Model.Area.Item.GetItem("Layout").GetFile("LogoImage") != null ? Model.Area.Item.GetItem("Layout").GetFile("LogoImage").PathUrlEncoded : "/Files/Images/logo-dynamicweb.png";
+    if (Path.GetExtension(logo).ToLower() != ".svg")
+    {
+        int logoHeight = Model.Area.Item.GetItem("Layout").GetInt32("LogoHeight");
+        logoHeight = logoHeight > 0 && Pageview.Device.ToString() != "Mobile" ? logoHeight : 40;
+        logo = "/Admin/Public/GetImage.ashx?height=" + Converter.ToString(logoHeight) + "&amp;crop=5&amp;Compression=75&amp;image=" + logo;
+    }
+    else
+    {
+        logo = HttpUtility.UrlDecode(logo);
+    }
+
+    <div class="logo @alignClass dw-mod">
+        <a href="/Default.aspx?ID=@firstPageId" class="logo__img dw-mod u-block">
+            <img class="grid__cell-img logo__img dw-mod" src="@logo" alt="@Translate("Logo")" />
+        </a>
+    </div>
+}

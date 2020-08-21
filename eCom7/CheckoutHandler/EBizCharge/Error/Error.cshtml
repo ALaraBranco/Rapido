@@ -1,0 +1,132 @@
+@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.General
+@Include("../../../../Components/GridBuilder.cshtml")
+@Include("../../../../Components/GeneralComponents.cshtml")
+
+@functions { 
+    BlocksPage checkoutPage = BlocksPage.GetBlockPage("CheckoutPage");
+}
+
+@{
+    Block orderContainer = new Block()
+    {
+        Id = "OrderContainer",
+        SortId = 20,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "8",
+            HidePadding = true
+        },
+        BlocksList = new List<Block> {
+            new Block()
+            {
+                Id = "OrderContainerRow",
+                SortId = 1,
+                Design = new Design
+                {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    checkoutPage.Add(orderContainer);
+    
+    Block errorBlock = new Block()
+    {
+        Id = "EBizError",
+        SortId = 30,
+        Template = RenderEBizError(),
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12"
+        }
+    };
+    checkoutPage.Add("OrderContainerRow", errorBlock);
+
+    Block summaryContainer = new Block()
+    {
+        Id = "SummaryContainer",
+        SortId = 40,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "auto",
+            HidePadding = true
+        },
+        BlocksList = new List<Block> {
+            new Block()
+            {
+                Id = "SummaryContainerRow",
+                SortId = 1,
+                Design = new Design
+                {
+                    RenderType = RenderType.Row
+                }
+            }
+        }
+    };
+    checkoutPage.Add(summaryContainer); 
+    
+    Block checkoutStepNavigation = new Block()
+    {
+        Id = "StepNavigation",
+        SortId = 50,
+        Template = RenderStepNavigation(),
+        Design = new Design {
+            RenderType = RenderType.Column,
+            Size = "12"
+        }
+    };
+    checkoutPage.Add(checkoutStepNavigation);
+}
+
+@Include("../../../CartV2/Step/Blocks/StaticSummary.cshtml")
+
+<section class="multiple-paragraphs-container u-color-light-gray--bg paragraph-container--full-width">
+    <div class="center-container center-container--with-background-image dw-mod">
+        <div class="paragraph-container">
+            <div class="grid grid--external-bleed">
+                @RenderBlockList(checkoutPage.BlocksRoot.BlocksList)
+            </div>
+        </div>
+    </div>
+</section>
+
+@helper RenderEBizError() {
+     <div class="card-header u-color-light--bg dw-mod">
+        <h2 class="cartDetail">@Translate("An error has happened")</h2>
+        <div class="grid__col-xs-12 grid__col-sm-8 grid__col-md-9">
+            @if (GetString("CheckoutHandler:ErrorType") == "SavedCard")
+            {
+                <span>
+                    @Translate("The credit card is no longer attached to this shop. The credit card token is expired or deleted. Make a new payment in order to save the credit card again")
+                </span>
+            }
+            <p><strong>@GetString("CheckoutHandler:ErrorMessage")</strong></p>
+        </div>
+    </div>
+}
+
+@helper RenderStepNavigation()
+{
+    var pageId = GetGlobalValue("Global:Page.ID");
+    var previousButton = string.Concat("/Default.aspx?Id=" , pageId , "&amp;CartV2.GotoStep3=true");
+    
+    <div class="card u-color-light--bg dw-mod">
+        <div class="u-pull--left">
+            @Render(new Link 
+            {
+                CssClass = "btn--secondary btn--condensed dw-mod u-pull--right u-no-margin",
+                Id = "CartV2.GotoStep3",
+                Target = LinkTargetType.Self,
+                Href = previousButton,
+                Icon = new Icon {Prefix = "fas", Name = "fa-angle-left"},
+                Title = Translate("Back")
+            })
+        </div>
+    </div>
+}

@@ -1,0 +1,20 @@
+﻿@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Core
+
+@helper RenderTableCell(TableCell settings)
+{
+    Dictionary<string, string> attributes = new Dictionary<string, string>();
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (settings.Colspan != 0) { attributes.Add("colspan", Converter.ToString(settings.Colspan)); }
+    if (settings.Rowspan != 0) { attributes.Add("rowspan", Converter.ToString(settings.Rowspan)); }
+    if (!string.IsNullOrEmpty(settings.CssClass)) { attributes.Add("class", settings.CssClass + " dw-mod"); }
+
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary(d => d.Key, d => d.Last().Value);
+
+    string tagName = settings.IsHeader ? "th" : "td";
+
+    @("<" + tagName + " " + ComponentMethods.AddAttributes(resultAttributes) + ">")
+        @settings.Content
+    @("</" + tagName + ">");
+}

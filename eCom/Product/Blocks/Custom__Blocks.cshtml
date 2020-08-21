@@ -1,0 +1,256 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Collections.Generic
+@using Dynamicweb.Rapido.Blocks
+@Include("Rizzo/Rizzo__Blocks.cshtml")
+@Include("RizzoPackages/RizzoPackages__Blocks.cshtml")
+@{ 
+    BlocksPage customProductBlocks = BlocksPage.GetBlockPage("Product");
+    Block customAddToCart = new Block
+    {
+        Id = "ProductDetailsItemAddToCart",
+        SortId = 30,
+        Template = Custom__RenderBuyActions("DetailsView") //@* CUSTOMIZATION *@
+    };
+    customProductBlocks.ReplaceBlock(customAddToCart);
+    Block customMainInfoBuy = new Block()
+    {
+        Id = "Buy",
+        SortId = 80,
+        Template = Custom_RenderMainInfoBuy()
+    };
+    customProductBlocks.ReplaceBlock(customMainInfoBuy);
+  
+}
+
+@helper Custom_RenderMainInfoBuy()
+{
+    string pageId = GetGlobalValue("Global:Page.ID").ToString();
+    string variantId = HttpContext.Current.Request.QueryString.Get("variantId");
+    string productId = GetString("Ecom:Product.ID");
+    string feedId = pageId + "&ProductID=" + productId + "&VariantID=" + variantId + "&Feed=True&redirect=false";
+    <div class="product__price-actions js-handlebars-root dw-mod" id="PriceAndActions" data-template="PricesAndActionsTemplate" data-json-feed="/Default.aspx?ID=@feedId" data-preloader="minimal"></div>
+    <input type="hidden" value="@GetString("Ecom:Product.VariantID.Extented")" name="Variant" id="Variant_@GetString("Ecom:Product.ID")" />
+    @* START CUSTOMIZATION *@
+    @Custom_RenderMainInfoBuyScripts();
+    @* END CUSTOMIZATION *@
+}
+@helper Custom_RenderMainInfoBuyScripts()
+{
+    bool showPrice = !Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HidePrice");
+    bool showCartButton = !Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HideAddToCartButton");
+    bool onlyPreview = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Pageview.User == null;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+    bool pointShopOnly = Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("PointShopOnly");
+    string variantId = HttpContext.Current.Request.QueryString.Get("variantId") ?? "";
+    string feedId = GetGlobalValue("Global:Page.ID").ToString() + "&ProductID=" + GetString("Ecom:Product.ID") + "&VariantID=" + variantId + "&Feed=True&redirect=false";
+    string hideStockState = Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HideStockState") ? "u-hidden" : "";
+    string hideDelivery = Pageview.AreaSettings.GetItem("ProductPage").GetBoolean("HideShipping") ? "u-hidden" : "";
+
+    @* Handlebars templates *@
+    <script id="PricesAndActionsTemplate" type="text/x-template">
+    {{#.}}
+        {{#if isLiveProductInfoActive}}
+        {{#unless isLiveProductInfoRequested}}
+        {{getLiveProductInfo 'PriceAndActions'}}
+        {{/unless}}
+        {{/if}}
+        @if (!onlyPreview)
+        {
+            @RenderPriceInfo("ProductPage")
+
+        } 
+        @* START CUSTOMIZATION  *@
+         @{
+             var addToCartBtn = new AddToCart
+                {
+                    ProductId = "{{productId}}",
+                    VariantId = "{{variantid}}",
+                    UnitId = "{{unitId}}",
+                    ProductInfo = "{{productInfo}}",
+                    BuyForPoints = pointShopOnly,
+                    WrapperCssClass = "buttons-collection--right product__price-actions__actions dw-mod",
+                    AddButton = new AddToCartButton
+                    {
+                        OnClick = "{{facebookPixelAction}}",
+                        ExtraAttributes = new Dictionary<string, string>
+                        {
+                            {"{{disabledBuyButton}}", ""}
+                        }
+                    },
+                    UnitSelector = new UnitSelector
+                    {
+                        OptionsContent = "{{#unitOptions}}{{>UnitOption}}{{/unitOptions}}",
+                        Id = "UnitOptions_{{id}}",
+                        SelectedOption = "{{unitName}}",
+                        CssClass = "{{hasUnits}}"
+                    }
+                };
+
+                if (!pointShopOnly)
+                {
+                    addToCartBtn.QuantitySelector = new QuantitySelector
+                    {
+                        Id = "Quantity_{{id}}"
+                    };
+                }
+            
+            @Render(addToCartBtn)
+            if (!onlyPreview)
+             {    
+                if (Pageview.User != null && !pointShopOnly && Dynamicweb.Security.Licensing.LicenseManager.LicenseHasFeature("LoyaltyPoints"))
+                {
+                    <text>
+                        {{#if canBePurchasedWithPoints}}
+                            <form method="post" role="form" class="u-no-margin u-margin-top">
+                                <input type="hidden" name="ProductID" value="{{id}}" />
+                                <button type="submit" class="btn btn--loyalty-points u-no-margin dw-mod pull-right u-no-margin js-cart-btn {{disabledBuyButton}}" name="CartCmd" value="addWithPoints">@Translate("Buy for") {{points}} @Translate("points")</button>
+                            </form>
+                        {{/if}}
+                    </text>
+                }
+            }
+            else
+            {
+                <button type="button" id="CartButton_{{id}}" class="u-hidden"></button>
+            }
+            
+            <div class="product__stock-delivery dw-mod"> 
+                {{#if stockText}}          
+                    <span class="@hideStockState">{{stockText}} <div class="stock-icon {{stockState}}"></div></span>                                   
+                {{/if}}
+                {{#if deliveryText}}                                              
+                    <span class="@hideDelivery">{{deliveryText}}</span>              
+                {{/if}}
+            </div>
+         }
+         @* END CUSTOMIZATION  *@
+    {{/.}}
+    </script>
+
+    <script id="Units" type="text/x-template">
+        <div class="dropdown__item dw-mod" onclick="HandlebarsBolt.UpdateContent('PriceAndActions', '/Default.aspx?ID=@feedId&UnitID={{value}}')">{{name}}</div>
+    </script>
+
+    <script id="UnitOption" type="text/x-template">
+        <div class="dropdown__item dw-mod" onclick="HandlebarsBolt.UpdateContent('PriceAndActions', '{{link}}&feed=true&UnitID={{value}}&rid={{id}}')">{{name}}</div>
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (document.getElementById("PriceAndActions")) {
+                document.getElementById("PriceAndActions").addEventListener("contentLoaded", function (event) {
+                    if (document.querySelector(".js-variants") != null) {
+                        MatchVariants.Update(document.querySelector(".js-variants"), "DoNothing");
+                    }
+                });
+            }
+        });
+    </script>
+   
+}
+
+@helper Custom__RenderBuyActions(string view)
+{
+    var viewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem(view);
+    var listViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("ListView");
+    var gridViewSettings = Pageview.AreaSettings.GetItem("ProductList").GetItem("GridView");
+    var ecommerceSettings = Pageview.AreaSettings.GetItem("Ecommerce");
+
+    bool onlyPreview = ecommerceSettings.GetBoolean("OnlyPreviewForAnonymous") && Pageview.User == null;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+    bool pointShopOnly = ecommerceSettings.GetBoolean("PointShopOnly");
+    bool showCartButton = viewSettings.GetBoolean("ShowAddToCartButton");
+    bool showViewButton = viewSettings.GetBoolean("ShowViewButton");
+    string viewMoreText = viewSettings.GetString("ViewMoreText");
+    viewMoreText = !string.IsNullOrEmpty(viewMoreText) ? viewMoreText : "View";
+    
+    bool hideUnitSelector = view == "GridView";
+    bool hasVariantSelector = view == "ListView" && listViewSettings.GetList("Variants") != null && listViewSettings.GetList("Variants").SelectedValue != "none";
+    string wrapperClass = view == "GridView" ? "buttons-collection--center" : "";
+    
+    int columnsCount = gridViewSettings.GetList("Columns") != null ? Converter.ToInt32(gridViewSettings.GetList("Columns").SelectedValue) : 4;
+    bool hideButtonText = view == "DetailsView" || (view == "GridView" && (columnsCount >= 4 || Pageview.Device.ToString() == "Mobile" || Pageview.Device.ToString() == "Tablet"));
+    if (view == "GridView" && pointShopOnly && columnsCount <= 4) 
+    {
+        hideButtonText = false;
+    }
+
+    var viewBtn = new Link
+    {
+        Href = "{{link}}",
+        Id = "CartButton_{{id}}",
+        Title = Translate(viewMoreText),
+        OnClick = "Scroll.SavePosition(event); {{googleImpressionClick}}",
+        ButtonLayout = ButtonLayout.Secondary,
+        CssClass = "u-no-margin"
+    };
+    @*!-- Start of Buttons Display Changes --*@
+    if (!onlyPreview)
+    {
+        var addToCartBtn = new AddToCart
+        {
+            ProductId = "{{productId}}",
+            VariantId = "{{variantid}}",
+            UnitId = "{{unitId}}",
+            ProductInfo = "{{productInfo}}",
+            BuyForPoints = pointShopOnly,
+            WrapperCssClass = wrapperClass,
+            AddButton = new AddToCartButton
+            {
+                HideTitle = hideButtonText,
+                OnClick = "{{facebookPixelAction}}",
+                ExtraAttributes = new Dictionary<string, string>
+                {
+                    { "{{disabledBuyButton}}", "" }
+                }
+            }
+        };
+
+        if (!pointShopOnly) 
+        {
+            addToCartBtn.QuantitySelector = new QuantitySelector
+            {
+                Id = "Quantity{{id}}"
+            };
+        }
+
+        if (!hideUnitSelector)
+        {
+            addToCartBtn.UnitSelector = new UnitSelector
+            {
+                OptionsContent = "{{#unitOptions}}{{>UnitOption}}{{/unitOptions}}",
+                Id = "UnitOptions_{{id}}",
+                SelectedOption = "{{unitName}}",
+                CssClass = "{{hasUnits}}"
+            };
+        }
+
+        if (showCartButton)
+        {
+            if (!showViewButton || hasVariantSelector)
+            {
+                @Render(addToCartBtn)
+            }
+            else
+            {
+                <text>{{#if hideAddToCartButton}}</text>
+                    <div>@Render(viewBtn)</div>
+                <text>{{else}}</text>
+                    @Render(addToCartBtn)
+                <text>{{/if}}</text>
+            }
+        }
+        else if (showViewButton)
+        {
+            <div>@Render(viewBtn)</div>
+        }
+    }
+    @*!-- End of Buttons Display Changes --*@
+    else if (showViewButton)
+    {
+        <div>@Render(viewBtn)</div>
+    }
+}

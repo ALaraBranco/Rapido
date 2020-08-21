@@ -1,0 +1,11 @@
+﻿// -----------------------------------------------------------------------------
+// Contains all styles related to the Wbsite settings articles
+// -----------------------------------------------------------------------------
+
+.article__short-summary.dw-mod {
+  .article__short-summary-mixin();
+}
+
+.article__short-summary-mixin() when not (@layout-body-text-font-color = none) {
+    color: @layout-body-text-font-color;
+}

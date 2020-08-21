@@ -1,0 +1,140 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@Include("../../Helpers/GetInitials.cshtml")
+
+@{
+    Block masterDesktopActionsMenuSignIn = new Block
+    {
+        Id = "MasterDesktopActionsMenuSignIn",
+        SortId = 20,
+        Template = RenderSignIn()
+    };
+
+    BlocksPage.GetBlockPage("Master").Add("MasterDesktopActionsMenu", masterDesktopActionsMenuSignIn);
+}
+
+@helper RenderSignIn()
+{
+    bool navigationItemsHideSignIn = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideSignIn");
+    string userInitials = "";
+    int pageId = Model.TopPage.ID;
+    int createAccountPageId = GetPageIdByNavigationTag("CreateAccount");
+    int myDashboardPageId = GetPageIdByNavigationTag("CustomerDashboard");
+    int myProfilePageId = GetPageIdByNavigationTag("CustomerProfile");
+    int myOrdersPageId = GetPageIdByNavigationTag("CustomerOrders");
+    int myFavoritesPageId = GetPageIdByNavigationTag("CustomerFavorites");
+    int mySavedCardsPageId = GetPageIdByNavigationTag("SavedCards");
+    int signInProfilePageId = GetPageIdByNavigationTag("SignInPage");
+    bool hideCreateAccountLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideCreateAccount");
+    bool hideMyProfileLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideProfile");
+    bool hideMyOrdersLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideOrders");
+    bool hideMySavedCardsLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideSavedCards");
+    bool hideMyFavoritesLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideFavorites");
+    bool hideForgotPasswordLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("SignInHideForgotPasswordLink");
+
+    string linkStart = "/Default.aspx?ID=";
+    if (Model.CurrentUser.ID <= 0)
+    {
+        linkStart += signInProfilePageId + "&RedirectPageId=";
+    }
+
+    string forgotPasswordPageLink = "/Default.aspx?ID=" + signInProfilePageId + "&LoginAction=Recovery";
+    string myProfilePageLink = linkStart + myProfilePageId;
+    string myOrdersPageLink = linkStart + myOrdersPageId;
+    string myFavoritesPageLink = linkStart + myFavoritesPageId;
+    string mySavedCardsPageLink = linkStart + mySavedCardsPageId;
+
+    string profileIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fa fa-user";
+    string favoritesIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon") != null ? "fas fa-" + Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("FavoriteIcon").SelectedValue : "fa fa-star";
+
+    if (Model.CurrentUser.ID != 0)
+    {
+        userInitials = GetInitials(Model.CurrentUser.Name, Model.CurrentUser.FirstName, Model.CurrentUser.LastName, Model.CurrentUser.Email, Model.CurrentUser.UserName);
+    }
+
+    if (!navigationItemsHideSignIn)
+    {
+        string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+        string liClasses = topLayout != "normal" ? "menu__item--top-level u-hidden-xxs" : "menu__item--clean";
+        string menuLinkClass = topLayout != "normal" ? "menu__link menu__link--icon" : "header-menu__link header-menu__link--icon";
+
+        <li class="menu__item menu__item--horizontal menu__item menu__item--icon @liClasses is-dropdown is-dropdown--no-icon dw-mod">
+            <div class="@menuLinkClass dw-mod">
+                @if (Model.CurrentUser.ID <= 0)
+                {
+                    <i class="@Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue fa-1_5x" title="@Translate("Sign in")"></i>
+                }
+                else
+                {
+                    <a href="/default.aspx?ID=@myDashboardPageId" class="u-color-inherit" title="@Translate("Customer center")"><div class="circle-icon-btn">@userInitials.ToUpper()</div></a>
+                }
+            </div>
+            <div class="menu menu--dropdown menu--dropdown-right menu--sign-in grid__cell dw-mod">
+                <ul class="list list--clean dw-mod">
+                    @if (Model.CurrentUser.ID <= 0)
+                    {
+                        <li>
+                            <label for="SignInModalTrigger" class="btn btn--primary btn--full u-no-margin sign-in-modal-trigger-button dw-mod" onclick="setTimeout(function () { document.getElementById('LoginUsername').focus() }, 10)">@Translate("Sign in")</label>
+                        </li>
+
+                        if (!hideCreateAccountLink)
+                        {
+                            @RenderListItem("/default.aspx?ID=" + createAccountPageId, Translate("Create account"));
+                        }
+                        if (!hideForgotPasswordLink)
+                        {
+                            @RenderListItem(forgotPasswordPageLink, Translate("Forgot your password?"))
+                        }
+                        if (!hideMyProfileLink || !hideMyOrdersLink || !hideMyFavoritesLink || !hideMySavedCardsLink)
+                        {
+                            @RenderSeparator()
+                        }
+                    }
+                    @if (!hideMyProfileLink)
+                    {
+                        @RenderListItem(myProfilePageLink, Translate("My Profile"), profileIcon)
+                    }
+                    @if (!hideMyOrdersLink)
+                    {
+                        @RenderListItem(myOrdersPageLink, Translate("My Orders"), "fas fa-list")
+                    }
+                    @if (!hideMyFavoritesLink)
+                    {
+                        @RenderListItem(myFavoritesPageLink, Translate("My Favorites"), favoritesIcon)
+                    }
+                    @if (!hideMySavedCardsLink)
+                    {
+                        @RenderListItem(mySavedCardsPageLink, Translate("My Saved cards"), "fas fa-credit-card")
+                    }
+                    @if (Model.CurrentUser.ID > 0)
+                    {
+                        if (!hideMyProfileLink || !hideMyOrdersLink || !hideMyFavoritesLink || !hideMySavedCardsLink)
+                        {
+                            @RenderSeparator()
+                        }
+
+                        @RenderListItem("/Admin/Public/ExtranetLogoff.aspx?ID=" + pageId, Translate("Sign out"))
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+}
+
+@helper RenderListItem(string link, string text, string icon = null) {
+    <li>
+        <a href="@link" class="list__link dw-mod">
+            @if (!string.IsNullOrEmpty(icon)){<i class="@icon u-margin-right"></i>}@text
+        </a>
+    </li>
+}
+
+@helper RenderSeparator() 
+{
+    <li class="list__seperator dw-mod"></li>
+}

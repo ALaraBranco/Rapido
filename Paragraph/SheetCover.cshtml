@@ -1,0 +1,125 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.ParagraphViewModel>
+@using System.IO
+@using Dynamicweb.Content.Items
+
+@functions{ 
+    public string GetThisOrParentSettingsItem(string systemName)
+    {
+        string item = null;
+
+        if (Model.Item.GetString(systemName) != null) {
+            if (Model.Item.GetList(systemName) != null)
+            {
+                if (!String.Equals("default", Model.Item.GetList(systemName).SelectedValue, StringComparison.OrdinalIgnoreCase)) {
+                    item = Model.Item.GetList(systemName).SelectedValue;
+                } else {
+                    item = null;
+                }
+            }
+            else if (Model.Item.GetFile(systemName) != null)
+            {
+                if (!String.IsNullOrEmpty(Model.Item.GetString(systemName))) {
+                    item = Model.Item.GetFile(systemName).Path;
+                } else {
+                    item = null;
+                }
+            }
+            else
+            {
+                if (!String.IsNullOrEmpty(Model.Item.GetString(systemName)) && !String.Equals("transparent", Model.Item.GetString(systemName), StringComparison.OrdinalIgnoreCase))
+                {
+                    item = Model.Item.GetString(systemName);
+                }
+                else
+                {
+                    item = null;
+                }
+            }
+        }
+
+        if (item == null)
+        {
+            Dynamicweb.Content.Page current = Dynamicweb.Services.Pages.GetPage(Model.PageID);
+            while (current != null && current.Parent != current)
+            {
+                var temp = current.Item != null ? current.Item[systemName] : "";
+
+                if (temp != null)
+                {
+                    item = temp.ToString();
+
+                    if (!String.IsNullOrEmpty(item) && !String.Equals("default", item, StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+                }
+
+                current = current.Parent;
+            }
+        }
+
+        return item;
+    }
+}
+
+@{ 
+    var colorService = new ColorSwatchService();
+
+    string contentLayout = Model.Item.GetString("Layout") != null ? "sheet-container__content--" + Model.Item.GetList("Layout").SelectedValue : "sheet-container__content--left";
+
+    string pageMargin = GetThisOrParentSettingsItem("Margin") != null ? GetThisOrParentSettingsItem("Margin") : "10";
+    string backgroundImageWidth = "2480";
+    string backgroundImageHeight = "1748";
+    string backgroundImagePath = Model.Item.GetFile("BackgroundImage") != null ? "/Admin/Public/GetImage.ashx?width=" + backgroundImageWidth + "&height=" + backgroundImageHeight + "&crop=5&image=" + Model.Item.GetFile("BackgroundImage").Path : "";
+    string backgroundImage = Model.Item.GetFile("BackgroundImage") != null ? "background-image: url('" + backgroundImagePath + "'); background-repeat: no-repeat; background-size: cover;" : "";
+
+    string logoImagePath = GetThisOrParentSettingsItem("Logo");
+    string logoImage = !String.IsNullOrEmpty(logoImagePath) ? "/Admin/Public/GetImage.ashx?width=200&height=60&crop=5&image=" + logoImagePath : "";
+
+    if (Path.GetExtension(logoImagePath).ToLower() == ".svg")
+    {
+        logoImage = logoImagePath;
+    }
+
+    string title = Model.Item.GetString("Title") != null ? Model.Item.GetString("Title") : "";
+    string subTitle = Model.Item.GetString("SubTitle") != null ? Model.Item.GetString("SubTitle") : "";
+
+    string headingColor = GetThisOrParentSettingsItem("HeadingColor") != null ? GetThisOrParentSettingsItem("HeadingColor") : "";
+    headingColor = !headingColor.Contains("#") ? colorService.GetHexColor(Pageview.AreaID, headingColor) : headingColor;
+    string subHeadingColor = GetThisOrParentSettingsItem("SubheadingColor") != null ? GetThisOrParentSettingsItem("SubheadingColor") : "";
+    subHeadingColor = !subHeadingColor.Contains("#") ? colorService.GetHexColor(Pageview.AreaID, subHeadingColor) : subHeadingColor;
+
+
+    int pageNumber = 1;
+    if (System.Web.HttpContext.Current.Items.Contains("PaperPageNumber"))
+    {
+        pageNumber = Convert.ToInt32(System.Web.HttpContext.Current.Items["PaperPageNumber"]);
+        pageNumber++;
+        System.Web.HttpContext.Current.Items["PaperPageNumber"] = pageNumber;
+    } else {
+        System.Web.HttpContext.Current.Items.Add("PaperPageNumber", pageNumber);
+    }
+}
+
+<section class="sheet padding-@(pageMargin)mm" style="@backgroundImage">
+    <div class="sheet-container">
+        <div class="sheet-container__content @contentLayout">
+            @if (!String.IsNullOrEmpty(logoImage))
+            {
+                <div class="sheet-cover-logo">
+                    <img src="@logoImage" />
+                </div>
+            }
+
+            @if (!String.IsNullOrEmpty(title) && !Model.Item.GetBoolean("HideTitle"))
+            {
+               <h1 class="sheet-cover-title" style="color: @headingColor">@title</h1>
+            }
+
+            @if (!String.IsNullOrEmpty(subTitle))
+            {
+               <h3 class="sheet-cover-sub-title" style="color: @subHeadingColor">@subTitle</h3>
+            }
+        </div>
+    </div>
+</section>

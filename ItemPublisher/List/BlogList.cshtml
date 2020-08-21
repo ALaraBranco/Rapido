@@ -1,0 +1,178 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO
+@using Dynamicweb.Content.Items
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks.Components.General
+
+@functions {
+    BlocksPage blogListPage = BlocksPage.GetBlockPage("BlogList");
+
+    string Truncate(string value, int maxChars)
+    {
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
+    }
+}
+
+@{
+    var articleItemTypeFields = ItemManager.Metadata.GetItemType("BlogArticle").Fields;
+    var filterOneOptions = articleItemTypeFields.Find("Category") != null ? articleItemTypeFields.Find("Category").Options.Values : null;
+
+    Block listContainer = new Block
+    {
+        Id = "ArticleListContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        },
+        BlocksList = new List<Block> {
+        new Block {
+        Id = "ArticleListBody",
+        SortId = 30,
+        Design = new Design {
+            RenderType = RenderType.Column,
+            Size = "8",
+            HidePadding = true
+        }
+    }
+}
+    };
+    blogListPage.Add(listContainer);
+
+    Block articleListBodyRow = new Block
+    {
+        Id = "ArticleListBodyRow",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row
+        }
+    };
+    blogListPage.Add("ArticleListBody", articleListBodyRow);
+
+    Block listFilters = new Block
+    {
+        Id = "ArticleListFilters",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "12",
+            CssClass = "grid__cell"
+        },
+        BlocksList = new List<Block> {
+        new Block {
+            Id = "ArticleListSearch",
+                SortId = 10,
+                Component = new ArticleListSearch { }
+            },
+            new Block {
+                Id = "ArticleListCategoryFilter",
+                SortId = 20,
+                Component = new ArticleListFilter { Options = filterOneOptions, Label = Translate("Category"), SystemName = "Category" }
+            }
+        }
+    };
+    blogListPage.Add("ArticleListBodyRow", listFilters);
+
+    int index = 0;
+    foreach (LoopItem listItem in GetLoop("ItemPublisher:Items.List"))
+    {
+        Block articleListItem = new Block
+        {
+            Id = "ArticleListItem" + index,
+            SortId = (index * 10) + 10,
+            Component = new ArticleListItem
+            {
+                Title = listItem.GetString("ItemPublisher:Item.Title"),
+                SubTitle = listItem.GetString("ItemPublisher:Item.Author") + listItem.GetDate("ItemPublisher:Item.Date").ToString("dd.MM.yyyy, HH:mm"),
+                Summary = Truncate(listItem.GetString("ItemPublisher:Item.Summary"), 360),
+                Link = "/Default.aspx?ID=" + listItem.GetString("ItemPublisher:Item.Field.PageId"),
+                Type = ArticleListItemType.List,
+                Image = new Image
+                {
+                    Title = listItem.GetString("ItemPublisher:Item.Title"),
+                    Path = listItem.GetString("ItemPublisher:Item.Image"),
+                    ImageDefault = new ImageSettings
+                    {
+                        Width = 300,
+                        Height = 180,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    },
+                    ImageSmall = new ImageSettings
+                    {
+                        Width = 1024,
+                        Height = 614,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    },
+                    ImageMedium = new ImageSettings
+                    {
+                        Width = 1300,
+                        Height = 780,
+                        Crop = 0,
+                        DoNotUpscale = true
+                    }
+                }
+            },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        blogListPage.Add("ArticleListBodyRow", articleListItem);
+
+        index++;
+    }
+
+    if (GetLoop("ItemPublisher:Items.List").Count == 0)
+    {
+        Block notFoundInfo = new Block
+        {
+            Id = "NotFoundInfo",
+            SortId = 40,
+            Component = new ArticleListNoResultsInfo { },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        blogListPage.Add("ArticleListContainer", notFoundInfo);
+    }
+
+    if (GetInteger("ItemPublisher:Items.Paging.TotalPages") > 1)
+    {
+        Block paginationBlock = new Block
+        {
+            Id = "ArticleListPagination",
+            SortId = 40,
+            Component = new Pagination { PagingTag = "ItemPublisher:Items" },
+            Design = new Design
+            {
+                RenderType = RenderType.Column,
+                Size = "12"
+            }
+        };
+        blogListPage.Add("ArticleListContainer", paginationBlock);
+    }
+}
+
+@* Include the required Grid builder (Contains the methods @RenderBlockList and @RenderBlock) *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+@Include("../../Components/ArticleComponents.cshtml")
+@Include("../../Components/TemplateTagDependent/Pagination.cshtml")
+
+
+@* Include the Blocks for the page *@
+@Include("Blocks/Custom__Blocks.cshtml")
+
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(blogListPage.BlocksRoot.BlocksList)
+

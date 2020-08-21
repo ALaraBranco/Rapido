@@ -1,0 +1,165 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Core
+@using System
+@using System.Web
+@using System.Globalization;
+@using System.Collections.Generic
+
+@Include("../../GetProductImage.cshtml")
+
+<style>
+    .receipt__header.dw-mod {
+        background: white !important;
+    }
+
+    .receipt__header.dw-mod * {
+        color: black !important;
+    }
+
+    .print {
+        font-size: 12pt;
+        text-align: left;
+        text-transform: none;
+    }
+
+    h1 {
+        font-size: 28pt;
+        text-align: left;
+    }
+
+    h2 {
+        font-size: 22pt;
+        text-align: left;
+    }
+
+    h3 {
+        font-size: 16pt;
+        text-align: left;
+    }
+
+    .row {
+        clear: both;
+        display: table;
+    }
+
+    .col-45 {
+        width: 45%;
+        float: left;
+    }
+
+    .col-55 {
+        width: 55%;
+        float: left;
+    }
+</style>
+    
+@{
+    //fix for displaying variant name
+    GetLoop("VariantCombinations");
+}
+<div class="print">
+    <h1 class="u-no-margin">@GetString("Ecom:Product.Name")</h1>
+    <div class="row">
+        <div class="col-55">
+            <h2>@GetString("Ecom:Product.SelectedVariantComboName")</h2>
+            <div class="u-margin-bottom--lg u-bold">@GetString("Ecom:Product.Number")</div>
+            <div>@GetString("Ecom:Product.ShortDescription")</div>
+        </div>
+        <div class="col-45">
+            <img src="@GetProductImage()" style="display: table; width: 100%; max-width: 100%; height: auto" />
+        </div>
+    </div>
+            
+    <h2>@Translate("Long description")</h2>
+    <div>@GetString("Ecom:Product.LongDescription")</div>
+
+    <h2>@Translate("Product information")</h2>
+    <table class="table table--clean table--compact u-margin-bottom--lg">
+        @if (GetLoop("CustomFieldValues").Count > 0)
+        {
+            @RenderCustomFields()
+        }
+    </table>
+    @foreach (LoopItem categoryGroup in GetLoop("ProductCategories"))
+    {
+        if (categoryGroup.GetLoop("ProductCategoryFields").Count > 0)
+        {
+            <h3>@categoryGroup.GetString("Ecom:Product.Category.Name")</h3>
+            <table class="table table--clean table--compact u-margin-bottom--lg">
+                @RenderProductCategoryFields(categoryGroup.GetLoop("ProductCategoryFields"))
+            </table>    
+        }
+    }
+</div>
+
+@helper RenderProductCategoryFields(List<LoopItem> fieldsLoop)
+{
+    foreach (LoopItem categoryField in fieldsLoop)
+    {
+        string fieldValue = categoryField.GetString("Ecom:Product.CategoryField.Value");
+        fieldValue = fieldValue == "False" ? Translate("No") : fieldValue;
+        fieldValue = fieldValue == "True" ? Translate("Yes") : fieldValue;
+
+        if (!string.IsNullOrEmpty(categoryField.GetString("Ecom:Product.CategoryField.Label")) && !string.IsNullOrEmpty(fieldValue))
+        {
+            if (categoryField.GetString("Ecom:Product.CategoryField.TypeID") != "9") 
+            {
+                if (categoryField.GetString("Ecom:Product.CategoryField.TypeID") == "15")
+                {
+                    @RenderFieldItem(categoryField.GetString("Ecom:Product.CategoryField.Label"), categoryField.GetString("Ecom:Product.CategoryField.OptionLabel"));
+                }
+                else
+                {
+                    @RenderFieldItem(categoryField.GetString("Ecom:Product.CategoryField.Label"), fieldValue);
+                }
+            }
+        }
+    }
+}
+
+
+@helper RenderCustomFields()
+{
+    foreach (LoopItem customField in GetLoop("CustomFieldValues"))
+    {
+        string fieldValue = customField.GetString("Product.CustomField.Value.Clean");
+        fieldValue = fieldValue == "False" ? Translate("No") : fieldValue;
+        fieldValue = fieldValue == "True" ? Translate("Yes") : fieldValue;
+
+        if (customField.GetLoop("Product.CustomField.Options").Count > 0)
+        {
+            fieldValue = customField.GetString("Product.CustomField.Label");
+        }
+
+        if (!string.IsNullOrEmpty(customField.GetString("Product.CustomField.Name")) && !string.IsNullOrEmpty(fieldValue) && customField.GetString("Product.CustomField.Name") != "Custom sticker")
+        {
+            if (string.IsNullOrEmpty(customField.GetString("Document.FullPath")))
+            {
+                @RenderFieldItem(customField.GetString("Product.CustomField.Name"), fieldValue);
+            }
+        }
+    }
+}
+
+
+@helper RenderFieldItem(string name, string value, string fieldType = "clean")
+{
+    <tr>
+        <th width="25%">@name</th>
+        <td>
+            @RenderFieldItemContent(name, value, fieldType)
+        </td>
+    </tr>
+}
+
+@helper RenderFieldItemContent(string name, string value, string fieldType = "clean")
+{
+    /*if (isImage(value))
+    {
+        @getIconForFile(value)
+    }
+    else
+    {*/
+        @value
+    //}
+}

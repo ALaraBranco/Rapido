@@ -1,0 +1,239 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    bool onlyPreview = Model.Area.Item.GetItem("Ecommerce").GetBoolean("OnlyPreviewForAnonymous") && Model.CurrentUser.ID == 0;
+    onlyPreview = Dynamicweb.Rapido.Services.User.IsUserAnonymous() ? true : onlyPreview;
+    bool hideCart = Model.Area.Item.GetItem("Layout").GetItem("Header").GetBoolean("HideCart");
+    string miniCartLayout = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("Layout") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("Layout").SelectedValue : "dropdown";
+
+    if (!onlyPreview && !hideCart)
+    {
+        Block masterDesktopActionsMenuMiniCart = new Block
+        {
+            Id = "MasterDesktopActionsMenuMiniCart",
+            SortId = 50,
+            Template = RenderMiniCart(miniCartLayout == "dropdown"),
+            SkipRenderBlocksList = true,
+            BlocksList = new List<Block>()
+        };
+
+        Block miniCartCounterScriptTemplate = new Block
+        {
+            Id = "MiniCartCounterScriptTemplate",
+            Template = RenderMiniCartCounterContent()
+        };
+
+        //dropdown layout is default
+        RazorEngine.Templating.TemplateWriter layoutTemplate;
+        RazorEngine.Templating.TemplateWriter miniCartTriggerTemplate;
+
+        switch (miniCartLayout)
+        {
+            case "dropdown":
+                layoutTemplate = RenderMiniCartDropdownLayout();
+                miniCartTriggerTemplate = RenderMiniCartTriggerLink();
+                break;
+            case "panel":
+                layoutTemplate = RenderMiniCartPanelLayout();
+                miniCartTriggerTemplate = RenderMiniCartTriggerLabel();
+                break;
+            case "modal":
+                layoutTemplate = RenderMiniCartModalLayout();
+                miniCartTriggerTemplate = RenderMiniCartTriggerLabel();
+                break;
+            case "none":
+            default:
+                layoutTemplate = RenderNoLayoutMiniCart();
+                miniCartTriggerTemplate = RenderMiniCartTriggerLink();
+                break;
+        }
+
+        masterDesktopActionsMenuMiniCart.BlocksList.Add(new Block
+        {
+            Id = "MiniCartTrigger",
+            Template = miniCartTriggerTemplate
+        });
+
+        if (Pageview.Device.ToString() != "Mobile" && Pageview.Device.ToString() != "Tablet")
+        {
+            masterDesktopActionsMenuMiniCart.BlocksList.Add(new Block
+            {
+                Id = "MiniCartLayout",
+                Template = layoutTemplate
+            });
+        }
+
+        BlocksPage.GetBlockPage("Master").Add("MasterDesktopActionsMenu", masterDesktopActionsMenuMiniCart);
+        BlocksPage.GetBlockPage("Master").Add("MasterBottomSnippets", miniCartCounterScriptTemplate);
+    }
+
+    if (hideCart && !onlyPreview)
+    {
+        BlocksPage.GetBlockPage("Master").Add("MasterBottomSnippets", new Block {
+            Id = "CartInitialization",
+            Template = RenderNoLayoutMiniCart()
+        });
+    }
+}
+
+@helper RenderMiniCart(bool hasMouseEnterEvent)
+{
+    List<Block> subBlocks = this.masterPage.GetBlockListById("MasterDesktopActionsMenuMiniCart").OrderBy(item => item.SortId).ToList();
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string liClasses = topLayout != "normal" ? "menu__item--top-level" : "menu--clean";
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    string mouseEvent = "";
+    string id = "MiniCart";
+    if (hasMouseEnterEvent) 
+    {
+        mouseEvent = "onmouseenter=\"Cart.UpdateMiniCart('miniCartTrigger', 'miniCart', 'cartCounter', '/Default.aspx?ID=" + miniCartFeedPageId + "&feedType=MiniCart')\"";
+        id = "miniCartTrigger";
+    }
+    <li class="menu__item menu__item--horizontal menu__item--icon @liClasses dw-mod" id="@id" @mouseEvent>
+        @RenderBlockList(subBlocks)
+    </li>
+}
+
+@helper RenderNoLayoutMiniCart()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    <script>
+        window.cartId = "@miniCartFeedPageId";
+    </script>
+}
+
+@helper RenderMiniCartTriggerLabel()
+{
+    int cartPageId = GetPageIdByNavigationTag("CartPage");
+    string cartIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon").SelectedValue : "fa fa-cart";
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string menuLinkClass = topLayout != "normal" ? "menu__link menu__link--icon" : "header-menu__link header-menu__link--icon";
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    
+    <div class="@menuLinkClass dw-mod js-mini-cart-button" onclick="Cart.UpdateMiniCart('miniCartTrigger', 'miniCart', 'cartCounter', '/Default.aspx?ID=@miniCartFeedPageId&feedType=MiniCart')">
+        <div class="u-inline u-position-relative" title="@Translate("Cart")">
+            <i class="@cartIcon fa-1_5x"></i>
+            @RenderMiniCartCounter()
+        </div>
+    </div>
+}
+
+@helper RenderMiniCartTriggerLink()
+{
+    int cartPageId = GetPageIdByNavigationTag("CartPage");
+    string cartIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("CartIcon").SelectedValue : "fa fa-cart";
+    string topLayout = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout") != null ? Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("TopLayout").SelectedValue : "normal";
+    string menuLinkClass = topLayout != "normal" ? "menu__link menu__link--icon" : "header-menu__link header-menu__link--icon";
+    
+    <a href="/Default.aspx?ID=@cartPageId&Purge=True" class="@menuLinkClass menu__item--icon dw-mod js-mini-cart-button">
+        <div class="u-inline u-position-relative" title="@Translate("Cart")">
+            <i class="@cartIcon fa-1_5x"></i>
+            @RenderMiniCartCounter()
+        </div>
+    </a>
+}
+
+@helper RenderMiniCartCounter()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    string cartProductsCount = Model.Cart.TotalProductsCount.ToString();
+    string counterPosition = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("CounterPosition") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("CounterPosition").SelectedValue : "right";
+    bool showPrice = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetBoolean("ShowPrice");
+    string cartProductsTotalPrice = showPrice && Model.Cart.TotalPrice != null ? Model.Cart.TotalPrice.Price.Formatted : "";
+    cartProductsTotalPrice = counterPosition == "right" ? cartProductsTotalPrice : "";
+
+    if (showPrice && counterPosition == "right")
+    {
+        cartProductsCount = Translate("Cart") + "(" + cartProductsCount + ")";
+    }
+
+    <div class="mini-cart__counter dw-mod">
+        <div class="js-handlebars-root js-mini-cart-counter" id="cartCounter" data-template="MiniCartCounterContent" data-json-feed="/Default.aspx?ID=@miniCartFeedPageId&feedType=Counter" data-init-onload="false" data-preloader="false">
+            <div class="js-mini-cart-counter-content" data-count="@Model.Cart.TotalProductsCount.ToString()">
+                @cartProductsCount
+                @cartProductsTotalPrice
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderMiniCartCounterContent()
+{
+    bool showPrice = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetBoolean("ShowPrice");
+    string counterPosition = Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("CounterPosition") != null ? Model.Area.Item.GetItem("Ecommerce").GetItem("MiniCart").GetList("CounterPosition").SelectedValue : "right";
+    bool showPriceInMiniCartCounter = Pageview.Device.ToString() != "Mobile" && counterPosition == "right" && showPrice;
+
+    <script id="MiniCartCounterContent" type="text/x-template">
+        {{#.}}
+            <div class="js-mini-cart-counter-content dw-mod" data-count="{{numberofproducts}}">
+                @if (showPriceInMiniCartCounter)
+                {
+                    @Translate("Cart")<text>({{numberofproducts}}) {{totalprice}}</text>
+                }
+                else
+                {
+                    <text>{{numberofproducts}}</text>
+                }
+            </div>
+        {{/.}}
+    </script>
+}
+
+@helper RenderMiniCartDropdownLayout()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    string cartPageLink = "Default.aspx?ID=" + GetPageIdByNavigationTag("CartPage");
+    
+    <div class="mini-cart mini-cart-dropdown js-mini-cart grid__cell dw-mod" id="miniCart" data-cart-id="@miniCartFeedPageId" data-show-type="dropdown" data-cart-page-link="@cartPageLink">
+        <div class="mini-cart-dropdown__inner dw-mod">
+            <h3 class="u-ta-center dw-mod">@Translate("Shopping cart")</h3>
+            <div class="mini-cart-dropdown__body u-flex dw-mod">
+                <div class="js-handlebars-root u-flex grid--direction-column u-full-width dw-mod" id="miniCartContent" data-template="MiniCartContent" data-json-feed="/Default.aspx?ID=@miniCartFeedPageId&feedType=MiniCart" data-init-onload="false"></div>
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderMiniCartPanelLayout()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    string cartPageLink = "Default.aspx?ID=" + GetPageIdByNavigationTag("CartPage");
+
+    <div class="mini-cart grid__cell dw-mod">
+        <input type="checkbox" id="miniCartTrigger" class="panel-trigger" />
+        <div class="panel panel--right panel--with-close-btn dw-mod js-mini-cart" id="miniCart" data-cart-id="@miniCartFeedPageId" data-show-type="block" data-cart-page-link="@cartPageLink">
+            <label for="miniCartTrigger" class="panel__close-btn" title="@Translate("Close panel")"><i class="fas fa-times"></i></label>
+            <div class="panel__content u-full-width dw-mod">
+                <h3 class="panel__header dw-mod u-margin-bottom u-ta-center">@Translate("Shopping cart")</h3>
+                <div class="panel__content-body panel__content-body--cart dw-mod">
+                    <div class="js-handlebars-root u-flex grid--direction-column u-full-height dw-mod" id="miniCartContent" data-template="MiniCartContent" data-json-feed="/Default.aspx?ID=@miniCartFeedPageId&feedType=MiniCart" data-init-onload="false"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@helper RenderMiniCartModalLayout()
+{
+    int miniCartFeedPageId = GetPageIdByNavigationTag("MiniCartFeed");
+    string cartPageLink = "Default.aspx?ID=" + GetPageIdByNavigationTag("CartPage");
+
+    <div class="mini-cart grid__cell dw-mod">
+        <input type="checkbox" id="miniCartTrigger" class="modal-trigger" autocomplete="off" />
+        <div class="modal-container dw-mod js-mini-cart" id="miniCart" data-cart-id="@miniCartFeedPageId" data-show-type="block" data-cart-page-link="@cartPageLink">
+            <label for="miniCartTrigger" class="modal-overlay"></label>
+            <div class="modal modal--top-right dw-mod">
+                <div class="modal__body u-flex grid--direction-column dw-mod">
+                    <h3 class="dw-mod u-ta-center">@Translate("Shopping cart")</h3>
+                    <div class="js-handlebars-root u-flex grid--direction-column dw-mod" id="miniCartContent" data-template="MiniCartContent" data-json-feed="/Default.aspx?ID=@miniCartFeedPageId&feedType=MiniCart" data-init-onload="false"></div>
+                </div>
+                <label class="modal__close-btn modal__close-btn--clean dw-mod" for="miniCartTrigger" title="@Translate("Close modal")"></label>
+            </div>
+        </div>
+    </div>
+}

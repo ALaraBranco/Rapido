@@ -1,0 +1,23 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+
+
+@* Component for the articles *@
+
+@helper RenderArticleAuthorAndDate(ArticleAuthorAndDate settings)
+{
+    <small class="article__subscription">
+        @if (!(string.IsNullOrWhiteSpace(settings.Author) && string.IsNullOrWhiteSpace(settings.Date)))
+        {
+            <text>@Translate("Written")</text>
+        }
+        @if (!string.IsNullOrWhiteSpace(settings.Author))
+        {
+            <text>@Translate("by") @settings.Author</text>
+        }
+        @if (!string.IsNullOrWhiteSpace(settings.Date))
+        {
+            <text>@Translate("on") @settings.Date</text>
+        }
+    </small>
+}

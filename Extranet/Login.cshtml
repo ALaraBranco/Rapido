@@ -1,0 +1,43 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using System.Web;
+@using System.IO;
+
+@functions {
+    BlocksPage loginPage = BlocksPage.GetBlockPage("Login");
+}
+
+@{
+    Block loginForm = new Block
+    {
+        Id = "LoginContainer",
+        SortId = 10,
+        Design = new Design
+        {
+            RenderType = RenderType.Row,
+            CssClass = "grid--justify-center"
+        },
+        BlocksList = new List<Block> {
+            new Block {
+                Id = "LoginFormPlaceholder",
+                SortId = 10,
+                Design = new Design {
+                    RenderType = RenderType.Column,
+                    Size = "6",
+                    CssClass = "grid__col--bleed  paragraph-container u-middle"
+                }
+            }
+        }
+    };
+
+    loginPage.Add(loginForm);
+}
+
+@* Include the Rendering helpers *@
+@Include("../UserManagement/Login/Blocks/LoginForm.cshtml")
+@Include("../Components/GeneralComponents.cshtml")
+@Include("../Components/GridBuilder.cshtml")
+
+@Include("Blocks/Custom__Blocks.cshtml")
+
+@* The @RenderBlockList base helper is included in Components/GridBuilder.cshtml *@
+@RenderBlockList(loginPage.BlocksRoot.BlocksList)

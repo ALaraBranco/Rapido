@@ -1,0 +1,351 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Security.UserManagement;
+@using Dynamicweb.Security.UserManagement.Common.CustomFields;
+@using Dynamicweb.Core
+@using System;
+@using System.Web;
+@using Dynamicweb.Rapido.Blocks
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using System.Reflection;
+@using System.Web.Mvc;
+
+@Include("../../Helpers/GetInitials.cshtml")
+
+@functions{
+    BlocksPage maintainUserPage = BlocksPage.GetBlockPage("EditProfilePage");
+
+    public bool IsAdmin(User user)
+    {
+        if (user != null)
+        {
+            var userIsAdmin = user.CustomFieldValues.Find(x => x.CustomField.SystemName == "AccessUser_UserIsAdmin");
+            if (userIsAdmin != null)
+            {
+                return userIsAdmin.Value.ToString() == "True";
+            }
+        }
+
+        return false;
+    }
+
+    public static string GeneratePassword()
+    {
+        return Guid.NewGuid().ToString();
+    }
+}
+
+@{
+    User currentUser = User.GetCurrentExtranetUser();
+    Dynamicweb.Security.UserManagement.Group governedGroup = null;
+    IEnumerable<UserAddress> addresses = null;
+
+    if (currentUser != null && currentUser.Groups != null)
+    {
+        governedGroup = currentUser.Groups.FirstOrDefault();
+        addresses = UserAddress.GetUserAddresses(currentUser.ID);
+    } 
+
+    string userId = HttpContext.Current.Request.Cookies["EditedUserId"] != null ? HttpContext.Current.Request.Cookies["EditedUserId"].Value : "";
+    string userAddressesToAddCookie = HttpContext.Current.Request.Cookies["UserAddressesToAdd"] != null ? HttpContext.Current.Request.Cookies["UserAddressesToAdd"].Value : "";
+
+    if (!string.IsNullOrEmpty(userId))
+    {
+        //check addresses deleting
+        string userAddressesToDeleteCookie = HttpContext.Current.Request.Cookies["UserAddressesToDelete"] != null ? HttpContext.Current.Request.Cookies["UserAddressesToDelete"].Value : "";
+        if (!string.IsNullOrEmpty(userAddressesToDeleteCookie))
+        {
+            string[] addressesToDelete = userAddressesToDeleteCookie.Split(',');
+            foreach (string addressId in addressesToDelete)
+            {
+                UserAddress.Delete(Converter.ToInt32(addressId));
+            }
+            @DeleteCookie("UserAddressesToDelete");
+        }
+    }
+    else
+    {
+        userId = GetString("UserManagement:User.ID");
+    }
+
+    if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(userAddressesToAddCookie))
+    {
+        string[] userAddresses = userAddressesToAddCookie.Split(',');
+        foreach (UserAddress address in addresses)
+        {
+            if (Array.IndexOf(userAddresses, Converter.ToString(address.ID)) != -1)
+            {
+                int temp = address.ID;
+                address.ID = 0;
+                address.UserID = Converter.ToInt32(userId);
+                address.Save();
+                address.ID = temp;
+            }
+        }
+        @DeleteCookie("UserAddressesToAdd");
+    }
+
+    if (HttpContext.Current.Request.Cookies["EditedUserId"] != null)
+    {
+        @DeleteCookie("EditedUserId");
+    }
+
+    Block maintainUsersContainer = new Block
+    {
+        Id = "MaintainUsersContainer",
+        SortId = 10,
+        BlocksList = new List<Block> {
+            new Block
+            {
+                Id = "MaintainUsersList",
+                SortId = 10,
+                Component = new Heading { Title = Pageview.Page.MenuText, Icon = new Icon { Prefix = "fas", Name = "fa-user-plus" }, Level = 2 },
+                BlocksList = new List<Block>()
+            },
+            new Block
+            {
+                Id = "MaintainUsersScripts",
+                SortId = 20,
+                Template = RenderScripts()
+            }
+        }
+    };
+
+    maintainUserPage.Add(maintainUsersContainer);
+    var maintainUserListBlocks = maintainUserPage.GetBlockListById("MaintainUsersList");
+
+    if (!IsAdmin(currentUser) || governedGroup == null)
+    {
+        maintainUserListBlocks.Add(new Block {
+            Id = "NoAccess",
+            SortId = 10,
+            Component = new Text { Content = Translate("You don't have admin functions!") }
+        });
+    }
+    else
+    {
+        var users = User.GetUsersByGroupID(governedGroup.ID);
+        if (users != null && users.Count > 0)
+        {
+            maintainUserListBlocks.Add(createUserButton);
+
+            maintainUserListBlocks.Add(new Block {
+                Id = "UsersList",
+                SortId = 30,
+                Template = RenderUsers(users, addresses)
+            });
+        }
+    }
+}
+
+@helper DeleteCookie(string name)
+{
+    <script>
+        document.cookie = "@name=; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    </script>
+}
+
+@helper RenderUsers(IEnumerable<User> users, IEnumerable<UserAddress> addresses) {
+    var i = 0;
+    foreach (var user in users.OrderByDescending(x => IsAdmin(x)).ThenByDescending(x => x.CreatedOn))
+    {
+        i++;
+
+        var item = new MediaListItem {
+            Id = "userWrap_" + user.ID,
+            Label = GetInitials(user.Name, user.FirstName, user.LastName, user.Email, user.UserName),
+            Title = user.Name,
+            Status = IsAdmin(user) ? Translate("Admin") : ""
+        };
+
+        item.AddInfoRow(Translate("Login name"), user.UserName);
+        item.AddInfoRow(Translate("Created date"), user.CreatedOn.Value.ToString(Dynamicweb.Core.Helpers.DateHelper.DateFormatStringShort));
+
+        if (!IsAdmin(user)) 
+        {
+            item.AddActions(
+                new Button {
+                    OnClick = "document.getElementById('EditUser" + user.ID + "ModalTrigger').checked = true",
+                    Title = Translate("Edit")
+                },
+                new Button {
+                    ConfirmTitle = Translate("Delete user"),
+                    ConfirmText = Translate("Are you sure you want to delete the user") + " " + user.Name + "?",
+                    OnClick = "DeleteUserAjax(" + user.ID + ")",
+                    Title = Translate("Delete")
+                }
+            );
+            @RenderEditUserModal(user, addresses)
+        }
+        
+        @Render(item)
+    }
+}
+
+@helper RenderEditUserModalBody(User user, IEnumerable<UserAddress> addresses)
+{
+    @Render(new HiddenField { Name = "UserManagementForm", Value = "1" })
+    @Render(new HiddenField { Name = "action", Value = "update" })
+    @Render(new HiddenField { Name = "UserManagement_Form_Email", Value = user.Email })
+    @Render(new HiddenField { Name = "UserManagement_Form_EmailAllowed_ApplyValue", Value = user.EmailAllowed.ToString().ToLower() })
+    @Render(new TextField { Label = Translate("Name"), Value = user.Name, ReadOnly = true })
+    @Render(new TextField { Label = Translate("Email"), Value = user.Email, ReadOnly = true })
+
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("AllowCustomAddress"))
+    {
+        @Render(new CheckboxField {
+            Id = "UserManagement_Form_CanWriteOwnAddress_" + user.ID,
+            Label = Translate("Create own delivery address in check out"),
+            Name = "AccessUser_AccessUser_CanWriteOwnAddress",
+            Value = "1",
+            Checked = Converter.ToString(user.CustomFieldValues.FirstOrDefault(field => field.CustomField.SystemName == "AccessUser_CanWriteOwnAddress")) == "True"
+        })
+        @Render(new HiddenField { Name = "CustomField.AccessUser_AccessUser_CanWriteOwnAddress" })
+    }
+
+    if (Pageview.AreaSettings.GetItem("Ecommerce").GetBoolean("AllowAddressSelection"))
+    {
+        string userIcon = Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon") != null ? Pageview.AreaSettings.GetItem("Layout").GetItem("Icons").GetList("SignInProfileIcon").SelectedValue : "fas fa-user";
+        
+        @Render(new Heading { Level = 3, Title = Translate("Select Address") })
+            foreach (var address in addresses)
+        {
+            IEnumerable<UserAddress> userAddresses = UserAddress.GetUserAddresses(user.ID);
+            UserAddress dublicatedAddress = userAddresses.FirstOrDefault(x => x.Address == address.Address && x.Company == address.Company && x.Name == address.Name);
+            bool isChecked = dublicatedAddress != null;
+
+            <div class="media-list-item dw-mod">
+                <input type="hidden" class="js-previous-value" value="@Converter.ToString(isChecked).ToLower()" />
+                <input name="address_id" id="edit_address_@(user.ID)_@address.ID" type="checkbox" value="@(isChecked ? dublicatedAddress.ID : address.ID)" class="form__control media-list-item__checkbox" @(isChecked ? "checked" : "") />
+                <label for="edit_address_@(user.ID)_@address.ID" class="media-list-item__header dw-mod">
+                    <i class="fas fa-map-marker"></i>
+                    @if (!string.IsNullOrEmpty(address.Name))
+                    {
+                        <strong>@address.Name</strong>
+                    }
+                    else
+                    {
+                        <strong>@address.Address</strong>
+                    }
+                </label>
+                <div class="grid u-padding-left--lg">
+                    <div class="grid__col-md-7 grid__col--bleed-y dw-mod">
+                        <div>
+                            @if (!string.IsNullOrEmpty(address.Name))
+                            {
+                                <div>@address.Address</div>
+                            }
+                            <div>@address.Zip @address.City</div>
+                            <div>
+                                @if (!string.IsNullOrEmpty(address.State))
+                                {
+                                    <text>@address.State, </text>
+                                }
+                                @address.Country
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid__col-md-5 grid__col--bleed-y dw-mod">
+                        <div>
+                            @{
+                                var addressUserName = address.CustomFieldValues.FirstOrDefault(x => x.CustomField.SystemName == "AccessUserAddress_UserName");
+                            }
+                            @if (addressUserName != null && !string.IsNullOrEmpty(Converter.ToString(addressUserName.Value)))
+                            {
+                                <div>
+                                    <i class="@userIcon media-list-item__parameter-icon dw-mod"></i>@Converter.ToString(addressUserName.Value)
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(address.Email))
+                            {
+                                <div>
+                                    <i class="fas fa-envelope media-list-item__parameter-icon dw-mod"></i>@address.Email
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(address.Phone))
+                            {
+                                <div>
+                                    <i class="fas fa-mobile media-list-item__parameter-icon dw-mod"></i>@address.Phone
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
+
+@helper RenderEditUserModal(User user, IEnumerable<UserAddress> addresses)
+{
+    int userEditActionPage = GetPageIdByNavigationTag("EditUser");
+
+    Modal editUserModal = new Modal {
+        Heading = new Heading { Title = Translate("Edit user"), Level = 2 },
+        Width = ModalWidth.Md,
+        Id = "EditUser" + user.ID,
+        BodyTemplate = RenderEditUserModalBody(user, addresses)
+    };
+    editUserModal.AddAction(new Button { ButtonType = ButtonType.Button, ButtonLayout = ButtonLayout.Secondary, Title = Translate("Cancel"), OnClick = "document.getElementById('EditUser" + user.ID + "ModalTrigger').checked = false" });
+    editUserModal.AddAction(new Button { ButtonType = ButtonType.Submit, ButtonLayout = ButtonLayout.Primary, Title = Translate("Save") });
+
+    <form class="u-no-margin" name="edit-form" method="post" action="/Default.aspx?ID=@userEditActionPage" onsubmit="editUser(this, '@user.ID')">
+        @Render(editUserModal)
+    </form>
+}
+
+@helper RenderScripts()
+{
+    <script>
+        function createUser(form) {
+            let collectionToAdd = form.querySelectorAll('[name=address_id]:checked');
+            document.cookie = "UserAddressesToAdd=" + Array.from(collectionToAdd).map(function (address) {
+                return address.value;
+            }).join(',');
+        }
+
+        function editUser(form, userId) {
+            document.cookie = "EditedUserId=" + userId;
+
+            let collectionToDelete = form.querySelectorAll('[class=js-previous-value][value=true]+[name=address_id]:not(:checked)');
+            if (collectionToDelete.length) {
+                document.cookie = "UserAddressesToDelete=" + Array.from(collectionToDelete).map(function (address) {
+                    return address.value;
+                }).join(',');
+            }
+
+            let collectionToAdd = form.querySelectorAll('[class=js-previous-value][value=false]+[name=address_id]:checked');
+            if (collectionToAdd.length) {
+                document.cookie = "UserAddressesToAdd=" + Array.from(collectionToAdd).map(function (address) {
+                    return address.value;
+                }).join(',');
+            }
+        }
+
+        function DeleteUserAjax(userId) {
+            Request.Fetch().post(
+                "/Default.aspx?ID=@GetPageIdByNavigationTag("DeleteUser")",
+                {
+                    userId: userId,
+                    cmd: "delete"
+                },
+                function (result) {
+                    if (result.result) {
+                        document.getElementById('userWrap_' + userId).remove();
+                    }
+                },
+                function (result) { }
+            );
+        }
+    </script>
+}
+
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")
+
+@Include("Blocks/MaintainUser/CreateUser.cshtml")
+@Include("Blocks/MaintainUser/Custom__Blocks.cshtml")
+
+
+
+@RenderBlockList(maintainUserPage.BlocksRoot.BlocksList)

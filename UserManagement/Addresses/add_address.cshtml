@@ -1,0 +1,109 @@
+﻿@inherits Dynamicweb.Rendering.RazorTemplateBase<Dynamicweb.Rendering.RazorTemplateModel<Dynamicweb.Rendering.Template>>
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks
+
+@functions {
+    BlocksPage addAddressPage = BlocksPage.GetBlockPage("AddAddressPage");
+}
+
+@{
+    bool isAdd = !string.IsNullOrWhiteSpace(GetString("UserManagement:User.ManageAddresses.AddAddress"));
+
+    Form form = new Form {
+        FormStartMarkup = GetString("UserManagement:User.ManageAddresses.FormStart")
+    };
+
+    addAddressPage.Add(new Block {
+        Id = "AddAddressForm",
+        SortId = 10,
+        Component = form,
+        Design = new Design
+        {
+            RenderType = RenderType.Column,
+            Size = "8",
+            CssClass = "grid__col--bleed"
+        }
+    });
+    
+    addAddressPage.Add(new Block
+    {
+        Id = "RegionLabelsScript",
+        SortId = 20,
+        Template = RenderRegionLabelsScript()
+    });
+
+    form.Add(new Heading {
+        Title = Translate(isAdd ? "Add address" : "Edit address"),
+        Level = 2,
+        Icon = new Icon() {
+            Prefix = "fas",
+            Name = "fa-" + (isAdd ? "plus" : "pencil")
+        }
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Description", Name = "Description", Label = Translate("Description"), Value = GetString("UserManagement:User.UserAddress.Description.Value"),
+        Required = true, ErrorMessage = GetString("UserManagement:User.UserAddress.Description.Input.Error")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Company", Name = "Company", Label = Translate("Company"), Value = GetString("UserManagement:User.UserAddress.Company.Value")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Email", Name = "Email", Label = Translate("Email"), Value = GetString("UserManagement:User.UserAddress.Email.Value"),
+        Type = TextFieldType.Email, ErrorMessage = GetString("UserManagement:User.UserAddress.Email.Input.Error")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Phone", Name = "Phone", Label = Translate("Phone"), Value = GetString("UserManagement:User.UserAddress.Phone.Value"),
+        Type = TextFieldType.Tel
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Address", Name = "Address", Label = Translate("Address"), Value = GetString("UserManagement:User.UserAddress.Address.Value"),
+        Required = true, ErrorMessage = GetString("UserManagement:User.UserAddress.Address.Input.Error")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Address2", Name = "Address2", Label = Translate("Address2"), Value = GetString("UserManagement:User.UserAddress.Address2.Value")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_Zip", Name = "Zip", Label = Translate("Zip code"), Value = GetString("UserManagement:User.UserAddress.Zip.Value")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_City", Name = "City", Label = Translate("City"), Value = GetString("UserManagement:User.UserAddress.City.Value"),
+        ErrorMessage = GetString("UserManagement:User.UserAddress.City.Input.Error")
+    });
+    form.Add(new TextField {
+        Id = "UserManagement_Form_State", Name = "State", Label = Translate("State"),
+        Value = GetString("UserManagement:User.UserAddress.State.Value")
+    });
+
+    var countrySelector = new SelectField {
+        Id = "UserManagement_Form_Country", Name = "Country", Label = Translate("Country"),
+        Required = true, ErrorMessage = GetString("UserManagement:User.UserAddress.Country.Input.Error"),
+        Value = GetString("UserManagement:User.UserAddress.Country.Value"),
+        OnChange = "document.getElementById('countryHidden').value=this.value"
+    };
+    foreach (LoopItem country in GetLoop("UserManagement.CountryList"))
+    {
+        countrySelector.Options.Add(new SelectFieldOption {
+            Label = country.GetString("Country.Name"),
+            Value = country.GetString("Country.Code2")
+        });
+    }
+    form.Add(countrySelector);
+    form.Add(new HiddenField { Id = "countryHidden", Name = "AddressCountryCode", Value = GetString("UserManagement:User.UserAddress.Country.Value") });
+    form.Add(new CheckboxField { Id = "isDefault", Value = "True", Name = "Default", Label = Translate("Is default"), Checked = GetBoolean("UserManagement:User.UserAddress.Default.Value") });
+    form.Add(new Button { ButtonType = ButtonType.Submit, Title = Translate("Save"), CssClass = "u-pull--right u-no-margin" });
+}
+
+@Include("Blocks/AddAddresses/Custom__Blocks.cshtml")
+
+@RenderBlockList(addAddressPage.BlocksRoot.BlocksList)
+
+@helper RenderRegionLabelsScript()
+{
+    <script>
+        var regions = @Newtonsoft.Json.JsonConvert.SerializeObject(Dynamicweb.Rapido.Services.Translations.GetRegionLabels());
+    </script>
+}
+
+@* Include the Rendering helpers *@
+@Include("../../Components/GridBuilder.cshtml")
+@Include("../../Components/GeneralComponents.cshtml")

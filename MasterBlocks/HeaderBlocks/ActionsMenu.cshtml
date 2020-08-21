@@ -1,0 +1,53 @@
+﻿@inherits Dynamicweb.Rendering.ViewModelTemplate<Dynamicweb.Frontend.PageViewModel>
+
+@using System
+@using System.Web
+@using Dynamicweb.Rapido.Blocks.Extensibility
+@using Dynamicweb.Rapido.Blocks
+
+@{
+    Block masterDesktopActionsMenu = new Block
+    {
+        Id = "MasterDesktopActionsMenu",
+        SortId = 10,
+        Template = RenderDesktopActionsMenu(),
+        Design = new Design
+        {
+            CssClass = "u-flex"
+        },
+        SkipRenderBlocksList = true
+
+    };
+    BlocksPage.GetBlockPage("Master").Add("MasterHeader", masterDesktopActionsMenu);
+
+    if (!string.IsNullOrWhiteSpace(Model.Area.Item.GetItem("Layout").GetItem("Header").GetString("HeaderButtonLink")))
+    {
+        Block masterDesktopActionsHeaderButton = new Block
+        {
+            Id = "MasterDesktopActionsHeaderButton",
+            SortId = 60,
+            Template = RenderHeaderButton()
+        };
+        masterDesktopActionsMenu.Add(masterDesktopActionsHeaderButton);
+    }
+}
+
+@helper RenderDesktopActionsMenu()
+{
+    List<Block> subBlocks = this.headerBlocksPage.GetBlockListById("MasterDesktopActionsMenu").OrderBy(item => item.SortId).ToList();
+
+    <ul class="menu u-flex dw-mod">
+        @RenderBlockList(subBlocks)
+    </ul>
+}
+
+@helper RenderHeaderButton()
+{
+    string headerButtonText = Model.Area.Item.GetItem("Layout").GetItem("Header").GetString("HeaderButtonText");
+    string headerButtonLink = Model.Area.Item.GetItem("Layout").GetItem("Header").GetString("HeaderButtonLink");
+    string headerButtonType = Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("HeaderButtonType") != null ? "btn--" + Model.Area.Item.GetItem("Layout").GetItem("Header").GetList("HeaderButtonType").SelectedName.ToLower() : "";
+
+    <li class="menu__item menu__item--horizontal menu--clean dw-mod">
+        <a class="btn @headerButtonType dw-mod u-no-margin u-margin-top u-margin-left" href="@headerButtonLink">@headerButtonText</a>
+    </li>
+}

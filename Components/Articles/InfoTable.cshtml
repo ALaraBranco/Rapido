@@ -1,0 +1,37 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components
+@using Dynamicweb.Rapido.Blocks.Components.Articles
+@using Dynamicweb.Rapido.Blocks
+
+@* Component for the articles *@
+
+@helper RenderArticleInfoTable(ArticleInfoTable settings)
+{
+    <table class="table table--clean">
+        @foreach (var row in settings.Rows)
+        {
+            string iconColor = row.IconColor != null ? row.IconColor : "u-brand-color-two";
+
+            <tr>
+                @if (!String.IsNullOrEmpty(row.Icon))
+                {
+                    <td class="u-w32px"><i class="@row.Icon fa-2x @row.IconColor"></i></td>
+                }
+                <td class="u-no-margin-on-p-elements">
+                    <div class="u-bold">@row.Title</div>
+                    @if (!String.IsNullOrEmpty(row.SubTitle))
+                    {
+                        if (row.Link == null)
+                        {
+                        <div>@row.SubTitle</div>
+                        }
+                        else
+                        {
+                        <a href="@row.Link" class="u-color-inherit">@row.SubTitle</a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+}

@@ -1,0 +1,62 @@
+﻿@using System.Reflection
+@using Dynamicweb.Rapido.Blocks.Components.General
+@using Dynamicweb.Rapido.Blocks.Components
+
+@* Component *@
+
+@helper RenderTextField(TextField settings)
+{
+    var attributes = new Dictionary<string, string>();
+    if (!string.IsNullOrEmpty(settings.Label) && string.IsNullOrEmpty(settings.Id)) 
+    {
+        settings.Id = Guid.NewGuid().ToString("N");
+    }
+
+    /*base settings*/
+    if (!string.IsNullOrEmpty(settings.Id)) { attributes.Add("id", settings.Id); }
+    if (!string.IsNullOrEmpty(settings.OnClick)) { attributes.Add("onclick", settings.OnClick); }
+    if (!string.IsNullOrEmpty(settings.OnChange)) { attributes.Add("onchange", settings.OnChange); }
+    if (settings.Disabled) { attributes.Add("disabled", "true"); }
+    if (settings.Required) { attributes.Add("required", "true"); }
+    if (!string.IsNullOrEmpty(settings.Name)) { attributes.Add("name", settings.Name); }
+    /*end*/
+    
+    if (!string.IsNullOrEmpty(settings.OnKeyUp)) { attributes.Add("onkeyup", settings.OnKeyUp); }
+    if (!string.IsNullOrEmpty(settings.OnInput)) { attributes.Add("oninput", settings.OnInput); }
+    if (!string.IsNullOrEmpty(settings.OnFocus)) { attributes.Add("onfocus", settings.OnFocus); }
+    if (settings.ReadOnly) { attributes.Add("readonly", "true"); }
+    if (settings.MaxLength != 0) { attributes.Add("maxlength", settings.MaxLength.ToString()); }
+    if (!string.IsNullOrEmpty(settings.Placeholder)) { attributes.Add("placeholder", settings.Placeholder); }
+    attributes.Add("type", Enum.GetName(typeof(TextFieldType), settings.Type).ToLower());
+    if (settings.Type == TextFieldType.Password) { attributes.Add("autocomplete", "off"); };
+    if (!string.IsNullOrEmpty(settings.Value)) { attributes.Add("value", settings.Value); }
+    settings.CssClass = "u-full-width " + settings.CssClass;
+
+    var resultAttributes = attributes.Concat(settings.ExtraAttributes).GroupBy(d => d.Key).ToDictionary (d => d.Key, d => d.Last().Value);
+
+    <div class="form__field-group u-full-width dw-mod">
+        @if (!string.IsNullOrEmpty(settings.Label))
+        {
+            <label for="@settings.Id">@settings.Label</label>
+        }
+        @if (!string.IsNullOrEmpty(settings.HelpText))
+        {
+            <small class="form__help-text">@settings.HelpText</small>
+        }
+
+        @if (settings.ActionButton != null)
+        {
+            settings.ActionButton.CssClass += " btn--condensed u-no-margin";
+            <div class="form__field-combi u-no-margin dw-mod">
+                <input @ComponentMethods.AddAttributes(resultAttributes) class="@settings.CssClass dw-mod" />
+                @Render(settings.ActionButton)
+            </div>
+        }
+        else
+        {
+            <input @ComponentMethods.AddAttributes(resultAttributes) class="@settings.CssClass dw-mod" />
+        }
+
+        @Render(new NotificationMessage { Message = settings.ErrorMessage })
+    </div>
+}
